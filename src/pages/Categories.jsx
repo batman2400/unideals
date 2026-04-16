@@ -3,9 +3,11 @@
  *
  * Groups all deals by their `category` field and renders
  * each group as a titled section with its own DealGrid.
+ * Fetches from Supabase.
  */
-import deals from "../data/mockData";
+import { useDeals } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
+import DealsLoader from "../components/DealsLoader";
 
 // Category metadata — icon + colour accent for each section header
 const categoryMeta = {
@@ -18,6 +20,8 @@ const categoryMeta = {
 };
 
 function Categories() {
+  const { deals, loading, error } = useDeals();
+
   // Group deals by category
   const grouped = deals.reduce((acc, deal) => {
     if (!acc[deal.category]) acc[deal.category] = [];
@@ -43,37 +47,42 @@ function Categories() {
         </p>
       </div>
 
-      {/* Category Sections */}
-      {categoryNames.map((cat, idx) => {
-        const meta = categoryMeta[cat] || { icon: "category", color: "text-primary" };
-        return (
-          <div key={cat} className="mb-20">
-            {/* Section divider (skip for first) */}
-            {idx > 0 && (
-              <div className="border-t border-outline-variant/15 mb-12" />
-            )}
+      {/* Show loader / error */}
+      {(loading || error) ? (
+        <DealsLoader loading={loading} error={error} />
+      ) : (
+        /* Category Sections */
+        categoryNames.map((cat, idx) => {
+          const meta = categoryMeta[cat] || { icon: "category", color: "text-primary" };
+          return (
+            <div key={cat} className="mb-20">
+              {/* Section divider (skip for first) */}
+              {idx > 0 && (
+                <div className="border-t border-outline-variant/15 mb-12" />
+              )}
 
-            {/* Section header */}
-            <div className="flex items-center gap-4 mb-10">
-              <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
-                <span className={`material-symbols-outlined text-2xl ${meta.color}`}>
-                  {meta.icon}
-                </span>
+              {/* Section header */}
+              <div className="flex items-center gap-4 mb-10">
+                <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
+                  <span className={`material-symbols-outlined text-2xl ${meta.color}`}>
+                    {meta.icon}
+                  </span>
+                </div>
+                <div>
+                  <h2 className="font-headline font-extrabold text-3xl tracking-tight">
+                    {cat}
+                  </h2>
+                  <p className="text-on-surface-variant/60 text-sm">
+                    {grouped[cat].length} deal{grouped[cat].length !== 1 ? "s" : ""} available
+                  </p>
+                </div>
               </div>
-              <div>
-                <h2 className="font-headline font-extrabold text-3xl tracking-tight">
-                  {cat}
-                </h2>
-                <p className="text-on-surface-variant/60 text-sm">
-                  {grouped[cat].length} deal{grouped[cat].length !== 1 ? "s" : ""} available
-                </p>
-              </div>
+
+              <DealGrid deals={grouped[cat]} />
             </div>
-
-            <DealGrid deals={grouped[cat]} />
-          </div>
-        );
-      })}
+          );
+        })
+      )}
     </section>
   );
 }

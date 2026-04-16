@@ -2,17 +2,23 @@
  * DealFeed Component
  *
  * The "Top Trending Perks" section that displays a grid of DealCards.
- * Now imports deals from the centralized mockData.js and shows the
- * first 6 deals (filtered by search if active).
+ * Fetches deals from Supabase and shows the first 6
+ * (filtered by search if active).
  *
  * Props:
  *   - searchQuery : string — optional search filter
  */
 import { Link } from "react-router-dom";
-import deals from "../data/mockData";
+import { useDeals } from "../lib/useDeals";
 import DealCard from "./DealCard";
+import DealsLoader from "./DealsLoader";
 
 function DealFeed({ searchQuery }) {
+  const { deals, loading, error } = useDeals();
+
+  // Show loader / error
+  if (loading || error) return <DealsLoader loading={loading} error={error} />;
+
   // Filter by search query if one is active
   const filtered = searchQuery
     ? deals.filter(

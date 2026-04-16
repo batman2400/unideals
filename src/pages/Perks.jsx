@@ -1,7 +1,7 @@
 /**
  * Perks Page (/perks)
  *
- * Displays ALL deals from mockData in a filterable grid.
+ * Displays ALL deals from Supabase in a filterable grid.
  * Users can filter by type (Show All / Online Only / In-Store Only)
  * and results also respond to the global search query.
  *
@@ -9,8 +9,9 @@
  *   - searchQuery : string — global search text from App state
  */
 import { useState } from "react";
-import deals from "../data/mockData";
+import { useDeals } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
+import DealsLoader from "../components/DealsLoader";
 
 const filters = [
   { label: "Show All", value: "all" },
@@ -20,6 +21,7 @@ const filters = [
 
 function Perks({ searchQuery }) {
   const [activeFilter, setActiveFilter] = useState("all");
+  const { deals, loading, error } = useDeals();
 
   // Apply type filter
   const filteredByType =
@@ -53,30 +55,37 @@ function Perks({ searchQuery }) {
         </p>
       </div>
 
-      {/* Filter Bar */}
-      <div className="flex flex-wrap gap-3 mb-10">
-        {filters.map((filter) => (
-          <button
-            key={filter.value}
-            onClick={() => setActiveFilter(filter.value)}
-            className={`px-6 py-2.5 rounded-full text-sm font-headline font-bold tracking-tight transition-all ${
-              activeFilter === filter.value
-                ? "bg-primary text-on-primary shadow-md"
-                : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container border border-outline-variant/20"
-            }`}
-          >
-            {filter.label}
-          </button>
-        ))}
+      {/* Show loader / error */}
+      {(loading || error) ? (
+        <DealsLoader loading={loading} error={error} />
+      ) : (
+        <>
+          {/* Filter Bar */}
+          <div className="flex flex-wrap gap-3 mb-10">
+            {filters.map((filter) => (
+              <button
+                key={filter.value}
+                onClick={() => setActiveFilter(filter.value)}
+                className={`px-6 py-2.5 rounded-full text-sm font-headline font-bold tracking-tight transition-all ${
+                  activeFilter === filter.value
+                    ? "bg-primary text-on-primary shadow-md"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container border border-outline-variant/20"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
 
-        {/* Active filter count */}
-        <span className="flex items-center text-sm text-on-surface-variant/60 font-body ml-2">
-          {filteredDeals.length} deal{filteredDeals.length !== 1 ? "s" : ""} found
-        </span>
-      </div>
+            {/* Active filter count */}
+            <span className="flex items-center text-sm text-on-surface-variant/60 font-body ml-2">
+              {filteredDeals.length} deal{filteredDeals.length !== 1 ? "s" : ""} found
+            </span>
+          </div>
 
-      {/* Deal Grid */}
-      <DealGrid deals={filteredDeals} />
+          {/* Deal Grid */}
+          <DealGrid deals={filteredDeals} />
+        </>
+      )}
     </section>
   );
 }

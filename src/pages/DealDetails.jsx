@@ -7,12 +7,13 @@
  *   • Online    → Copyable promo code + "Go to Store" affiliate button
  *
  * Uses useParams to grab the deal ID from the URL,
- * then looks it up in mockData.js.
+ * then fetches it from Supabase.
  */
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import deals from "../data/mockData";
+import { useDeal } from "../lib/useDeals";
+import DealsLoader from "../components/DealsLoader";
 
 // ── Countdown Timer Hook ────────────────────────────────
 function useCountdown(totalSeconds) {
@@ -239,7 +240,25 @@ function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
 // ── Main DealDetails Page ───────────────────────────────
 function DealDetails() {
   const { id } = useParams();
-  const deal = deals.find((d) => d.id === Number(id));
+  const { deal, loading, error } = useDeal(id);
+
+  // Loading state
+  if (loading) {
+    return (
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16">
+        <DealsLoader loading={true} error={null} />
+      </section>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16">
+        <DealsLoader loading={false} error={error} />
+      </section>
+    );
+  }
 
   // 404 — deal not found
   if (!deal) {
