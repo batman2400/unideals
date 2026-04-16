@@ -21,6 +21,7 @@ import AuthModal from "./components/AuthModal";
 
 import Home from "./pages/Home";
 import Perks from "./pages/Perks";
+import DealDetails from "./pages/DealDetails";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 
@@ -54,6 +55,7 @@ function App() {
             path="/perks"
             element={<Perks searchQuery={searchQuery} />}
           />
+          <Route path="/perks/:id" element={<DealDetails />} />
           <Route path="/categories" element={<Categories />} />
           <Route path="/brands" element={<Brands />} />
         </Routes>
