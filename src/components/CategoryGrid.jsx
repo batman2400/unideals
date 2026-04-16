@@ -12,11 +12,11 @@ import { useNavigate } from "react-router-dom";
 // Each category has an icon name (from Material Symbols) and a label
 const categories = [
   { icon: "coffee", label: "Coffee" },
-  { icon: "laptop_mac", label: "Laptops" },
+  { icon: "laptop_mac", label: "Tech" },
   { icon: "apparel", label: "Clothing" },
   { icon: "fitness_center", label: "Fitness" },
-  { icon: "travel_explore", label: "Travel" },
-  { icon: "more_horiz", label: "More" },
+  { icon: "home", label: "Home" },
+  { icon: "palette", label: "Creative" },
 ];
 
 function CategoryGrid() {
@@ -28,7 +28,10 @@ function CategoryGrid() {
         {categories.map((category) => (
           <button
             key={category.label}
-            onClick={() => navigate("/categories")}
+            onClick={() => {
+              const params = new URLSearchParams({ filter: category.label });
+              navigate(`/categories?${params.toString()}`);
+            }}
             className="bg-surface-container-low p-6 flex flex-col items-center justify-center gap-4 rounded-xl group hover:bg-surface-container transition-colors cursor-pointer active:scale-[0.97]"
           >
             <span className="material-symbols-outlined text-3xl text-primary">

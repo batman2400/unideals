@@ -157,7 +157,7 @@ export async function checkIfSaved(dealId) {
     
   if (error) {
     console.error("[checkIfSaved] Error:", error.message);
-    return false;
+    throw error;
   }
   
   return !!data;

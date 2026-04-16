@@ -44,21 +44,40 @@ function App() {
   const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
+
     // 1. Check for an existing session on initial load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setAuthLoading(false);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data: { session }, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("[App] Failed to load session:", error.message);
+        }
+        setSession(session ?? null);
+        setAuthLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        console.error("[App] Unexpected session bootstrap error:", err);
+        setSession(null);
+        setAuthLoading(false);
+      });
 
     // 2. Listen for auth state changes (login, logout, token refresh)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!active) return;
       setSession(session);
+      setAuthLoading(false);
     });
 
     // Cleanup listener on unmount
-    return () => subscription.unsubscribe();
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   // ── Global Event Listener for Auth Modal ─────────────

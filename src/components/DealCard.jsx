@@ -23,6 +23,7 @@ function DealCard({ deal }) {
 
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSave, setLoadingSave] = useState(true);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -32,7 +33,10 @@ function DealCard({ deal }) {
         setLoadingSave(false);
       }
     }).catch(() => {
-      if (active) setLoadingSave(false);
+      if (active) {
+        setSaveError("Could not verify saved state right now.");
+        setLoadingSave(false);
+      }
     });
     return () => { active = false; };
   }, [id]);
@@ -40,6 +44,7 @@ function DealCard({ deal }) {
   const handleToggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setSaveError("");
 
     // Check login state: if not logged in, trigger custom event to open AuthModal
     const { data: { session } } = await supabase.auth.getSession();
@@ -59,6 +64,7 @@ function DealCard({ deal }) {
       }
     } catch (err) {
       console.error("Error toggling save:", err);
+      setSaveError(err?.message || "Could not update saved state. Please try again.");
     } finally {
       setLoadingSave(false);
     }
@@ -119,6 +125,9 @@ function DealCard({ deal }) {
           <span className="text-primary font-headline font-black text-xl">{discount}</span>
         </div>
         <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">{description}</p>
+        {saveError && (
+          <p className="text-error text-xs font-bold mb-3">{saveError}</p>
+        )}
         <Link
           to={`/perks/${id}`}
           className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center group-hover:bg-primary group-hover:text-on-primary transition-all active:scale-[0.98]"

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRole } from "../../lib/useRole";
 
@@ -11,6 +11,13 @@ function AdminDashboard() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [actingDealId, setActingDealId] = useState(null);
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -81,6 +88,8 @@ function AdminDashboard() {
       .update({ status: "approved" })
       .eq("id", id);
 
+    if (!isMountedRef.current) return;
+
     if (updateError) {
       setActingDealId(null);
       setError(updateError.message || "Failed to approve deal.");
@@ -105,6 +114,8 @@ function AdminDashboard() {
       .from("deals")
       .update({ status: "rejected" })
       .eq("id", id);
+
+    if (!isMountedRef.current) return;
 
     if (updateError) {
       setActingDealId(null);

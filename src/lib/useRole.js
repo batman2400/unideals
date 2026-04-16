@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "./supabaseClient";
 
 /**
@@ -12,9 +12,42 @@ export function useRole() {
   const [role, setRole] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const roleChannelRef = useRef(null);
 
   useEffect(() => {
     let active = true;
+
+    function detachRoleChannel() {
+      if (roleChannelRef.current) {
+        supabase.removeChannel(roleChannelRef.current);
+        roleChannelRef.current = null;
+      }
+    }
+
+    function attachRoleChannel(userId) {
+      detachRoleChannel();
+
+      if (!userId) {
+        return;
+      }
+
+      roleChannelRef.current = supabase
+        .channel(`user-role-sync-${userId}`)
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "user_roles",
+            filter: `user_id=eq.${userId}`,
+          },
+          () => {
+            resolveRole();
+          }
+        )
+        .subscribe();
+    }
 
     async function resolveRole(sessionOverride = null) {
       if (!active) return;
@@ -43,6 +76,7 @@ export function useRole() {
         if (!active) return;
 
         setUser(nextUser);
+        attachRoleChannel(nextUser?.id ?? null);
 
         if (!nextUser) {
           setRole(null);
@@ -74,7 +108,7 @@ export function useRole() {
         setLoading(false);
       } catch (err) {
         if (!active) return;
-        setRole(null);
+        // Preserve the last known role on transient failures.
         setError(err?.message || "Failed to load user role.");
         setLoading(false);
       }
@@ -91,8 +125,13 @@ export function useRole() {
     return () => {
       active = false;
       subscription.unsubscribe();
+      detachRoleChannel();
     };
-  }, []);
+  }, [refreshKey]);
+
+  const refreshRole = () => {
+    setRefreshKey((previous) => previous + 1);
+  };
 
   return {
     user,
@@ -100,5 +139,6 @@ export function useRole() {
     loading,
     error,
     isAuthenticated: !!user,
+    refreshRole,
   };
 }

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRole } from "../../lib/useRole";
@@ -24,6 +24,13 @@ function CreateDeal() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -78,6 +85,8 @@ function CreateDeal() {
 
       const { error: insertError } = await supabase.from("deals").insert([payload]);
 
+      if (!isMountedRef.current) return;
+
       if (insertError) {
         throw insertError;
       }
@@ -85,8 +94,10 @@ function CreateDeal() {
       setFormData(INITIAL_FORM);
       setSuccessMessage("Deal submitted successfully. It is now pending admin approval.");
     } catch (submitError) {
+      if (!isMountedRef.current) return;
       setError(submitError?.message || "Could not submit deal. Please try again.");
     } finally {
+      if (!isMountedRef.current) return;
       setSubmitting(false);
     }
   };

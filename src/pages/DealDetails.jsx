@@ -245,6 +245,7 @@ function DealDetails() {
 
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSave, setLoadingSave] = useState(true);
+  const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -255,7 +256,10 @@ function DealDetails() {
           setLoadingSave(false);
         }
       }).catch(() => {
-        if (active) setLoadingSave(false);
+        if (active) {
+          setSaveError("Could not verify saved state right now.");
+          setLoadingSave(false);
+        }
       });
     }
     return () => { active = false; };
@@ -264,6 +268,7 @@ function DealDetails() {
   const handleToggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    setSaveError("");
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
@@ -282,6 +287,7 @@ function DealDetails() {
       }
     } catch (err) {
       console.error("Error toggling save:", err);
+      setSaveError(err?.message || "Could not update saved state. Please try again.");
     } finally {
       setLoadingSave(false);
     }
@@ -351,6 +357,12 @@ function DealDetails() {
           {title}
         </span>
       </nav>
+
+      {saveError && (
+        <div className="mb-6 rounded-lg border border-error/20 bg-error/10 px-4 py-3">
+          <p className="text-error text-sm font-bold">{saveError}</p>
+        </div>
+      )}
 
       {/* Main content — stacks on mobile, side-by-side on desktop */}
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">

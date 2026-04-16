@@ -62,14 +62,20 @@ function Profile({ isLoggedIn, user }) {
   // ── Fetch user's saved deals ─────────────────────────
   const [savedDealIds, setSavedDealIds] = useState([]);
   const [savedLoading, setSavedLoading] = useState(true);
+  const [savedError, setSavedError] = useState(null);
 
   useEffect(() => {
     let active = true;
     async function fetchSaved() {
        if (!user) {
+         setSavedError(null);
          setSavedLoading(false);
          return;
        }
+
+       setSavedLoading(true);
+       setSavedError(null);
+
        const { data, error } = await supabase
          .from("saved_deals")
          .select("deal_id")
@@ -77,9 +83,11 @@ function Profile({ isLoggedIn, user }) {
          
        if (active && !error) {
          setSavedDealIds(data ? data.map(d => d.deal_id) : []);
+         setSavedError(null);
          setSavedLoading(false);
        } else if (active && error) {
          console.error("Error fetching saved deals:", error);
+         setSavedError(error.message || "Could not load your saved deals.");
          setSavedLoading(false);
        }
     }
@@ -211,7 +219,7 @@ function Profile({ isLoggedIn, user }) {
             </Link>
           </div>
           {(dealsLoading || dealsError || savedLoading) ? (
-            <DealsLoader loading={dealsLoading || savedLoading} error={dealsError} />
+            <DealsLoader loading={dealsLoading || savedLoading} error={dealsError || savedError} />
           ) : (
             <DealGrid deals={savedDeals} />
           )}

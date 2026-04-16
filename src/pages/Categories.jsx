@@ -3,8 +3,11 @@
  *
  * Groups all deals by their `category` field and renders
  * each group as a titled section with its own DealGrid.
+ * Syncs active category with the `filter` URL search param.
  * Fetches from Supabase.
  */
+import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "react-router-dom";
 import { useDeals } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
@@ -20,16 +23,53 @@ const categoryMeta = {
 };
 
 function Categories() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const { deals, loading, error } = useDeals();
+  const [activeCategory, setActiveCategory] = useState("all");
 
   // Group deals by category
-  const grouped = deals.reduce((acc, deal) => {
-    if (!acc[deal.category]) acc[deal.category] = [];
-    acc[deal.category].push(deal);
-    return acc;
-  }, {});
+  const grouped = useMemo(
+    () =>
+      deals.reduce((acc, deal) => {
+        if (!acc[deal.category]) acc[deal.category] = [];
+        acc[deal.category].push(deal);
+        return acc;
+      }, {}),
+    [deals]
+  );
 
-  const categoryNames = Object.keys(grouped);
+  const categoryNames = useMemo(() => Object.keys(grouped), [grouped]);
+
+  useEffect(() => {
+    const filterParam = searchParams.get("filter");
+
+    if (!filterParam) {
+      setActiveCategory("all");
+      return;
+    }
+
+    const matchedCategory = categoryNames.find(
+      (category) => category.toLowerCase() === filterParam.toLowerCase()
+    );
+
+    setActiveCategory(matchedCategory || "all");
+  }, [searchParams, categoryNames]);
+
+  const handleCategoryChange = (category) => {
+    setActiveCategory(category);
+
+    if (category === "all") {
+      setSearchParams({});
+      return;
+    }
+
+    setSearchParams({ filter: category });
+  };
+
+  const visibleCategories =
+    activeCategory === "all"
+      ? categoryNames
+      : categoryNames.filter((category) => category === activeCategory);
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
@@ -45,6 +85,36 @@ function Categories() {
           Find student deals sorted by what matters to you — from tech and
           coffee to fitness and fashion.
         </p>
+
+        {/* Category Filter Controls */}
+        {!loading && !error && categoryNames.length > 0 && (
+          <div className="flex flex-wrap gap-3 mt-8">
+            <button
+              onClick={() => handleCategoryChange("all")}
+              className={`px-6 py-2.5 rounded-full text-sm font-headline font-bold tracking-tight transition-all ${
+                activeCategory === "all"
+                  ? "bg-primary text-on-primary shadow-md"
+                  : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container border border-outline-variant/20"
+              }`}
+            >
+              All Categories
+            </button>
+
+            {categoryNames.map((category) => (
+              <button
+                key={category}
+                onClick={() => handleCategoryChange(category)}
+                className={`px-6 py-2.5 rounded-full text-sm font-headline font-bold tracking-tight transition-all ${
+                  activeCategory === category
+                    ? "bg-primary text-on-primary shadow-md"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container border border-outline-variant/20"
+                }`}
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Show loader / error */}
@@ -52,7 +122,7 @@ function Categories() {
         <DealsLoader loading={loading} error={error} />
       ) : (
         /* Category Sections */
-        categoryNames.map((cat, idx) => {
+        visibleCategories.map((cat, idx) => {
           const meta = categoryMeta[cat] || { icon: "category", color: "text-primary" };
           return (
             <div key={cat} className="mb-20">
