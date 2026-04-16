@@ -8,7 +8,7 @@
  *   - Route definitions for all pages
  *
  * Routes:
- *   /            → Home (hero, categories, deal feed, newsletter)
+ *   /            → Home (hero, categories, deal feed)
  *   /perks       → All Deals with type filters
  *   /perks/:id   → Single deal details with redemption
  *   /categories  → Deals grouped by category
@@ -16,12 +16,13 @@
  *   /profile     → User dashboard & settings
  */
 import { useState, useEffect } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
+import ProtectedRoute from "./components/ProtectedRoute";
 
 import Home from "./pages/Home";
 import Perks from "./pages/Perks";
@@ -29,6 +30,9 @@ import DealDetails from "./pages/DealDetails";
 import Categories from "./pages/Categories";
 import Brands from "./pages/Brands";
 import Profile from "./pages/Profile";
+import PartnerDashboard from "./pages/partner/PartnerDashboard";
+import CreateDeal from "./pages/partner/CreateDeal";
+import AdminDashboard from "./pages/admin/AdminDashboard";
 
 function App() {
   // ── Global UI State ──────────────────────────────────
@@ -100,7 +104,7 @@ function App() {
       />
 
       {/* Page Content */}
-      <main className="pt-24 pb-20">
+      <main className="pt-20 md:pt-24 pb-14 md:pb-20">
         <Routes>
           <Route
             path="/"
@@ -121,6 +125,27 @@ function App() {
           <Route
             path="/profile"
             element={<Profile isLoggedIn={isLoggedIn} user={user} />}
+          />
+
+          <Route
+            path="/partner"
+            element={
+              <ProtectedRoute allowedRoles={["partner", "admin"]}>
+                <Outlet />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<PartnerDashboard />} />
+            <Route path="create-deal" element={<CreateDeal />} />
+          </Route>
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
           />
         </Routes>
       </main>

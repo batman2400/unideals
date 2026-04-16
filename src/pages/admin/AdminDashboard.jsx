@@ -1,0 +1,260 @@
+import { useEffect, useState } from "react";
+import { supabase } from "../../lib/supabaseClient";
+import { useRole } from "../../lib/useRole";
+
+function AdminDashboard() {
+  const { role, loading: roleLoading, error: roleError } = useRole();
+
+  const [pendingDeals, setPendingDeals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [messageType, setMessageType] = useState("success");
+  const [actingDealId, setActingDealId] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+
+    async function fetchPendingDeals() {
+      if (!active) return;
+
+      if (roleLoading) {
+        return;
+      }
+
+      if (roleError) {
+        setError(roleError || "Unable to verify role.");
+        setLoading(false);
+        return;
+      }
+
+      if (role !== "admin") {
+        setError("Access denied. Admin role is required.");
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      setError("");
+
+      const { data, error: fetchError } = await supabase
+        .from("deals")
+        .select("id, brand, title, discount, type, category, image_url, created_at")
+        .eq("status", "pending")
+        .order("created_at", { ascending: false });
+
+      if (!active) return;
+
+      if (fetchError) {
+        setError(fetchError.message || "Failed to load pending deals.");
+        setLoading(false);
+        return;
+      }
+
+      setPendingDeals(data || []);
+      setLoading(false);
+    }
+
+    fetchPendingDeals();
+
+    return () => {
+      active = false;
+    };
+  }, [role, roleError, roleLoading]);
+
+  const showMessage = (text, type = "success") => {
+    setMessage(text);
+    setMessageType(type);
+  };
+
+  const handleApprove = async (id) => {
+    if (role !== "admin") {
+      showMessage("Only admins can approve deals.", "error");
+      return;
+    }
+
+    setActingDealId(id);
+    setError("");
+
+    const { error: updateError } = await supabase
+      .from("deals")
+      .update({ status: "approved" })
+      .eq("id", id);
+
+    if (updateError) {
+      setActingDealId(null);
+      setError(updateError.message || "Failed to approve deal.");
+      return;
+    }
+
+    setPendingDeals((prev) => prev.filter((deal) => deal.id !== id));
+    setActingDealId(null);
+    showMessage("Deal approved and moved out of the pending queue.", "success");
+  };
+
+  const handleReject = async (id) => {
+    if (role !== "admin") {
+      showMessage("Only admins can reject deals.", "error");
+      return;
+    }
+
+    setActingDealId(id);
+    setError("");
+
+    const { error: updateError } = await supabase
+      .from("deals")
+      .update({ status: "rejected" })
+      .eq("id", id);
+
+    if (updateError) {
+      setActingDealId(null);
+      setError(updateError.message || "Failed to reject deal.");
+      return;
+    }
+
+    setPendingDeals((prev) => prev.filter((deal) => deal.id !== id));
+    setActingDealId(null);
+    showMessage("Deal rejected and removed from moderation queue.", "success");
+  };
+
+  if (roleLoading || loading) {
+    return (
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
+        <div className="min-h-[45vh] flex items-center justify-center">
+          <div className="flex items-center gap-3 text-on-surface-variant">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-headline font-bold">Loading moderation queue...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
+      <div className="mb-8">
+        <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase block mb-2">
+          Admin Moderation
+        </span>
+        <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background mb-2">
+          Pending Deal Queue
+        </h1>
+        <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
+          Review newly submitted partner offers and decide which deals go live.
+        </p>
+      </div>
+
+      {message && (
+        <div
+          className={`mb-6 flex items-start gap-2 rounded-lg px-4 py-3 border ${
+            messageType === "error"
+              ? "bg-error/10 border-error/20"
+              : "bg-primary-container/30 border-primary/20"
+          }`}
+        >
+          <span
+            className={`material-symbols-outlined text-lg flex-shrink-0 mt-0.5 ${
+              messageType === "error" ? "text-error" : "text-primary"
+            }`}
+          >
+            {messageType === "error" ? "error" : "check_circle"}
+          </span>
+          <p className={`text-sm font-bold ${messageType === "error" ? "text-error" : "text-primary"}`}>
+            {message}
+          </p>
+        </div>
+      )}
+
+      {error ? (
+        <div className="bg-error/10 border border-error/20 rounded-xl p-5">
+          <p className="text-error text-sm font-bold">{error}</p>
+        </div>
+      ) : pendingDeals.length === 0 ? (
+        <div className="bg-surface rounded-2xl border border-outline-variant/20 p-8 text-center">
+          <p className="font-headline font-bold text-on-background text-lg mb-1">Queue is clear</p>
+          <p className="text-on-surface-variant text-sm">No pending deals need moderation right now.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {pendingDeals.map((deal) => {
+            const isActing = actingDealId === deal.id;
+
+            return (
+              <article
+                key={deal.id}
+                className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm"
+              >
+                <div className="aspect-[16/9] bg-surface-container-low overflow-hidden">
+                  <img
+                    src={deal.image_url}
+                    alt={`${deal.brand} deal preview`}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <div className="p-5 md:p-6">
+                  <div className="flex items-center justify-between gap-3 mb-2">
+                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">{deal.category}</p>
+                    <span className="text-[11px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
+                      {deal.type}
+                    </span>
+                  </div>
+
+                  <h2 className="font-headline font-extrabold text-2xl tracking-tight text-on-background mb-1">
+                    {deal.title}
+                  </h2>
+                  <p className="text-on-surface-variant text-sm mb-4">{deal.brand}</p>
+
+                  <div className="inline-flex items-center gap-2 rounded-full bg-primary-container/35 border border-primary/15 px-3 py-1.5 mb-5">
+                    <span className="material-symbols-outlined text-primary text-base">local_offer</span>
+                    <span className="text-primary text-sm font-headline font-bold">{deal.discount}</span>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={() => handleApprove(deal.id)}
+                      disabled={isActing}
+                      className="flex-1 inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isActing ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-lg">done</span>
+                          Approve
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => handleReject(deal.id)}
+                      disabled={isActing}
+                      className="flex-1 inline-flex items-center justify-center gap-2 bg-error text-white py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                    >
+                      {isActing ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <span className="material-symbols-outlined text-lg">close</span>
+                          Reject
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default AdminDashboard;

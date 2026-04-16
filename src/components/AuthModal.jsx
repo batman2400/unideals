@@ -25,6 +25,7 @@ function AuthModal({ isOpen, onClose }) {
 
   // ── Form State ────────────────────────────────────────
   const [fullName, setFullName] = useState("");
+  const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -38,6 +39,7 @@ function AuthModal({ isOpen, onClose }) {
   const switchTab = (tab) => {
     setActiveTab(tab);
     setFullName("");
+    setUsername("");
     setEmail("");
     setPassword("");
     setErrors({});
@@ -51,6 +53,10 @@ function AuthModal({ isOpen, onClose }) {
 
     if (activeTab === "signup" && fullName.trim().length === 0) {
       newErrors.fullName = "Full name is required.";
+    }
+
+    if (activeTab === "signup" && username.trim().length < 3) {
+      newErrors.username = "Username must be at least 3 characters.";
     }
 
     if (!email.includes("@")) {
@@ -85,6 +91,7 @@ function AuthModal({ isOpen, onClose }) {
           options: {
             data: {
               full_name: fullName.trim(),
+              username: username.trim(),
             },
           },
         });
@@ -113,6 +120,7 @@ function AuthModal({ isOpen, onClose }) {
 
         // Success — session is set by onAuthStateChange in App.jsx
         setFullName("");
+        setUsername("");
         setEmail("");
         setPassword("");
         setErrors({});
@@ -222,29 +230,55 @@ function AuthModal({ isOpen, onClose }) {
               {/* Form */}
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                 {activeTab === "signup" && (
-                  <div>
-                    <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      placeholder="Jane Doe"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      disabled={loading}
-                      className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
-                        errors.fullName
-                          ? "border-error ring-1 ring-error/30"
-                          : "border-outline-variant/20"
-                      }`}
-                    />
-                    {errors.fullName && (
-                      <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
-                        <span className="material-symbols-outlined text-xs">error</span>
-                        {errors.fullName}
-                      </p>
-                    )}
-                  </div>
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                        Full Name
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="Jane Doe"
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        disabled={loading}
+                        className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
+                          errors.fullName
+                            ? "border-error ring-1 ring-error/30"
+                            : "border-outline-variant/20"
+                        }`}
+                      />
+                      {errors.fullName && (
+                        <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">error</span>
+                          {errors.fullName}
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                        Username
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="jane_doe"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        disabled={loading}
+                        className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
+                          errors.username
+                            ? "border-error ring-1 ring-error/30"
+                            : "border-outline-variant/20"
+                        }`}
+                      />
+                      {errors.username && (
+                        <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
+                          <span className="material-symbols-outlined text-xs">error</span>
+                          {errors.username}
+                        </p>
+                      )}
+                    </div>
+                  </>
                 )}
 
                 <div>

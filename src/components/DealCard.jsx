@@ -65,7 +65,7 @@ function DealCard({ deal }) {
   };
 
   return (
-    <div className="flex flex-col group cursor-pointer relative">
+    <div className="flex flex-col group cursor-pointer relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-xl">
       {/* Deal Image */}
       <Link to={`/perks/${id}`} className="block relative">
         <div className="aspect-[16/10] overflow-hidden rounded-xl relative bg-surface-container">

@@ -2,7 +2,7 @@
  * Home Page
  *
  * The landing page at route "/".
- * Assembles the hero, categories, deal feed, and newsletter sections.
+ * Assembles the hero, categories, and deal feed sections.
  *
  * Props:
  *   - searchQuery    : string — current search text (from App state)
@@ -11,7 +11,6 @@
 import HeroSection from "../components/HeroSection";
 import CategoryGrid from "../components/CategoryGrid";
 import DealFeed from "../components/DealFeed";
-import Newsletter from "../components/Newsletter";
 
 function Home({ searchQuery, onSearchChange }) {
   return (
@@ -19,7 +18,6 @@ function Home({ searchQuery, onSearchChange }) {
       <HeroSection searchQuery={searchQuery} onSearchChange={onSearchChange} />
       <CategoryGrid />
       <DealFeed searchQuery={searchQuery} />
-      <Newsletter />
     </>
   );
 }

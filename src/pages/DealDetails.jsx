@@ -291,7 +291,7 @@ function DealDetails() {
   // Loading state
   if (loading) {
     return (
-      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 animate-fade-in">
         <DealsLoader loading={true} error={null} />
       </section>
     );
@@ -300,7 +300,7 @@ function DealDetails() {
   // Error state
   if (error) {
     return (
-      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 animate-fade-in">
         <DealsLoader loading={false} error={error} />
       </section>
     );
@@ -309,7 +309,7 @@ function DealDetails() {
   // 404 — deal not found
   if (!deal) {
     return (
-      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center">
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center animate-fade-in">
         <div className="max-w-md mx-auto">
           <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 mb-4 block">
             search_off
@@ -337,7 +337,7 @@ function DealDetails() {
   const isInStore = type === "In-Store";
 
   return (
-    <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16">
+    <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-on-surface-variant/60 mb-8">
         <Link

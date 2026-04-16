@@ -19,12 +19,17 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useRole } from "../lib/useRole";
 
 function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onLogout }) {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const avatarRef = useRef(null);
+  const { role } = useRole();
+
+  const canAccessPartnerPortal = role === "partner" || role === "admin";
+  const canAccessAdminPanel = role === "admin";
 
   // Close avatar dropdown on outside click
   useEffect(() => {
@@ -66,15 +71,15 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
 
   return (
     <nav className="fixed top-0 w-full z-50 bg-[#fcf9f8]/80 dark:bg-[#323233]/80 backdrop-blur-xl">
-      <div className="flex justify-between items-center px-8 py-4 max-w-[1440px] mx-auto">
+      <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 py-3 md:py-4 max-w-[1440px] mx-auto">
         {/* Left side: Logo + Nav Links */}
-        <div className="flex items-center gap-12">
+        <div className="flex items-center gap-6 md:gap-12">
           <Link
             to="/"
             className="flex items-center gap-2"
           >
-            <img src="/images/logo.png" alt="Uni Deals" className="h-8 w-auto" />
-            <span className="text-2xl font-black text-[#323233] dark:text-[#fcf9f8] tracking-tighter font-headline">
+            <img src="/images/logo.png" alt="Uni Deals" className="h-7 md:h-8 w-auto" />
+            <span className="text-xl md:text-2xl font-black text-[#323233] dark:text-[#fcf9f8] tracking-tighter font-headline">
               Uni Deals
             </span>
           </Link>
@@ -90,9 +95,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
         </div>
 
         {/* Right side: Search + Auth/Avatar + Hamburger */}
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-3 sm:gap-4 md:gap-6">
           {/* Search bar (desktop) */}
-          <div className="relative hidden sm:block">
+          <div className="relative hidden md:block">
             <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">
               search
             </span>
@@ -147,6 +152,29 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                         <span className="material-symbols-outlined text-lg">dashboard</span>
                         My Dashboard
                       </Link>
+
+                      {canAccessPartnerPortal && (
+                        <Link
+                          to="/partner"
+                          onClick={() => setAvatarMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">storefront</span>
+                          Partner Portal
+                        </Link>
+                      )}
+
+                      {canAccessAdminPanel && (
+                        <Link
+                          to="/admin"
+                          onClick={() => setAvatarMenuOpen(false)}
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
+                        >
+                          <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+                          Admin Panel
+                        </Link>
+                      )}
+
                       <Link
                         to="/profile?tab=saved"
                         onClick={() => setAvatarMenuOpen(false)}
@@ -208,7 +236,7 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
       {/* ── Mobile Menu ─────────────────────────────────── */}
       {mobileOpen && (
         <div className="md:hidden bg-[#fcf9f8]/95 dark:bg-[#323233]/95 backdrop-blur-xl border-t border-outline-variant/10 animate-slide-down">
-          <div className="flex flex-col px-8 py-6 gap-4">
+          <div className="flex flex-col px-4 sm:px-6 py-5 gap-4">
             {/* Mobile search */}
             <div className="relative sm:hidden">
               <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50">
@@ -228,7 +256,7 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
               <Link
                 key={link.to}
                 to={link.to}
-                className={`text-lg py-2 ${linkClasses(link.to)}`}
+                className={`text-base py-2 ${linkClasses(link.to)}`}
                 onClick={() => setMobileOpen(false)}
               >
                 {link.label}
@@ -256,6 +284,29 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                   <span className="material-symbols-outlined text-lg">dashboard</span>
                   My Dashboard
                 </Link>
+
+                {canAccessPartnerPortal && (
+                  <Link
+                    to="/partner"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">storefront</span>
+                    Partner Portal
+                  </Link>
+                )}
+
+                {canAccessAdminPanel && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setMobileOpen(false)}
+                    className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+                    Admin Panel
+                  </Link>
+                )}
+
                 <Link
                   to="/profile?tab=saved"
                   onClick={() => setMobileOpen(false)}
