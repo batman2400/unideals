@@ -12,7 +12,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
-import { useDeal } from "../lib/useDeals";
+import { supabase } from "../lib/supabaseClient";
+import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import DealsLoader from "../components/DealsLoader";
 
 // ── Countdown Timer Hook ────────────────────────────────
@@ -242,6 +243,51 @@ function DealDetails() {
   const { id } = useParams();
   const { deal, loading, error } = useDeal(id);
 
+  const [isSaved, setIsSaved] = useState(false);
+  const [loadingSave, setLoadingSave] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    if (id) {
+      checkIfSaved(id).then((saved) => {
+        if (active) {
+          setIsSaved(saved);
+          setLoadingSave(false);
+        }
+      }).catch(() => {
+        if (active) setLoadingSave(false);
+      });
+    }
+    return () => { active = false; };
+  }, [id]);
+
+  const handleToggleSave = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.dispatchEvent(new Event("open-auth-modal"));
+      return;
+    }
+
+    try {
+      setLoadingSave(true);
+      if (isSaved) {
+        await unsaveDeal(id);
+        setIsSaved(false);
+      } else {
+        await saveDeal(id);
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error("Error toggling save:", err);
+    } finally {
+      setLoadingSave(false);
+    }
+  };
+
+
   // Loading state
   if (loading) {
     return (
@@ -316,6 +362,26 @@ function DealDetails() {
               alt={title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
+            {/* Save Button */}
+            <button
+              onClick={handleToggleSave}
+              disabled={loadingSave}
+              className={`absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-md ${
+                loadingSave ? "opacity-50 cursor-not-allowed" : "hover:scale-110"
+              } ${
+                isSaved
+                  ? "bg-primary text-on-primary"
+                  : "bg-surface/80 text-on-surface hover:bg-surface"
+              }`}
+            >
+              <span
+                className="material-symbols-outlined text-2xl"
+                style={isSaved ? { fontVariationSettings: "'FILL' 1" } : {}}
+              >
+                bookmark
+              </span>
+            </button>
+
             {/* Badges */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
               <span

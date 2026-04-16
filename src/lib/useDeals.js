@@ -109,3 +109,56 @@ export function useDeal(id) {
 
   return { deal, loading, error };
 }
+
+/**
+ * ── Phase 3: Saved Deals Helper Functions ──────────────
+ */
+
+export async function saveDeal(dealId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Must be logged in to save a deal");
+  
+  const { error } = await supabase
+    .from("saved_deals")
+    .insert([{ user_id: user.id, deal_id: dealId }]);
+    
+  if (error) {
+    console.error("[saveDeal] Error:", error.message);
+    throw error;
+  }
+}
+
+export async function unsaveDeal(dealId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("Must be logged in to unsave a deal");
+  
+  const { error } = await supabase
+    .from("saved_deals")
+    .delete()
+    .eq("user_id", user.id)
+    .eq("deal_id", dealId);
+    
+  if (error) {
+    console.error("[unsaveDeal] Error:", error.message);
+    throw error;
+  }
+}
+
+export async function checkIfSaved(dealId) {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return false;
+  
+  const { data, error } = await supabase
+    .from("saved_deals")
+    .select("deal_id")
+    .eq("user_id", user.id)
+    .eq("deal_id", dealId)
+    .maybeSingle(); // maybeSingle returns null if 0 rows, instead of throwing PGRST116
+    
+  if (error) {
+    console.error("[checkIfSaved] Error:", error.message);
+    return false;
+  }
+  
+  return !!data;
+}

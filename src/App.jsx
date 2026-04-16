@@ -57,6 +57,13 @@ function App() {
     return () => subscription.unsubscribe();
   }, []);
 
+  // ── Global Event Listener for Auth Modal ─────────────
+  useEffect(() => {
+    const handleOpenAuth = () => setAuthModalOpen(true);
+    window.addEventListener("open-auth-modal", handleOpenAuth);
+    return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
+  }, []);
+
   // Derived auth state
   const isLoggedIn = !!session;
   const user = session?.user ?? null;

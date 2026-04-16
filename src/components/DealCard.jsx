@@ -11,18 +11,84 @@
  * Props:
  *   - deal : object from mockData.js
  */
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
+import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 
 function DealCard({ deal }) {
   const { id, title, type, discount, imageUrl, description } = deal;
 
   const isInStore = type === "In-Store";
 
+  const [isSaved, setIsSaved] = useState(false);
+  const [loadingSave, setLoadingSave] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    checkIfSaved(id).then((saved) => {
+      if (active) {
+        setIsSaved(saved);
+        setLoadingSave(false);
+      }
+    }).catch(() => {
+      if (active) setLoadingSave(false);
+    });
+    return () => { active = false; };
+  }, [id]);
+
+  const handleToggleSave = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Check login state: if not logged in, trigger custom event to open AuthModal
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      window.dispatchEvent(new Event("open-auth-modal"));
+      return;
+    }
+
+    try {
+      setLoadingSave(true);
+      if (isSaved) {
+        await unsaveDeal(id);
+        setIsSaved(false);
+      } else {
+        await saveDeal(id);
+        setIsSaved(true);
+      }
+    } catch (err) {
+      console.error("Error toggling save:", err);
+    } finally {
+      setLoadingSave(false);
+    }
+  };
+
   return (
-    <div className="flex flex-col group cursor-pointer">
+    <div className="flex flex-col group cursor-pointer relative">
       {/* Deal Image */}
-      <Link to={`/perks/${id}`} className="block">
+      <Link to={`/perks/${id}`} className="block relative">
         <div className="aspect-[16/10] overflow-hidden rounded-xl relative bg-surface-container">
+          {/* Save Button */}
+          <button
+            onClick={handleToggleSave}
+            disabled={loadingSave}
+            className={`absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-sm ${
+              loadingSave ? "opacity-50 cursor-not-allowed" : "hover:scale-110"
+            } ${
+              isSaved
+                ? "bg-primary text-on-primary"
+                : "bg-surface/80 text-on-surface hover:bg-surface"
+            }`}
+          >
+            <span
+              className="material-symbols-outlined text-xl"
+              style={isSaved ? { fontVariationSettings: "'FILL' 1" } : {}}
+            >
+              bookmark
+            </span>
+          </button>
+
           <img
             alt={title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"

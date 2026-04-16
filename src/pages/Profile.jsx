@@ -10,14 +10,12 @@
  *   - isLoggedIn : boolean — redirects to home if false
  *   - user       : object|null — Supabase user object
  */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 import { useDeals } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
-
-// Simulated saved deal IDs (bookmarked by user)
-const savedDealIds = [1, 3, 6, 9, 11];
 
 // Simulated active in-store subscriptions
 const activeSubscriptions = [
@@ -60,6 +58,35 @@ function Profile({ isLoggedIn, user }) {
 
   // ── Fetch deals from Supabase ────────────────────────
   const { deals, loading: dealsLoading, error: dealsError } = useDeals();
+
+  // ── Fetch user's saved deals ─────────────────────────
+  const [savedDealIds, setSavedDealIds] = useState([]);
+  const [savedLoading, setSavedLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchSaved() {
+       if (!user) {
+         setSavedLoading(false);
+         return;
+       }
+       const { data, error } = await supabase
+         .from("saved_deals")
+         .select("deal_id")
+         .eq("user_id", user.id);
+         
+       if (active && !error) {
+         setSavedDealIds(data ? data.map(d => d.deal_id) : []);
+         setSavedLoading(false);
+       } else if (active && error) {
+         console.error("Error fetching saved deals:", error);
+         setSavedLoading(false);
+       }
+    }
+    fetchSaved();
+    return () => { active = false; };
+  }, [user]);
+
   const savedDeals = deals.filter((d) => savedDealIds.includes(d.id));
 
   // ── Derive user info from Supabase user object ───────
@@ -183,8 +210,8 @@ function Profile({ isLoggedIn, user }) {
               <span className="material-symbols-outlined text-sm">arrow_forward</span>
             </Link>
           </div>
-          {(dealsLoading || dealsError) ? (
-            <DealsLoader loading={dealsLoading} error={dealsError} />
+          {(dealsLoading || dealsError || savedLoading) ? (
+            <DealsLoader loading={dealsLoading || savedLoading} error={dealsError} />
           ) : (
             <DealGrid deals={savedDeals} />
           )}
