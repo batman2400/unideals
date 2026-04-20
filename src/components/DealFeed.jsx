@@ -17,11 +17,8 @@ import DealsLoader from "./DealsLoader";
 function DealFeed({ searchQuery }) {
   const { deals, loading, error } = useDeals();
 
-  // Show loader / error
-  if (loading || error) return <DealsLoader loading={loading} error={error} />;
-
-  // Filter by search query if one is active
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  // Compute derived lists on every render to keep hook ordering stable.
+  const normalizedQuery = (searchQuery ?? "").trim().toLowerCase();
 
   const filtered = useMemo(() => {
     if (!normalizedQuery) return deals;
@@ -35,6 +32,9 @@ function DealFeed({ searchQuery }) {
 
   // Show first 6 on the homepage
   const displayDeals = useMemo(() => filtered.slice(0, 6), [filtered]);
+
+  // Show loader / error
+  if (loading || error) return <DealsLoader loading={loading} error={error} />;
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">

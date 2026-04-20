@@ -30,16 +30,16 @@ function Footer() {
         {/* Legal Links — use Link to avoid full page reloads */}
         <div className="flex gap-8">
           <Link
-            to="/"
+            to="/privacy"
             className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
           >
-            Privacy
+            Privacy Policy
           </Link>
           <Link
-            to="/"
+            to="/terms"
             className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
           >
-            Terms
+            Terms of Service
           </Link>
           <Link
             to="/"

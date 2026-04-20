@@ -29,6 +29,8 @@ const Perks = lazy(() => import("./pages/Perks"));
 const DealDetails = lazy(() => import("./pages/DealDetails"));
 const Categories = lazy(() => import("./pages/Categories"));
 const Brands = lazy(() => import("./pages/Brands"));
+const TermsOfService = lazy(() => import("./pages/TermsOfService"));
+const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Profile = lazy(() => import("./pages/Profile"));
 const PartnerDashboard = lazy(() => import("./pages/partner/PartnerDashboard"));
 const CreateDeal = lazy(() => import("./pages/partner/CreateDeal"));
@@ -119,7 +121,7 @@ function App() {
   // This prevents a flash of unauthenticated UI
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-on-surface-variant text-sm font-headline font-bold">Loading...</p>
@@ -141,7 +143,7 @@ function App() {
       />
 
       {/* Page Content */}
-      <main className="pt-20 md:pt-24 pb-14 md:pb-20">
+      <main className="pt-20 md:pt-24 pb-safe-content">
         <Suspense fallback={<RouteSkeleton />}>
           <div key={`${location.pathname}${location.search}`} className="animate-route-fade">
             <Routes location={location}>
@@ -161,6 +163,8 @@ function App() {
               <Route path="/perks/:id" element={<DealDetails />} />
               <Route path="/categories" element={<Categories />} />
               <Route path="/brands" element={<Brands />} />
+              <Route path="/terms" element={<TermsOfService />} />
+              <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route
                 path="/profile"
                 element={<Profile isLoggedIn={isLoggedIn} user={user} />}
