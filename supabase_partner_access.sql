@@ -903,30 +903,30 @@ BEGIN
 
   RETURN QUERY
   WITH known_brands AS (
-    SELECT DISTINCT trim(src.brand) AS brand
+    SELECT DISTINCT trim(src.shop_brand) AS brand
     FROM (
-      SELECT brand FROM public.redemption_events
+      SELECT re.brand AS shop_brand FROM public.redemption_events re
       UNION ALL
-      SELECT brand FROM public.confirmed_redemptions
+      SELECT cr.brand AS shop_brand FROM public.confirmed_redemptions cr
     ) src
-    WHERE trim(COALESCE(src.brand, '')) <> ''
+    WHERE trim(COALESCE(src.shop_brand, '')) <> ''
   ),
   scans AS (
     SELECT
-      trim(brand) AS brand,
+      trim(re.brand) AS brand,
       COUNT(*)::BIGINT AS total_scans,
-      COUNT(*) FILTER (WHERE scan_result = 'valid')::BIGINT AS valid_scans
-    FROM public.redemption_events
-    WHERE trim(COALESCE(brand, '')) <> ''
-    GROUP BY trim(brand)
+      COUNT(*) FILTER (WHERE re.scan_result = 'valid')::BIGINT AS valid_scans
+    FROM public.redemption_events re
+    WHERE trim(COALESCE(re.brand, '')) <> ''
+    GROUP BY trim(re.brand)
   ),
   redemptions AS (
     SELECT
-      trim(brand) AS brand,
+      trim(cr.brand) AS brand,
       COUNT(*)::BIGINT AS confirmed_redemptions
-    FROM public.confirmed_redemptions
-    WHERE trim(COALESCE(brand, '')) <> ''
-    GROUP BY trim(brand)
+    FROM public.confirmed_redemptions cr
+    WHERE trim(COALESCE(cr.brand, '')) <> ''
+    GROUP BY trim(cr.brand)
   )
   SELECT
     kb.brand,

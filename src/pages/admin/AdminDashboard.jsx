@@ -125,8 +125,9 @@ function AdminDashboard() {
         || perShopResponse.error;
 
       if (analyticsError) {
+        const details = analyticsError?.message ? ` (${analyticsError.message})` : "";
         setAnalyticsWarning(
-          "Redemption analytics are unavailable. Run the latest SQL migration to enable scan tracking tables."
+          `Redemption analytics are unavailable. Run the latest SQL migration to enable scan tracking tables.${details}`
         );
         setScanEvents([]);
         setConfirmedRedemptions([]);
