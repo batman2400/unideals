@@ -28,6 +28,7 @@ function AdminDashboard() {
   const [pendingDeals, setPendingDeals] = useState([]);
   const [scanEvents, setScanEvents] = useState([]);
   const [confirmedRedemptions, setConfirmedRedemptions] = useState([]);
+  const [shopAnalytics, setShopAnalytics] = useState([]);
   const [analyticsWarning, setAnalyticsWarning] = useState("");
   const [analyticsMetrics, setAnalyticsMetrics] = useState({
     totalScans: 0,
@@ -92,7 +93,7 @@ function AdminDashboard() {
 
       setPendingDeals(pendingData || []);
 
-      const [eventsResponse, confirmedResponse, totalScansResponse, validScansResponse] = await Promise.all([
+      const [eventsResponse, confirmedResponse, totalScansResponse, validScansResponse, perShopResponse] = await Promise.all([
         supabase
           .from("redemption_events")
           .select("id, partner_id, deal_id, brand, scanned_code, scan_method, scan_result, created_at")
@@ -110,6 +111,8 @@ function AdminDashboard() {
           .from("redemption_events")
           .select("id", { count: "exact", head: true })
           .eq("scan_result", "valid"),
+        supabase
+          .rpc("get_redemption_analytics_by_shop"),
       ]);
 
       if (!active) return;
@@ -118,7 +121,8 @@ function AdminDashboard() {
         eventsResponse.error
         || confirmedResponse.error
         || totalScansResponse.error
-        || validScansResponse.error;
+        || validScansResponse.error
+        || perShopResponse.error;
 
       if (analyticsError) {
         setAnalyticsWarning(
@@ -126,6 +130,7 @@ function AdminDashboard() {
         );
         setScanEvents([]);
         setConfirmedRedemptions([]);
+        setShopAnalytics([]);
         setAnalyticsMetrics({
           totalScans: 0,
           validScans: 0,
@@ -142,6 +147,7 @@ function AdminDashboard() {
 
       setScanEvents(eventsResponse.data || []);
       setConfirmedRedemptions(confirmedResponse.data || []);
+      setShopAnalytics(perShopResponse.data || []);
       setAnalyticsMetrics({
         totalScans,
         validScans,
@@ -413,6 +419,41 @@ function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div className="rounded-xl border border-outline-variant/15 overflow-hidden xl:col-span-2">
+            <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
+              <h3 className="font-headline font-bold text-on-background">Shop-wise Breakdown</h3>
+            </div>
+
+            {shopAnalytics.length === 0 ? (
+              <div className="p-4 text-sm text-on-surface-variant">No shop analytics available yet.</div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[720px] text-sm">
+                  <thead className="bg-surface-container-low/60">
+                    <tr>
+                      <th className="text-left px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Shop</th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Total Scans</th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Valid</th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Failed</th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Confirmed</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-outline-variant/10">
+                    {shopAnalytics.map((row) => (
+                      <tr key={row.brand}>
+                        <td className="px-4 py-3 font-bold text-on-background">{row.brand}</td>
+                        <td className="px-4 py-3 text-right text-on-background">{row.total_scans}</td>
+                        <td className="px-4 py-3 text-right text-emerald-700 font-bold">{row.valid_scans}</td>
+                        <td className="px-4 py-3 text-right text-red-700 font-bold">{row.failed_scans}</td>
+                        <td className="px-4 py-3 text-right text-on-background font-bold">{row.confirmed_redemptions}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+
           <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
             <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
               <h3 className="font-headline font-bold text-on-background">Recent Scan Events</h3>

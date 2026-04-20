@@ -881,3 +881,66 @@ END
 $$;
 
 GRANT EXECUTE ON FUNCTION public.record_partner_redemption_scan(TEXT, TEXT) TO authenticated;
+
+-- Admin analytics helper: redemption metrics grouped by shop/brand.
+CREATE OR REPLACE FUNCTION public.get_redemption_analytics_by_shop()
+RETURNS TABLE (
+  brand TEXT,
+  total_scans BIGINT,
+  valid_scans BIGINT,
+  failed_scans BIGINT,
+  confirmed_redemptions BIGINT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  IF public.get_user_role() <> 'admin' THEN
+    RAISE EXCEPTION 'Only admins can view redemption analytics by shop.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  RETURN QUERY
+  WITH known_brands AS (
+    SELECT DISTINCT trim(src.brand) AS brand
+    FROM (
+      SELECT brand FROM public.redemption_events
+      UNION ALL
+      SELECT brand FROM public.confirmed_redemptions
+    ) src
+    WHERE trim(COALESCE(src.brand, '')) <> ''
+  ),
+  scans AS (
+    SELECT
+      trim(brand) AS brand,
+      COUNT(*)::BIGINT AS total_scans,
+      COUNT(*) FILTER (WHERE scan_result = 'valid')::BIGINT AS valid_scans
+    FROM public.redemption_events
+    WHERE trim(COALESCE(brand, '')) <> ''
+    GROUP BY trim(brand)
+  ),
+  redemptions AS (
+    SELECT
+      trim(brand) AS brand,
+      COUNT(*)::BIGINT AS confirmed_redemptions
+    FROM public.confirmed_redemptions
+    WHERE trim(COALESCE(brand, '')) <> ''
+    GROUP BY trim(brand)
+  )
+  SELECT
+    kb.brand,
+    COALESCE(s.total_scans, 0)::BIGINT AS total_scans,
+    COALESCE(s.valid_scans, 0)::BIGINT AS valid_scans,
+    GREATEST(COALESCE(s.total_scans, 0) - COALESCE(s.valid_scans, 0), 0)::BIGINT AS failed_scans,
+    COALESCE(r.confirmed_redemptions, 0)::BIGINT AS confirmed_redemptions
+  FROM known_brands kb
+  LEFT JOIN scans s
+    ON lower(s.brand) = lower(kb.brand)
+  LEFT JOIN redemptions r
+    ON lower(r.brand) = lower(kb.brand)
+  ORDER BY lower(kb.brand);
+END
+$$;
+
+GRANT EXECUTE ON FUNCTION public.get_redemption_analytics_by_shop() TO authenticated;
