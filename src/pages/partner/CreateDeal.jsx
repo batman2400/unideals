@@ -132,7 +132,8 @@ function CreateDeal() {
 
   const onChange = (event) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === "redemptionCode" ? value.toUpperCase() : value;
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const onOfferTypeChange = (event) => {
@@ -152,7 +153,7 @@ function CreateDeal() {
   const offerPreview = buildOfferLabel(offerType, offerValue);
 
   const validate = () => {
-    const requiredKeys = ["title", "brand", "type", "category", "description", "redemptionCode"];
+    const requiredKeys = ["title", "brand", "type", "category", "redemptionCode"];
     const hasOffer = String(offerPreview).trim().length > 0;
     const hasImage = !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
 
@@ -222,6 +223,7 @@ function CreateDeal() {
       }
 
       let effectiveImageUrl = formData.imageUrl.trim();
+      const normalizedRedemptionCode = formData.redemptionCode.trim().toUpperCase();
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
@@ -240,8 +242,8 @@ function CreateDeal() {
         type: formData.type,
         category: formData.category,
         image_url: effectiveImageUrl,
-        description: formData.description.trim(),
-        redemption_code: formData.redemptionCode.trim(),
+        description: formData.description.trim() || `${formData.title.trim()} student offer.`,
+        redemption_code: normalizedRedemptionCode,
         partner_id: user.id,
         status: "pending",
       };
@@ -261,7 +263,11 @@ function CreateDeal() {
       setSuccessMessage("Deal submitted successfully. It is now pending admin approval.");
     } catch (submitError) {
       if (!isMountedRef.current) return;
-      setError(submitError?.message || "Could not submit deal. Please try again.");
+      if (submitError?.code === "23505") {
+        setError("Promo code already exists for this brand. Please use a unique code.");
+      } else {
+        setError(submitError?.message || "Could not submit deal. Please try again.");
+      }
     } finally {
       if (!isMountedRef.current) return;
       setSubmitting(false);
@@ -488,7 +494,7 @@ function CreateDeal() {
 
           <div className="md:col-span-2">
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              Description
+              Description (Optional)
             </label>
             <textarea
               name="description"
@@ -496,7 +502,7 @@ function CreateDeal() {
               value={formData.description}
               onChange={onChange}
               disabled={submitting}
-              placeholder="Describe the student offer and redemption rules."
+              placeholder="Add short terms or leave empty."
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all resize-y"
             />
           </div>
@@ -514,6 +520,9 @@ function CreateDeal() {
               placeholder="TECHNOVA20"
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Must be unique for your brand.
+            </p>
           </div>
 
           <div className="md:col-span-2 flex items-center justify-end">
@@ -522,7 +531,9 @@ function CreateDeal() {
               disabled={
                 submitting ||
                 brandLoading ||
+                !formData.title.trim() ||
                 !formData.brand.trim() ||
+                !formData.redemptionCode.trim() ||
                 !offerPreview ||
                 (!selectedImageFile && !formData.imageUrl.trim())
               }

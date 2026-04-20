@@ -406,6 +406,9 @@ $$;
 CREATE INDEX IF NOT EXISTS deals_partner_id_idx ON public.deals (partner_id);
 CREATE INDEX IF NOT EXISTS deals_status_idx ON public.deals (status);
 CREATE INDEX IF NOT EXISTS deals_partner_brand_idx ON public.deals (partner_id, brand);
+DROP INDEX IF EXISTS public.deals_redemption_code_unique_idx;
+CREATE UNIQUE INDEX IF NOT EXISTS deals_brand_redemption_code_unique_idx
+  ON public.deals (lower(trim(brand)), lower(trim(redemption_code)));
 
 ALTER TABLE public.deals ENABLE ROW LEVEL SECURITY;
 

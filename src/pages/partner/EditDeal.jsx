@@ -162,7 +162,8 @@ function EditDeal() {
 
   const onChange = (event) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const nextValue = name === "redemptionCode" ? value.toUpperCase() : value;
+    setFormData((prev) => ({ ...prev, [name]: nextValue }));
   };
 
   const onOfferTypeChange = (event) => {
@@ -182,7 +183,7 @@ function EditDeal() {
   const offerPreview = buildOfferLabel(offerType, offerValue);
 
   const validate = () => {
-    const requiredKeys = ["title", "brand", "type", "category", "description", "redemptionCode"];
+    const requiredKeys = ["title", "brand", "type", "category", "redemptionCode"];
     const hasOffer = String(offerPreview).trim().length > 0;
     const hasImage = !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
 
@@ -223,6 +224,7 @@ function EditDeal() {
 
     try {
       let effectiveImageUrl = formData.imageUrl.trim();
+      const normalizedRedemptionCode = formData.redemptionCode.trim().toUpperCase();
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
@@ -241,8 +243,8 @@ function EditDeal() {
         type: formData.type,
         category: formData.category,
         image_url: effectiveImageUrl,
-        description: formData.description.trim(),
-        redemption_code: formData.redemptionCode.trim(),
+        description: formData.description.trim() || `${formData.title.trim()} student offer.`,
+        redemption_code: normalizedRedemptionCode,
       };
 
       const { data, error: updateError } = await supabase
@@ -271,7 +273,11 @@ function EditDeal() {
       setSuccessMessage("Offer updated successfully.");
     } catch (submitError) {
       if (!isMountedRef.current) return;
-      setError(submitError?.message || "Could not update offer. Please try again.");
+      if (submitError?.code === "23505") {
+        setError("Promo code already exists for this brand. Please use a unique code.");
+      } else {
+        setError(submitError?.message || "Could not update offer. Please try again.");
+      }
     } finally {
       if (!isMountedRef.current) return;
       setSaving(false);
@@ -500,7 +506,7 @@ function EditDeal() {
 
           <div className="md:col-span-2">
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              Description
+              Description (Optional)
             </label>
             <textarea
               name="description"
@@ -508,6 +514,7 @@ function EditDeal() {
               value={formData.description}
               onChange={onChange}
               disabled={saving}
+              placeholder="Add short terms or leave empty."
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all resize-y"
             />
           </div>
@@ -524,6 +531,9 @@ function EditDeal() {
               disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Must be unique for your brand.
+            </p>
           </div>
 
           <div className="md:col-span-2 flex items-center justify-end gap-3">
@@ -535,7 +545,13 @@ function EditDeal() {
             </Link>
             <button
               type="submit"
-              disabled={saving || !offerPreview || (!selectedImageFile && !formData.imageUrl.trim())}
+              disabled={
+                saving ||
+                !formData.title.trim() ||
+                !formData.redemptionCode.trim() ||
+                !offerPreview ||
+                (!selectedImageFile && !formData.imageUrl.trim())
+              }
               className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {saving ? (
