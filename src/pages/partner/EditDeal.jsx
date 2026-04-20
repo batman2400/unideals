@@ -3,6 +3,15 @@ import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRole } from "../../lib/useRole";
 import { getPartnerBrandName, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
+import {
+  buildOfferLabel,
+  getOfferValueLabel,
+  getOfferValuePlaceholder,
+  isOfferValueRequired,
+  OFFER_TYPE_OPTIONS,
+  parseOfferLabel,
+} from "../../lib/dealOffer";
+import { uploadDealImage } from "../../lib/dealImageUpload";
 
 const CATEGORY_OPTIONS = ["Tech", "Coffee", "Clothing", "Fitness", "Home", "Creative"];
 const TYPE_OPTIONS = ["Online", "In-Store"];
@@ -23,11 +32,15 @@ function EditDeal() {
   const { user, role, loading: roleLoading, error: roleError } = useRole();
 
   const [formData, setFormData] = useState(INITIAL_FORM);
+  const [offerType, setOfferType] = useState("percentage_off");
+  const [offerValue, setOfferValue] = useState("");
   const [partnerBrand, setPartnerBrand] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -35,6 +48,20 @@ function EditDeal() {
       isMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedImageFile) {
+      setSelectedImagePreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImageFile);
+    setSelectedImagePreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedImageFile]);
 
   useEffect(() => {
     let active = true;
@@ -119,6 +146,10 @@ function EditDeal() {
         description: data.description || "",
         redemptionCode: data.redemption_code || "",
       });
+
+      const parsedOffer = parseOfferLabel(data.discount || "");
+      setOfferType(parsedOffer.offerType);
+      setOfferValue(parsedOffer.offerValue);
       setLoading(false);
     }
 
@@ -134,19 +165,28 @@ function EditDeal() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const validate = () => {
-    const requiredKeys = [
-      "title",
-      "brand",
-      "discount",
-      "type",
-      "category",
-      "imageUrl",
-      "description",
-      "redemptionCode",
-    ];
+  const onOfferTypeChange = (event) => {
+    const nextType = event.target.value;
+    setOfferType(nextType);
 
-    return requiredKeys.every((key) => String(formData[key]).trim().length > 0);
+    if (!isOfferValueRequired(nextType)) {
+      setOfferValue("");
+    }
+  };
+
+  const onImageFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedImageFile(file);
+  };
+
+  const offerPreview = buildOfferLabel(offerType, offerValue);
+
+  const validate = () => {
+    const requiredKeys = ["title", "brand", "type", "category", "description", "redemptionCode"];
+    const hasOffer = String(offerPreview).trim().length > 0;
+    const hasImage = !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
+
+    return requiredKeys.every((key) => String(formData[key]).trim().length > 0) && hasOffer && hasImage;
   };
 
   const handleSubmit = async (event) => {
@@ -164,6 +204,16 @@ function EditDeal() {
       return;
     }
 
+    if (!offerPreview) {
+      setError("Please choose the offer details.");
+      return;
+    }
+
+    if (!selectedImageFile && !formData.imageUrl.trim()) {
+      setError("Please upload an image or provide an image URL.");
+      return;
+    }
+
     if (!validate()) {
       setError("Please complete all required fields.");
       return;
@@ -172,13 +222,25 @@ function EditDeal() {
     setSaving(true);
 
     try {
+      let effectiveImageUrl = formData.imageUrl.trim();
+
+      if (selectedImageFile) {
+        const { publicUrl } = await uploadDealImage({
+          file: selectedImageFile,
+          userId: user.id,
+          brandName: partnerBrand,
+        });
+
+        effectiveImageUrl = publicUrl;
+      }
+
       const payload = {
         title: formData.title.trim(),
         brand: partnerBrand,
-        discount: formData.discount.trim(),
+        discount: offerPreview,
         type: formData.type,
         category: formData.category,
-        image_url: formData.imageUrl.trim(),
+        image_url: effectiveImageUrl,
         description: formData.description.trim(),
         redemption_code: formData.redemptionCode.trim(),
       };
@@ -202,6 +264,9 @@ function EditDeal() {
         setError("Update blocked. You can only edit your own brand offers.");
         return;
       }
+
+      setFormData((prev) => ({ ...prev, imageUrl: effectiveImageUrl }));
+      setSelectedImageFile(null);
 
       setSuccessMessage("Offer updated successfully.");
     } catch (submitError) {
@@ -299,16 +364,42 @@ function EditDeal() {
 
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              Discount
+              Offer Type
             </label>
-            <input
-              name="discount"
-              type="text"
-              value={formData.discount}
-              onChange={onChange}
+            <select
+              name="offerType"
+              value={offerType}
+              onChange={onOfferTypeChange}
               disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-            />
+            >
+              {OFFER_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              {getOfferValueLabel(offerType)}
+            </label>
+            {isOfferValueRequired(offerType) ? (
+              <input
+                name="offerValue"
+                type="text"
+                value={offerValue}
+                onChange={(event) => setOfferValue(event.target.value)}
+                disabled={saving}
+                placeholder={getOfferValuePlaceholder(offerType)}
+                className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+              />
+            ) : (
+              <div className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body text-on-surface-variant">
+                Buy 1 Get 1
+              </div>
+            )}
           </div>
 
           <div>
@@ -351,7 +442,23 @@ function EditDeal() {
 
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              Image URL
+              Upload New Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onImageFileChange}
+              disabled={saving}
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-3 py-2.5 text-sm font-body"
+            />
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Optional: Upload JPG, PNG, or WEBP (max 5MB).
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              Image URL (Optional)
             </label>
             <input
               name="imageUrl"
@@ -362,6 +469,34 @@ function EditDeal() {
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
           </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              Offer Preview
+            </label>
+            <input
+              type="text"
+              value={offerPreview || "Complete offer type/value to preview"}
+              readOnly
+              disabled
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body"
+            />
+          </div>
+
+          {(selectedImagePreviewUrl || formData.imageUrl) && (
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                Image Preview
+              </label>
+              <div className="w-full max-w-md overflow-hidden rounded-xl border border-outline-variant/20 bg-surface-container-low">
+                <img
+                  src={selectedImagePreviewUrl || formData.imageUrl}
+                  alt="Offer preview"
+                  className="w-full h-52 object-cover"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="md:col-span-2">
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
@@ -400,7 +535,7 @@ function EditDeal() {
             </Link>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || !offerPreview || (!selectedImageFile && !formData.imageUrl.trim())}
               className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {saving ? (

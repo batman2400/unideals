@@ -6,6 +6,14 @@ import {
   getPartnerBrandName,
   upsertPartnerBrandName,
 } from "../../lib/partnerBrand";
+import {
+  buildOfferLabel,
+  getOfferValueLabel,
+  getOfferValuePlaceholder,
+  isOfferValueRequired,
+  OFFER_TYPE_OPTIONS,
+} from "../../lib/dealOffer";
+import { uploadDealImage } from "../../lib/dealImageUpload";
 
 const CATEGORY_OPTIONS = ["Tech", "Coffee", "Clothing", "Fitness", "Home", "Creative"];
 const TYPE_OPTIONS = ["Online", "In-Store"];
@@ -25,12 +33,16 @@ function CreateDeal() {
   const { user, role, loading: roleLoading } = useRole();
 
   const [formData, setFormData] = useState(INITIAL_FORM);
+  const [offerType, setOfferType] = useState("percentage_off");
+  const [offerValue, setOfferValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [partnerBrand, setPartnerBrand] = useState("");
   const [brandSetupRequired, setBrandSetupRequired] = useState(false);
   const [brandLoading, setBrandLoading] = useState(true);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -38,6 +50,20 @@ function CreateDeal() {
       isMountedRef.current = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!selectedImageFile) {
+      setSelectedImagePreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImageFile);
+    setSelectedImagePreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedImageFile]);
 
   useEffect(() => {
     let active = true;
@@ -109,19 +135,28 @@ function CreateDeal() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const validate = () => {
-    const requiredKeys = [
-      "title",
-      "brand",
-      "discount",
-      "type",
-      "category",
-      "imageUrl",
-      "description",
-      "redemptionCode",
-    ];
+  const onOfferTypeChange = (event) => {
+    const nextType = event.target.value;
+    setOfferType(nextType);
 
-    return requiredKeys.every((key) => String(formData[key]).trim().length > 0);
+    if (!isOfferValueRequired(nextType)) {
+      setOfferValue("");
+    }
+  };
+
+  const onImageFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setSelectedImageFile(file);
+  };
+
+  const offerPreview = buildOfferLabel(offerType, offerValue);
+
+  const validate = () => {
+    const requiredKeys = ["title", "brand", "type", "category", "description", "redemptionCode"];
+    const hasOffer = String(offerPreview).trim().length > 0;
+    const hasImage = !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
+
+    return requiredKeys.every((key) => String(formData[key]).trim().length > 0) && hasOffer && hasImage;
   };
 
   const handleSubmit = async (event) => {
@@ -141,6 +176,16 @@ function CreateDeal() {
 
     if (brandLoading) {
       setError("Please wait while we verify your partner brand.");
+      return;
+    }
+
+    if (!offerPreview) {
+      setError("Please choose the offer details.");
+      return;
+    }
+
+    if (!selectedImageFile && !formData.imageUrl.trim()) {
+      setError("Please upload an image or provide an image URL.");
       return;
     }
 
@@ -176,13 +221,25 @@ function CreateDeal() {
         setBrandSetupRequired(false);
       }
 
+      let effectiveImageUrl = formData.imageUrl.trim();
+
+      if (selectedImageFile) {
+        const { publicUrl } = await uploadDealImage({
+          file: selectedImageFile,
+          userId: user.id,
+          brandName: effectiveBrand,
+        });
+
+        effectiveImageUrl = publicUrl;
+      }
+
       const payload = {
         title: formData.title.trim(),
         brand: effectiveBrand,
-        discount: formData.discount.trim(),
+        discount: offerPreview,
         type: formData.type,
         category: formData.category,
-        image_url: formData.imageUrl.trim(),
+        image_url: effectiveImageUrl,
         description: formData.description.trim(),
         redemption_code: formData.redemptionCode.trim(),
         partner_id: user.id,
@@ -198,6 +255,9 @@ function CreateDeal() {
       }
 
       setFormData({ ...INITIAL_FORM, brand: effectiveBrand });
+      setOfferType("percentage_off");
+      setOfferValue("");
+      setSelectedImageFile(null);
       setSuccessMessage("Deal submitted successfully. It is now pending admin approval.");
     } catch (submitError) {
       if (!isMountedRef.current) return;
@@ -291,17 +351,42 @@ function CreateDeal() {
 
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              Discount
+              Offer Type
             </label>
-            <input
-              name="discount"
-              type="text"
-              value={formData.discount}
-              onChange={onChange}
+            <select
+              name="offerType"
+              value={offerType}
+              onChange={onOfferTypeChange}
               disabled={submitting}
-              placeholder="20% OFF"
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-            />
+            >
+              {OFFER_TYPE_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              {getOfferValueLabel(offerType)}
+            </label>
+            {isOfferValueRequired(offerType) ? (
+              <input
+                name="offerValue"
+                type="text"
+                value={offerValue}
+                onChange={(event) => setOfferValue(event.target.value)}
+                disabled={submitting}
+                placeholder={getOfferValuePlaceholder(offerType)}
+                className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+              />
+            ) : (
+              <div className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body text-on-surface-variant">
+                Buy 1 Get 1
+              </div>
+            )}
           </div>
 
           <div>
@@ -344,7 +429,23 @@ function CreateDeal() {
 
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              Image URL
+              Upload Image
+            </label>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={onImageFileChange}
+              disabled={submitting}
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-3 py-2.5 text-sm font-body"
+            />
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Optional: Upload JPG, PNG, or WEBP (max 5MB).
+            </p>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              Image URL (Optional)
             </label>
             <input
               name="imageUrl"
@@ -356,6 +457,34 @@ function CreateDeal() {
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
           </div>
+
+          <div className="md:col-span-2">
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              Offer Preview
+            </label>
+            <input
+              type="text"
+              value={offerPreview || "Complete offer type/value to preview"}
+              readOnly
+              disabled
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body"
+            />
+          </div>
+
+          {(selectedImagePreviewUrl || formData.imageUrl) && (
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                Image Preview
+              </label>
+              <div className="w-full max-w-md overflow-hidden rounded-xl border border-outline-variant/20 bg-surface-container-low">
+                <img
+                  src={selectedImagePreviewUrl || formData.imageUrl}
+                  alt="Offer preview"
+                  className="w-full h-52 object-cover"
+                />
+              </div>
+            </div>
+          )}
 
           <div className="md:col-span-2">
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
@@ -390,7 +519,13 @@ function CreateDeal() {
           <div className="md:col-span-2 flex items-center justify-end">
             <button
               type="submit"
-              disabled={submitting || brandLoading || !formData.brand.trim()}
+              disabled={
+                submitting ||
+                brandLoading ||
+                !formData.brand.trim() ||
+                !offerPreview ||
+                (!selectedImageFile && !formData.imageUrl.trim())
+              }
               className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
               {submitting ? (

@@ -296,6 +296,81 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.promote_user_to_partner(TEXT, TEXT) TO authenticated;
 
+-- Storage bucket and policies for direct deal image uploads.
+INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
+VALUES (
+  'deal-images',
+  'deal-images',
+  TRUE,
+  5242880,
+  ARRAY['image/jpeg', 'image/png', 'image/webp', 'image/gif']
+)
+ON CONFLICT (id) DO UPDATE
+SET public = EXCLUDED.public,
+    file_size_limit = EXCLUDED.file_size_limit,
+    allowed_mime_types = EXCLUDED.allowed_mime_types;
+
+DROP POLICY IF EXISTS "Public can view deal images" ON storage.objects;
+DROP POLICY IF EXISTS "Partners and admins can upload deal images" ON storage.objects;
+DROP POLICY IF EXISTS "Partners and admins can update own deal images" ON storage.objects;
+DROP POLICY IF EXISTS "Partners and admins can delete own deal images" ON storage.objects;
+
+CREATE POLICY "Public can view deal images"
+  ON storage.objects
+  FOR SELECT
+  USING (bucket_id = 'deal-images');
+
+CREATE POLICY "Partners and admins can upload deal images"
+  ON storage.objects
+  FOR INSERT
+  TO authenticated
+  WITH CHECK (
+    bucket_id = 'deal-images'
+    AND public.get_user_role() IN ('partner', 'admin')
+    AND split_part(name, '/', 1) = 'partners'
+    AND (
+      public.get_user_role() = 'admin'
+      OR split_part(name, '/', 2) = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Partners and admins can update own deal images"
+  ON storage.objects
+  FOR UPDATE
+  TO authenticated
+  USING (
+    bucket_id = 'deal-images'
+    AND public.get_user_role() IN ('partner', 'admin')
+    AND split_part(name, '/', 1) = 'partners'
+    AND (
+      public.get_user_role() = 'admin'
+      OR split_part(name, '/', 2) = auth.uid()::text
+    )
+  )
+  WITH CHECK (
+    bucket_id = 'deal-images'
+    AND public.get_user_role() IN ('partner', 'admin')
+    AND split_part(name, '/', 1) = 'partners'
+    AND (
+      public.get_user_role() = 'admin'
+      OR split_part(name, '/', 2) = auth.uid()::text
+    )
+  );
+
+CREATE POLICY "Partners and admins can delete own deal images"
+  ON storage.objects
+  FOR DELETE
+  TO authenticated
+  USING (
+    bucket_id = 'deal-images'
+    AND public.get_user_role() IN ('partner', 'admin')
+    AND split_part(name, '/', 1) = 'partners'
+    AND (
+      public.get_user_role() = 'admin'
+      OR split_part(name, '/', 2) = auth.uid()::text
+    )
+  );
+
 -- Ensure deals table has moderation and ownership columns.
 ALTER TABLE public.deals
   ADD COLUMN IF NOT EXISTS partner_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
