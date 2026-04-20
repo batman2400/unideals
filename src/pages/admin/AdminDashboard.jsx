@@ -11,6 +11,8 @@ function AdminDashboard() {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [actingDealId, setActingDealId] = useState(null);
+  const [partnerForm, setPartnerForm] = useState({ email: "", brandName: "" });
+  const [promoting, setPromoting] = useState(false);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -128,6 +130,52 @@ function AdminDashboard() {
     showMessage("Deal rejected and removed from moderation queue.", "success");
   };
 
+  const handlePartnerFormChange = (event) => {
+    const { name, value } = event.target;
+    setPartnerForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handlePromoteToPartner = async (event) => {
+    event.preventDefault();
+
+    if (role !== "admin") {
+      showMessage("Only admins can promote users to partner.", "error");
+      return;
+    }
+
+    const email = partnerForm.email.trim().toLowerCase();
+    const brandName = partnerForm.brandName.trim();
+
+    if (!email || !brandName) {
+      showMessage("Email and brand name are required.", "error");
+      return;
+    }
+
+    setPromoting(true);
+    setError("");
+
+    const { data, error: promoteError } = await supabase.rpc("promote_user_to_partner", {
+      target_email: email,
+      target_brand: brandName,
+    });
+
+    if (!isMountedRef.current) return;
+
+    if (promoteError) {
+      setPromoting(false);
+      showMessage(promoteError.message || "Could not promote user to partner.", "error");
+      return;
+    }
+
+    setPromoting(false);
+    setPartnerForm({ email: "", brandName: "" });
+    showMessage(`User ${email} is now a partner for ${brandName}.`, "success");
+
+    if (data) {
+      console.log("[AdminDashboard] promote_user_to_partner result user_id:", data);
+    }
+  };
+
   if (roleLoading || loading) {
     return (
       <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
@@ -175,6 +223,69 @@ function AdminDashboard() {
           </p>
         </div>
       )}
+
+      <div className="bg-surface rounded-2xl border border-outline-variant/20 p-5 md:p-6 mb-8 shadow-sm">
+        <div className="mb-5">
+          <h2 className="font-headline font-extrabold text-2xl tracking-tight text-on-background mb-1">
+            Partner Access Management
+          </h2>
+          <p className="text-on-surface-variant text-sm">
+            Promote a signed-up user to partner and assign their one allowed brand.
+          </p>
+        </div>
+
+        <form onSubmit={handlePromoteToPartner} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="md:col-span-1">
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              User Email
+            </label>
+            <input
+              name="email"
+              type="email"
+              value={partnerForm.email}
+              onChange={handlePartnerFormChange}
+              disabled={promoting}
+              placeholder="user@domain.com"
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            />
+          </div>
+
+          <div className="md:col-span-1">
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              Brand Name
+            </label>
+            <input
+              name="brandName"
+              type="text"
+              value={partnerForm.brandName}
+              onChange={handlePartnerFormChange}
+              disabled={promoting}
+              placeholder="TechNova"
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            />
+          </div>
+
+          <div className="md:col-span-1 flex items-end">
+            <button
+              type="submit"
+              disabled={promoting}
+              className="w-full inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              {promoting ? (
+                <>
+                  <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                  Promoting...
+                </>
+              ) : (
+                <>
+                  <span className="material-symbols-outlined text-lg">person_add</span>
+                  Promote To Partner
+                </>
+              )}
+            </button>
+          </div>
+        </form>
+      </div>
 
       {error ? (
         <div className="bg-error/10 border border-error/20 rounded-xl p-5">

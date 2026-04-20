@@ -1,11 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRole } from "../../lib/useRole";
-import {
-  getPartnerBrandName,
-  upsertPartnerBrandName,
-} from "../../lib/partnerBrand";
+import { getPartnerBrandName, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
 
 const CATEGORY_OPTIONS = ["Tech", "Coffee", "Clothing", "Fitness", "Home", "Creative"];
 const TYPE_OPTIONS = ["Online", "In-Store"];
@@ -21,16 +18,16 @@ const INITIAL_FORM = {
   redemptionCode: "",
 };
 
-function CreateDeal() {
-  const { user, role, loading: roleLoading } = useRole();
+function EditDeal() {
+  const { id } = useParams();
+  const { user, role, loading: roleLoading, error: roleError } = useRole();
 
   const [formData, setFormData] = useState(INITIAL_FORM);
-  const [submitting, setSubmitting] = useState(false);
+  const [partnerBrand, setPartnerBrand] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [partnerBrand, setPartnerBrand] = useState("");
-  const [brandSetupRequired, setBrandSetupRequired] = useState(false);
-  const [brandLoading, setBrandLoading] = useState(true);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -42,67 +39,95 @@ function CreateDeal() {
   useEffect(() => {
     let active = true;
 
-    async function resolvePartnerBrand() {
+    async function fetchDealForEdit() {
       if (roleLoading) {
         return;
       }
 
+      if (roleError) {
+        setError(roleError || "Unable to verify role.");
+        setLoading(false);
+        return;
+      }
+
+      if (role !== "partner") {
+        setError("Only partners can edit offers from this page.");
+        setLoading(false);
+        return;
+      }
+
       if (!user?.id) {
-        if (!active) return;
-        setPartnerBrand("");
-        setBrandSetupRequired(false);
-        setBrandLoading(false);
+        setError("Unable to load partner profile.");
+        setLoading(false);
         return;
       }
 
-      if (role !== "partner" && role !== "admin") {
-        if (!active) return;
-        setError("Access denied. Partner role required.");
-        setPartnerBrand("");
-        setBrandSetupRequired(false);
-        setBrandLoading(false);
+      const dealId = Number(id);
+      if (!Number.isFinite(dealId)) {
+        setError("Invalid offer id.");
+        setLoading(false);
         return;
       }
-
-      if (!active) return;
-      setBrandLoading(true);
 
       const { brandName, error: brandError } = await getPartnerBrandName(user.id);
 
       if (!active) return;
 
       if (brandError) {
-        setError(brandError);
-        setPartnerBrand("");
-        setBrandSetupRequired(false);
-        setBrandLoading(false);
+        setError(brandError || "Unable to resolve partner brand.");
+        setLoading(false);
         return;
       }
 
       if (!brandName) {
-        setError(
-          "No brand profile found yet. Set your brand name below to create your first offer."
-        );
-        setPartnerBrand("");
-        setBrandSetupRequired(true);
-        setFormData((prev) => ({ ...prev, brand: "" }));
-        setBrandLoading(false);
+        setError(PARTNER_BRAND_REQUIRED_MESSAGE);
+        setLoading(false);
         return;
       }
 
-      setError("");
       setPartnerBrand(brandName);
-      setBrandSetupRequired(false);
-      setFormData((prev) => ({ ...prev, brand: brandName }));
-      setBrandLoading(false);
+
+      const { data, error: fetchError } = await supabase
+        .from("deals")
+        .select("id, title, brand, discount, type, category, image_url, description, redemption_code")
+        .eq("id", dealId)
+        .eq("partner_id", user.id)
+        .eq("brand", brandName)
+        .maybeSingle();
+
+      if (!active) return;
+
+      if (fetchError) {
+        setError(fetchError.message || "Failed to load offer for editing.");
+        setLoading(false);
+        return;
+      }
+
+      if (!data) {
+        setError("Offer not found or you do not have access to edit it.");
+        setLoading(false);
+        return;
+      }
+
+      setFormData({
+        title: data.title || "",
+        brand: data.brand || brandName,
+        discount: data.discount || "",
+        type: data.type || "Online",
+        category: data.category || "Tech",
+        imageUrl: data.image_url || "",
+        description: data.description || "",
+        redemptionCode: data.redemption_code || "",
+      });
+      setLoading(false);
     }
 
-    resolvePartnerBrand();
+    fetchDealForEdit();
 
     return () => {
       active = false;
     };
-  }, [role, roleLoading, user?.id]);
+  }, [id, role, roleError, roleLoading, user?.id]);
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -129,18 +154,13 @@ function CreateDeal() {
     setError("");
     setSuccessMessage("");
 
-    if (!user) {
-      setError("You must be logged in to submit a deal.");
-      return;
-    }
-
-    if (role !== "partner" && role !== "admin") {
+    if (role !== "partner" || !user?.id) {
       setError("Access denied. Partner role required.");
       return;
     }
 
-    if (brandLoading) {
-      setError("Please wait while we verify your partner brand.");
+    if (!partnerBrand) {
+      setError(PARTNER_BRAND_REQUIRED_MESSAGE);
       return;
     }
 
@@ -149,64 +169,62 @@ function CreateDeal() {
       return;
     }
 
-    setSubmitting(true);
+    setSaving(true);
 
     try {
-      let effectiveBrand = partnerBrand;
-
-      if (!effectiveBrand) {
-        const requestedBrand = formData.brand.trim();
-
-        if (!requestedBrand) {
-          setError("Please provide a brand name before submitting your first offer.");
-          return;
-        }
-
-        const { brandName: savedBrand, error: brandSaveError } = await upsertPartnerBrandName(
-          user.id,
-          requestedBrand
-        );
-
-        if (brandSaveError) {
-          throw new Error(brandSaveError);
-        }
-
-        effectiveBrand = savedBrand || requestedBrand;
-        setPartnerBrand(effectiveBrand);
-        setBrandSetupRequired(false);
-      }
-
       const payload = {
         title: formData.title.trim(),
-        brand: effectiveBrand,
+        brand: partnerBrand,
         discount: formData.discount.trim(),
         type: formData.type,
         category: formData.category,
         image_url: formData.imageUrl.trim(),
         description: formData.description.trim(),
         redemption_code: formData.redemptionCode.trim(),
-        partner_id: user.id,
-        status: "pending",
       };
 
-      const { error: insertError } = await supabase.from("deals").insert([payload]);
+      const { data, error: updateError } = await supabase
+        .from("deals")
+        .update(payload)
+        .eq("id", Number(id))
+        .eq("partner_id", user.id)
+        .eq("brand", partnerBrand)
+        .select("id")
+        .maybeSingle();
 
       if (!isMountedRef.current) return;
 
-      if (insertError) {
-        throw insertError;
+      if (updateError) {
+        throw updateError;
       }
 
-      setFormData({ ...INITIAL_FORM, brand: effectiveBrand });
-      setSuccessMessage("Deal submitted successfully. It is now pending admin approval.");
+      if (!data) {
+        setError("Update blocked. You can only edit your own brand offers.");
+        return;
+      }
+
+      setSuccessMessage("Offer updated successfully.");
     } catch (submitError) {
       if (!isMountedRef.current) return;
-      setError(submitError?.message || "Could not submit deal. Please try again.");
+      setError(submitError?.message || "Could not update offer. Please try again.");
     } finally {
       if (!isMountedRef.current) return;
-      setSubmitting(false);
+      setSaving(false);
     }
   };
+
+  if (roleLoading || loading) {
+    return (
+      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
+        <div className="min-h-[45vh] flex items-center justify-center">
+          <div className="flex items-center gap-3 text-on-surface-variant">
+            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-headline font-bold">Loading offer editor...</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
@@ -216,11 +234,10 @@ function CreateDeal() {
             Partner Portal
           </span>
           <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background mb-2">
-            Create a New Deal Submission
+            Edit Offer
           </h1>
           <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
-            Complete all fields and submit for review. The deal will remain pending
-            until an admin approves it.
+            Update your offer details for your assigned brand.
           </p>
         </div>
 
@@ -258,8 +275,7 @@ function CreateDeal() {
               type="text"
               value={formData.title}
               onChange={onChange}
-              disabled={submitting}
-              placeholder="TechNova Pro"
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
           </div>
@@ -271,22 +287,14 @@ function CreateDeal() {
             <input
               name="brand"
               type="text"
-              value={brandLoading ? "Loading partner brand..." : formData.brand}
-              onChange={onChange}
-              readOnly={!!partnerBrand && !brandSetupRequired}
-              disabled={submitting || brandLoading || (!!partnerBrand && !brandSetupRequired)}
-              placeholder={brandSetupRequired ? "Enter your brand name" : "Assigned by profile"}
-              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+              value={formData.brand}
+              readOnly
+              disabled
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body"
             />
-            {brandSetupRequired ? (
-              <p className="text-[11px] text-primary mt-2 font-bold tracking-wide uppercase">
-                Set this once to create your brand profile.
-              </p>
-            ) : (
-              <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
-                Brand is locked to your partner profile.
-              </p>
-            )}
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Brand is locked after creation.
+            </p>
           </div>
 
           <div>
@@ -298,8 +306,7 @@ function CreateDeal() {
               type="text"
               value={formData.discount}
               onChange={onChange}
-              disabled={submitting}
-              placeholder="20% OFF"
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
           </div>
@@ -312,7 +319,7 @@ function CreateDeal() {
               name="type"
               value={formData.type}
               onChange={onChange}
-              disabled={submitting}
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             >
               {TYPE_OPTIONS.map((option) => (
@@ -331,7 +338,7 @@ function CreateDeal() {
               name="category"
               value={formData.category}
               onChange={onChange}
-              disabled={submitting}
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             >
               {CATEGORY_OPTIONS.map((option) => (
@@ -351,8 +358,7 @@ function CreateDeal() {
               type="url"
               value={formData.imageUrl}
               onChange={onChange}
-              disabled={submitting}
-              placeholder="https://example.com/deal-image.jpg"
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
           </div>
@@ -366,8 +372,7 @@ function CreateDeal() {
               rows={4}
               value={formData.description}
               onChange={onChange}
-              disabled={submitting}
-              placeholder="Describe the student offer and redemption rules."
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all resize-y"
             />
           </div>
@@ -381,27 +386,32 @@ function CreateDeal() {
               type="text"
               value={formData.redemptionCode}
               onChange={onChange}
-              disabled={submitting}
-              placeholder="TECHNOVA20"
+              disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             />
           </div>
 
-          <div className="md:col-span-2 flex items-center justify-end">
+          <div className="md:col-span-2 flex items-center justify-end gap-3">
+            <Link
+              to="/partner"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-lg border border-outline-variant/20 text-on-surface-variant font-headline font-bold text-sm tracking-tight hover:bg-surface-container-low transition-all"
+            >
+              Cancel
+            </Link>
             <button
               type="submit"
-              disabled={submitting || brandLoading || !formData.brand.trim()}
+              disabled={saving}
               className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              {submitting ? (
+              {saving ? (
                 <>
                   <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                  Submitting...
+                  Saving...
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-lg">send</span>
-                  Submit for Approval
+                  <span className="material-symbols-outlined text-lg">save</span>
+                  Save Changes
                 </>
               )}
             </button>
@@ -412,4 +422,4 @@ function CreateDeal() {
   );
 }
 
-export default CreateDeal;
+export default EditDeal;

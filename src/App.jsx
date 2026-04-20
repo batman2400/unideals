@@ -32,6 +32,7 @@ import Brands from "./pages/Brands";
 import Profile from "./pages/Profile";
 import PartnerDashboard from "./pages/partner/PartnerDashboard";
 import CreateDeal from "./pages/partner/CreateDeal";
+import EditDeal from "./pages/partner/EditDeal";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 
 function App() {
@@ -156,6 +157,7 @@ function App() {
           >
             <Route index element={<PartnerDashboard />} />
             <Route path="create-deal" element={<CreateDeal />} />
+            <Route path="edit-deal/:id" element={<EditDeal />} />
           </Route>
 
           <Route

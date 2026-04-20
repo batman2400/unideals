@@ -2,6 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRole } from "../../lib/useRole";
+import {
+  getPartnerBrandName,
+  PARTNER_BRAND_REQUIRED_MESSAGE,
+} from "../../lib/partnerBrand";
 
 const STATUS_STYLES = {
   pending: "bg-amber-100 text-amber-700 border-amber-200",
@@ -15,6 +19,10 @@ function PartnerDashboard() {
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [partnerBrand, setPartnerBrand] = useState("");
+  const [brandLoading, setBrandLoading] = useState(true);
+  const [deletingDealId, setDeletingDealId] = useState(null);
+  const [actionMessage, setActionMessage] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -28,24 +36,68 @@ function PartnerDashboard() {
 
       if (roleError) {
         setError(roleError || "Unable to verify account role.");
+        setBrandLoading(false);
         setLoading(false);
         return;
       }
 
       if (!user?.id) {
         setError("Unable to load partner profile.");
+        setBrandLoading(false);
         setLoading(false);
         return;
       }
 
+      let resolvedBrand = "";
+
+      if (role === "partner") {
+        setBrandLoading(true);
+
+        const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+
+        if (!active) return;
+
+        if (brandError) {
+          setError(brandError || "Unable to resolve your partner brand.");
+          setPartnerBrand("");
+          setBrandLoading(false);
+          setLoading(false);
+          return;
+        }
+
+        if (!brandName) {
+          setError(
+            "No brand profile found yet. Open Create New Deal to set your brand and publish your first offer."
+          );
+          setPartnerBrand("");
+          setBrandLoading(false);
+          setLoading(false);
+          return;
+        }
+
+        resolvedBrand = brandName;
+        setPartnerBrand(brandName);
+      } else {
+        setPartnerBrand("");
+      }
+
+      setBrandLoading(false);
+
       setLoading(true);
       setError("");
+      setActionMessage("");
 
-      const { data, error: fetchError } = await supabase
+      let query = supabase
         .from("deals")
-        .select("id, brand, title, discount, type, category, status, created_at")
+        .select("id, partner_id, brand, title, discount, type, category, status, created_at")
         .eq("partner_id", user.id)
         .order("created_at", { ascending: false });
+
+      if (role === "partner") {
+        query = query.eq("brand", resolvedBrand);
+      }
+
+      const { data, error: fetchError } = await query;
 
       if (!active) return;
 
@@ -64,7 +116,47 @@ function PartnerDashboard() {
     return () => {
       active = false;
     };
-  }, [roleLoading, roleError, user?.id]);
+  }, [role, roleLoading, roleError, user?.id]);
+
+  const handleDelete = async (dealId) => {
+    if (role !== "partner") {
+      setError("Only partners can delete deals from this page.");
+      return;
+    }
+
+    if (!user?.id || !partnerBrand) {
+      setError(PARTNER_BRAND_REQUIRED_MESSAGE);
+      return;
+    }
+
+    setDeletingDealId(dealId);
+    setActionMessage("");
+    setError("");
+
+    const { data, error: deleteError } = await supabase
+      .from("deals")
+      .delete()
+      .eq("id", dealId)
+      .eq("partner_id", user.id)
+      .eq("brand", partnerBrand)
+      .select("id");
+
+    if (deleteError) {
+      setError(deleteError.message || "Failed to delete this deal.");
+      setDeletingDealId(null);
+      return;
+    }
+
+    if (!data || data.length === 0) {
+      setError("Delete blocked. You can only delete deals for your own brand.");
+      setDeletingDealId(null);
+      return;
+    }
+
+    setDeals((prev) => prev.filter((deal) => deal.id !== dealId));
+    setDeletingDealId(null);
+    setActionMessage("Deal deleted successfully.");
+  };
 
   const metrics = useMemo(() => {
     const total = deals.length;
@@ -96,7 +188,7 @@ function PartnerDashboard() {
     },
   ];
 
-  if (roleLoading || loading) {
+  if (roleLoading || loading || (role === "partner" && brandLoading)) {
     return (
       <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
         <div className="min-h-[45vh] flex items-center justify-center">
@@ -122,6 +214,11 @@ function PartnerDashboard() {
           <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
             Track your submission pipeline and monitor moderation outcomes in real time.
           </p>
+          {role === "partner" && partnerBrand ? (
+            <p className="text-xs font-bold tracking-[0.15em] uppercase text-primary mt-3">
+              Assigned Brand: {partnerBrand}
+            </p>
+          ) : null}
         </div>
 
         <Link
@@ -136,6 +233,12 @@ function PartnerDashboard() {
       {role !== "partner" && role !== "admin" ? (
         <div className="bg-error/10 border border-error/20 rounded-xl p-5 mb-6">
           <p className="text-error text-sm font-bold">Access denied. Partner role required.</p>
+        </div>
+      ) : null}
+
+      {actionMessage ? (
+        <div className="bg-primary-container/30 border border-primary/20 rounded-xl p-5 mb-6">
+          <p className="text-primary text-sm font-bold">{actionMessage}</p>
         </div>
       ) : null}
 
@@ -197,12 +300,40 @@ function PartnerDashboard() {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 flex-wrap justify-end">
                         <span
                           className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-bold tracking-wide uppercase ${badgeClass}`}
                         >
                           {deal.status}
                         </span>
+                        {role === "partner" ? (
+                          <Link
+                            to={`/partner/edit-deal/${deal.id}`}
+                            className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase hover:bg-primary/15 transition-colors"
+                          >
+                            <span className="material-symbols-outlined text-sm">edit</span>
+                            Edit
+                          </Link>
+                        ) : null}
+                        {role === "partner" ? (
+                          <button
+                            onClick={() => handleDelete(deal.id)}
+                            disabled={deletingDealId === deal.id}
+                            className="inline-flex items-center gap-1.5 bg-error/10 text-error border border-error/20 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase hover:bg-error/15 transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                          >
+                            {deletingDealId === deal.id ? (
+                              <>
+                                <div className="w-3.5 h-3.5 border-2 border-error border-t-transparent rounded-full animate-spin" />
+                                Deleting...
+                              </>
+                            ) : (
+                              <>
+                                <span className="material-symbols-outlined text-sm">delete</span>
+                                Delete
+                              </>
+                            )}
+                          </button>
+                        ) : null}
                       </div>
                     </li>
                   );
