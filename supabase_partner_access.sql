@@ -540,3 +540,344 @@ CREATE POLICY "Admins can update deals"
   FOR UPDATE
   USING (public.get_user_role() = 'admin')
   WITH CHECK (public.get_user_role() = 'admin');
+
+-- Redemption tracking for partner scanner activity.
+CREATE TABLE IF NOT EXISTS public.redemption_events (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  partner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  deal_id BIGINT REFERENCES public.deals(id) ON DELETE SET NULL,
+  brand TEXT NOT NULL,
+  scanned_code TEXT NOT NULL,
+  scan_method TEXT NOT NULL CHECK (scan_method IN ('camera', 'manual')),
+  scan_result TEXT NOT NULL CHECK (
+    scan_result IN ('valid', 'invalid', 'not_found', 'wrong_brand', 'not_approved')
+  ),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS redemption_events_partner_id_created_at_idx
+  ON public.redemption_events (partner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS redemption_events_scan_result_idx
+  ON public.redemption_events (scan_result);
+CREATE INDEX IF NOT EXISTS redemption_events_deal_id_idx
+  ON public.redemption_events (deal_id);
+
+ALTER TABLE public.redemption_events ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Partners can read own redemption events" ON public.redemption_events;
+DROP POLICY IF EXISTS "Admins can read all redemption events" ON public.redemption_events;
+DROP POLICY IF EXISTS "Partners can insert own redemption events" ON public.redemption_events;
+DROP POLICY IF EXISTS "Admins can insert redemption events" ON public.redemption_events;
+
+CREATE POLICY "Partners can read own redemption events"
+  ON public.redemption_events
+  FOR SELECT
+  USING (auth.uid() = partner_id);
+
+CREATE POLICY "Admins can read all redemption events"
+  ON public.redemption_events
+  FOR SELECT
+  USING (public.get_user_role() = 'admin');
+
+CREATE POLICY "Partners can insert own redemption events"
+  ON public.redemption_events
+  FOR INSERT
+  WITH CHECK (
+    auth.uid() = partner_id
+    AND public.get_user_role() = 'partner'
+  );
+
+CREATE POLICY "Admins can insert redemption events"
+  ON public.redemption_events
+  FOR INSERT
+  WITH CHECK (public.get_user_role() = 'admin');
+
+CREATE TABLE IF NOT EXISTS public.confirmed_redemptions (
+  id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  partner_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  deal_id BIGINT NOT NULL REFERENCES public.deals(id) ON DELETE CASCADE,
+  brand TEXT NOT NULL,
+  redemption_code TEXT NOT NULL,
+  source_event_id BIGINT REFERENCES public.redemption_events(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS confirmed_redemptions_partner_id_created_at_idx
+  ON public.confirmed_redemptions (partner_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS confirmed_redemptions_deal_id_idx
+  ON public.confirmed_redemptions (deal_id);
+
+ALTER TABLE public.confirmed_redemptions ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Partners can read own confirmed redemptions" ON public.confirmed_redemptions;
+DROP POLICY IF EXISTS "Admins can read all confirmed redemptions" ON public.confirmed_redemptions;
+DROP POLICY IF EXISTS "Partners can insert own confirmed redemptions" ON public.confirmed_redemptions;
+DROP POLICY IF EXISTS "Admins can insert confirmed redemptions" ON public.confirmed_redemptions;
+
+CREATE POLICY "Partners can read own confirmed redemptions"
+  ON public.confirmed_redemptions
+  FOR SELECT
+  USING (auth.uid() = partner_id);
+
+CREATE POLICY "Admins can read all confirmed redemptions"
+  ON public.confirmed_redemptions
+  FOR SELECT
+  USING (public.get_user_role() = 'admin');
+
+CREATE POLICY "Partners can insert own confirmed redemptions"
+  ON public.confirmed_redemptions
+  FOR INSERT
+  WITH CHECK (
+    auth.uid() = partner_id
+    AND public.get_user_role() = 'partner'
+  );
+
+CREATE POLICY "Admins can insert confirmed redemptions"
+  ON public.confirmed_redemptions
+  FOR INSERT
+  WITH CHECK (public.get_user_role() = 'admin');
+
+-- Server-side scanner verifier: logs every attempt and records confirmed redemptions.
+CREATE OR REPLACE FUNCTION public.record_partner_redemption_scan(
+  scanned_payload TEXT,
+  scan_method TEXT DEFAULT 'camera'
+)
+RETURNS TABLE (
+  event_id BIGINT,
+  result TEXT,
+  message TEXT,
+  deal_id BIGINT,
+  deal_title TEXT,
+  deal_brand TEXT,
+  deal_status TEXT,
+  confirmed_redemption_id BIGINT
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  caller_id UUID := auth.uid();
+  caller_role TEXT := public.get_user_role();
+  partner_brand TEXT;
+  normalized_payload TEXT := trim(COALESCE(scanned_payload, ''));
+  normalized_method TEXT := lower(trim(COALESCE(scan_method, 'camera')));
+  parsed_code TEXT;
+  redeem_segment_pos INTEGER;
+  any_match RECORD;
+  brand_match RECORD;
+BEGIN
+  IF caller_id IS NULL THEN
+    RAISE EXCEPTION 'Authentication required.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF caller_role <> 'partner' THEN
+    RAISE EXCEPTION 'Only partners can use redemption scanner.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  partner_brand := public.get_partner_brand(caller_id);
+
+  IF partner_brand IS NULL OR trim(partner_brand) = '' THEN
+    RAISE EXCEPTION 'Partner brand profile not found.'
+      USING ERRCODE = '42501';
+  END IF;
+
+  IF normalized_method NOT IN ('camera', 'manual') THEN
+    normalized_method := 'camera';
+  END IF;
+
+  parsed_code := normalized_payload;
+
+  IF left(lower(parsed_code), length('unideals://redeem/')) = 'unideals://redeem/' THEN
+    parsed_code := substr(parsed_code, length('unideals://redeem/') + 1);
+  ELSE
+    redeem_segment_pos := position('/redeem/' IN lower(parsed_code));
+    IF redeem_segment_pos > 0 THEN
+      parsed_code := substr(parsed_code, redeem_segment_pos + length('/redeem/'));
+    END IF;
+  END IF;
+
+  parsed_code := trim(parsed_code);
+
+  IF parsed_code = '' THEN
+    INSERT INTO public.redemption_events (
+      partner_id,
+      deal_id,
+      brand,
+      scanned_code,
+      scan_method,
+      scan_result
+    )
+    VALUES (
+      caller_id,
+      NULL,
+      partner_brand,
+      '',
+      normalized_method,
+      'invalid'
+    )
+    RETURNING id INTO event_id;
+
+    result := 'invalid';
+    message := 'Could not detect a valid redemption code.';
+    deal_id := NULL;
+    deal_title := NULL;
+    deal_brand := partner_brand;
+    deal_status := NULL;
+    confirmed_redemption_id := NULL;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  SELECT d.id, d.title, d.brand, d.status
+  INTO any_match
+  FROM public.deals d
+  WHERE lower(trim(d.redemption_code)) = lower(trim(parsed_code))
+  ORDER BY d.created_at DESC
+  LIMIT 1;
+
+  SELECT d.id, d.title, d.brand, d.status
+  INTO brand_match
+  FROM public.deals d
+  WHERE lower(trim(d.redemption_code)) = lower(trim(parsed_code))
+    AND lower(trim(d.brand)) = lower(trim(partner_brand))
+  ORDER BY d.created_at DESC
+  LIMIT 1;
+
+  IF any_match.id IS NULL THEN
+    INSERT INTO public.redemption_events (
+      partner_id,
+      deal_id,
+      brand,
+      scanned_code,
+      scan_method,
+      scan_result
+    )
+    VALUES (
+      caller_id,
+      NULL,
+      partner_brand,
+      parsed_code,
+      normalized_method,
+      'not_found'
+    )
+    RETURNING id INTO event_id;
+
+    result := 'not_found';
+    message := 'Code was not found.';
+    deal_id := NULL;
+    deal_title := NULL;
+    deal_brand := partner_brand;
+    deal_status := NULL;
+    confirmed_redemption_id := NULL;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  IF brand_match.id IS NULL THEN
+    INSERT INTO public.redemption_events (
+      partner_id,
+      deal_id,
+      brand,
+      scanned_code,
+      scan_method,
+      scan_result
+    )
+    VALUES (
+      caller_id,
+      NULL,
+      partner_brand,
+      parsed_code,
+      normalized_method,
+      'wrong_brand'
+    )
+    RETURNING id INTO event_id;
+
+    result := 'wrong_brand';
+    message := 'Code belongs to a different brand.';
+    deal_id := NULL;
+    deal_title := NULL;
+    deal_brand := partner_brand;
+    deal_status := NULL;
+    confirmed_redemption_id := NULL;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  IF brand_match.status IS DISTINCT FROM 'approved' THEN
+    INSERT INTO public.redemption_events (
+      partner_id,
+      deal_id,
+      brand,
+      scanned_code,
+      scan_method,
+      scan_result
+    )
+    VALUES (
+      caller_id,
+      brand_match.id,
+      partner_brand,
+      parsed_code,
+      normalized_method,
+      'not_approved'
+    )
+    RETURNING id INTO event_id;
+
+    result := 'not_approved';
+    message := format('Code matched %s, but this deal is %s.', brand_match.title, brand_match.status);
+    deal_id := brand_match.id;
+    deal_title := brand_match.title;
+    deal_brand := brand_match.brand;
+    deal_status := brand_match.status;
+    confirmed_redemption_id := NULL;
+    RETURN NEXT;
+    RETURN;
+  END IF;
+
+  INSERT INTO public.redemption_events (
+    partner_id,
+    deal_id,
+    brand,
+    scanned_code,
+    scan_method,
+    scan_result
+  )
+  VALUES (
+    caller_id,
+    brand_match.id,
+    partner_brand,
+    parsed_code,
+    normalized_method,
+    'valid'
+  )
+  RETURNING id INTO event_id;
+
+  INSERT INTO public.confirmed_redemptions (
+    partner_id,
+    deal_id,
+    brand,
+    redemption_code,
+    source_event_id
+  )
+  VALUES (
+    caller_id,
+    brand_match.id,
+    brand_match.brand,
+    parsed_code,
+    event_id
+  )
+  RETURNING id INTO confirmed_redemption_id;
+
+  result := 'valid';
+  message := format('Valid code for %s - %s.', brand_match.brand, brand_match.title);
+  deal_id := brand_match.id;
+  deal_title := brand_match.title;
+  deal_brand := brand_match.brand;
+  deal_status := brand_match.status;
+  RETURN NEXT;
+END
+$$;
+
+GRANT EXECUTE ON FUNCTION public.record_partner_redemption_scan(TEXT, TEXT) TO authenticated;

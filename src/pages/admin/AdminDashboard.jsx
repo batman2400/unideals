@@ -2,10 +2,39 @@ import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRole } from "../../lib/useRole";
 
+function formatDateTime(value) {
+  if (!value) return "-";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return "-";
+  }
+
+  return date.toLocaleString(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
+}
+
+function shortId(value) {
+  const text = String(value || "");
+  if (!text) return "-";
+  return `${text.slice(0, 8)}...`;
+}
+
 function AdminDashboard() {
   const { role, loading: roleLoading, error: roleError } = useRole();
 
   const [pendingDeals, setPendingDeals] = useState([]);
+  const [scanEvents, setScanEvents] = useState([]);
+  const [confirmedRedemptions, setConfirmedRedemptions] = useState([]);
+  const [analyticsWarning, setAnalyticsWarning] = useState("");
+  const [analyticsMetrics, setAnalyticsMetrics] = useState({
+    totalScans: 0,
+    validScans: 0,
+    failedScans: 0,
+    confirmedRedemptions: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -24,7 +53,7 @@ function AdminDashboard() {
   useEffect(() => {
     let active = true;
 
-    async function fetchPendingDeals() {
+    async function fetchDashboardData() {
       if (!active) return;
 
       if (roleLoading) {
@@ -45,8 +74,9 @@ function AdminDashboard() {
 
       setLoading(true);
       setError("");
+      setAnalyticsWarning("");
 
-      const { data, error: fetchError } = await supabase
+      const { data: pendingData, error: pendingError } = await supabase
         .from("deals")
         .select("id, brand, title, discount, type, category, image_url, created_at")
         .eq("status", "pending")
@@ -54,17 +84,74 @@ function AdminDashboard() {
 
       if (!active) return;
 
-      if (fetchError) {
-        setError(fetchError.message || "Failed to load pending deals.");
+      if (pendingError) {
+        setError(pendingError.message || "Failed to load pending deals.");
         setLoading(false);
         return;
       }
 
-      setPendingDeals(data || []);
+      setPendingDeals(pendingData || []);
+
+      const [eventsResponse, confirmedResponse, totalScansResponse, validScansResponse] = await Promise.all([
+        supabase
+          .from("redemption_events")
+          .select("id, partner_id, deal_id, brand, scanned_code, scan_method, scan_result, created_at")
+          .order("created_at", { ascending: false })
+          .limit(15),
+        supabase
+          .from("confirmed_redemptions")
+          .select("id, partner_id, deal_id, brand, redemption_code, created_at", { count: "exact" })
+          .order("created_at", { ascending: false })
+          .limit(15),
+        supabase
+          .from("redemption_events")
+          .select("id", { count: "exact", head: true }),
+        supabase
+          .from("redemption_events")
+          .select("id", { count: "exact", head: true })
+          .eq("scan_result", "valid"),
+      ]);
+
+      if (!active) return;
+
+      const analyticsError =
+        eventsResponse.error
+        || confirmedResponse.error
+        || totalScansResponse.error
+        || validScansResponse.error;
+
+      if (analyticsError) {
+        setAnalyticsWarning(
+          "Redemption analytics are unavailable. Run the latest SQL migration to enable scan tracking tables."
+        );
+        setScanEvents([]);
+        setConfirmedRedemptions([]);
+        setAnalyticsMetrics({
+          totalScans: 0,
+          validScans: 0,
+          failedScans: 0,
+          confirmedRedemptions: 0,
+        });
+        setLoading(false);
+        return;
+      }
+
+      const totalScans = totalScansResponse.count ?? 0;
+      const validScans = validScansResponse.count ?? 0;
+      const totalConfirmedRedemptions = confirmedResponse.count ?? 0;
+
+      setScanEvents(eventsResponse.data || []);
+      setConfirmedRedemptions(confirmedResponse.data || []);
+      setAnalyticsMetrics({
+        totalScans,
+        validScans,
+        failedScans: Math.max(totalScans - validScans, 0),
+        confirmedRedemptions: totalConfirmedRedemptions,
+      });
       setLoading(false);
     }
 
-    fetchPendingDeals();
+    fetchDashboardData();
 
     return () => {
       active = false;
@@ -285,6 +372,95 @@ function AdminDashboard() {
             </button>
           </div>
         </form>
+      </div>
+
+      <div className="bg-surface rounded-2xl border border-outline-variant/20 p-5 md:p-6 mb-8 shadow-sm">
+        <div className="mb-5">
+          <h2 className="font-headline font-extrabold text-2xl tracking-tight text-on-background mb-1">
+            Redemption Analytics
+          </h2>
+          <p className="text-on-surface-variant text-sm">
+            View recent partner scanner activity and confirmed redemptions.
+          </p>
+        </div>
+
+        {analyticsWarning ? (
+          <div className="mb-5 bg-amber-100 border border-amber-200 rounded-lg px-4 py-3">
+            <p className="text-amber-700 text-sm font-bold">{analyticsWarning}</p>
+          </div>
+        ) : null}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Total Scans</p>
+            <p className="font-headline font-black text-3xl tracking-tight text-on-background">{analyticsMetrics.totalScans}</p>
+          </article>
+
+          <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Valid Scans</p>
+            <p className="font-headline font-black text-3xl tracking-tight text-emerald-700">{analyticsMetrics.validScans}</p>
+          </article>
+
+          <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Failed Scans</p>
+            <p className="font-headline font-black text-3xl tracking-tight text-red-700">{analyticsMetrics.failedScans}</p>
+          </article>
+
+          <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Confirmed Redemptions</p>
+            <p className="font-headline font-black text-3xl tracking-tight text-on-background">{analyticsMetrics.confirmedRedemptions}</p>
+          </article>
+        </div>
+
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
+          <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
+            <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
+              <h3 className="font-headline font-bold text-on-background">Recent Scan Events</h3>
+            </div>
+
+            {scanEvents.length === 0 ? (
+              <div className="p-4 text-sm text-on-surface-variant">No scan events yet.</div>
+            ) : (
+              <ul className="divide-y divide-outline-variant/10">
+                {scanEvents.map((event) => (
+                  <li key={event.id} className="px-4 py-3 text-sm">
+                    <p className="font-bold text-on-background">{event.brand} · {event.scan_result}</p>
+                    <p className="text-on-surface-variant text-xs mt-1">
+                      Code: {event.scanned_code} · Method: {event.scan_method}
+                    </p>
+                    <p className="text-on-surface-variant text-xs mt-1">
+                      Partner: {shortId(event.partner_id)} · Deal: {event.deal_id || "-"} · {formatDateTime(event.created_at)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+
+          <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
+            <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
+              <h3 className="font-headline font-bold text-on-background">Recent Confirmed Redemptions</h3>
+            </div>
+
+            {confirmedRedemptions.length === 0 ? (
+              <div className="p-4 text-sm text-on-surface-variant">No confirmed redemptions yet.</div>
+            ) : (
+              <ul className="divide-y divide-outline-variant/10">
+                {confirmedRedemptions.map((entry) => (
+                  <li key={entry.id} className="px-4 py-3 text-sm">
+                    <p className="font-bold text-on-background">{entry.brand} · {entry.redemption_code}</p>
+                    <p className="text-on-surface-variant text-xs mt-1">
+                      Partner: {shortId(entry.partner_id)} · Deal: {entry.deal_id}
+                    </p>
+                    <p className="text-on-surface-variant text-xs mt-1">
+                      {formatDateTime(entry.created_at)}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
       </div>
 
       {error ? (
