@@ -222,7 +222,6 @@ function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
         rel="noopener noreferrer"
         onClick={(e) => {
           e.preventDefault();
-          console.log(`[Affiliate] Redirecting to ${brand}: ${storeUrl}`);
           alert(`🔗 Redirecting to ${brand}...\n\n(This would open: ${storeUrl})`);
         }}
         className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
@@ -462,6 +461,8 @@ function DealDetails() {
               src={imageUrl}
               alt={title}
               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+              loading="lazy"
+              decoding="async"
             />
             {/* Save Button */}
             <button

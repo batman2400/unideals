@@ -60,3 +60,87 @@
 .animate-slide-down {
   animation: slide-down 0.2s ease-out;
 }
+
+/* Page-level fade used during route transitions */
+@keyframes route-fade {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-route-fade {
+  animation: route-fade 0.28s ease-out;
+}
+
+/* Generic fade helper used on loaders and sections */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade-in {
+  animation: fade-in 0.24s ease-out;
+}
+
+/* Card-by-card stagger entrance */
+@keyframes stagger-in {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-stagger-in {
+  animation: stagger-in 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+/* Premium skeleton shimmer */
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.skeleton-shimmer {
+  background: linear-gradient(
+    100deg,
+    rgba(230, 236, 234, 0.9) 30%,
+    rgba(243, 247, 246, 1) 45%,
+    rgba(230, 236, 234, 0.9) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.3s linear infinite;
+}
+
+@layer base {
+  button,
+  [role="button"] {
+    @apply transition-all duration-200 ease-out;
+  }
+
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  a:focus-visible,
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible {
+    @apply outline-none ring-2 ring-primary/30 ring-offset-2 ring-offset-background;
+  }
+
+  button:active,
+  [role="button"]:active {
+    transform: scale(0.98);
+  }
+}

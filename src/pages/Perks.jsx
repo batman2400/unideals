@@ -8,7 +8,7 @@
  * Props:
  *   - searchQuery : string — global search text from App state
  */
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useDeals } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
@@ -24,20 +24,28 @@ function Perks({ searchQuery }) {
   const { deals, loading, error } = useDeals();
 
   // Apply type filter
-  const filteredByType =
-    activeFilter === "all"
-      ? deals
-      : deals.filter((deal) => deal.type === activeFilter);
+  const filteredByType = useMemo(
+    () => (
+      activeFilter === "all"
+        ? deals
+        : deals.filter((deal) => deal.type === activeFilter)
+    ),
+    [activeFilter, deals]
+  );
 
   // Apply search filter on top of type filter
-  const filteredDeals = searchQuery
-    ? filteredByType.filter(
-        (deal) =>
-          deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          deal.brand.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          deal.category.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : filteredByType;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filteredDeals = useMemo(() => {
+    if (!normalizedQuery) return filteredByType;
+
+    return filteredByType.filter(
+      (deal) =>
+        deal.title.toLowerCase().includes(normalizedQuery)
+        || deal.brand.toLowerCase().includes(normalizedQuery)
+        || deal.category.toLowerCase().includes(normalizedQuery)
+    );
+  }, [filteredByType, normalizedQuery]);
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
@@ -69,7 +77,7 @@ function Perks({ searchQuery }) {
                 className={`px-6 py-2.5 rounded-full text-sm font-headline font-bold tracking-tight transition-all ${
                   activeFilter === filter.value
                     ? "bg-primary text-on-primary shadow-md"
-                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container border border-outline-variant/20"
+                    : "bg-surface-container-low text-on-surface-variant hover:bg-surface-container hover:shadow-sm border border-outline-variant/20"
                 }`}
               >
                 {filter.label}

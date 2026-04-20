@@ -6,6 +6,7 @@
  * view their deals.
  */
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { useDeals } from "../lib/useDeals";
 import DealsLoader from "../components/DealsLoader";
 
@@ -13,20 +14,22 @@ function Brands() {
   const { deals, loading, error } = useDeals();
 
   // Build a map of unique brands with their deals
-  const brandMap = deals.reduce((acc, deal) => {
-    if (!acc[deal.brand]) {
-      acc[deal.brand] = {
-        name: deal.brand,
-        category: deal.category,
-        deals: [],
-        imageUrl: deal.imageUrl,
-      };
-    }
-    acc[deal.brand].deals.push(deal);
-    return acc;
-  }, {});
+  const brands = useMemo(() => {
+    const brandMap = deals.reduce((acc, deal) => {
+      if (!acc[deal.brand]) {
+        acc[deal.brand] = {
+          name: deal.brand,
+          category: deal.category,
+          deals: [],
+          imageUrl: deal.imageUrl,
+        };
+      }
+      acc[deal.brand].deals.push(deal);
+      return acc;
+    }, {});
 
-  const brands = Object.values(brandMap);
+    return Object.values(brandMap);
+  }, [deals]);
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
@@ -49,10 +52,11 @@ function Brands() {
       ) : (
         /* Brand Cards Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {brands.map((brand) => (
+          {brands.map((brand, index) => (
             <div
               key={brand.name}
-              className="group bg-surface-container-low rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-outline-variant/10"
+              className="group bg-surface-container-low rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-outline-variant/10 animate-stagger-in"
+              style={{ animationDelay: `${Math.min(index, 12) * 45}ms` }}
             >
               {/* Brand image */}
               <div className="aspect-[16/9] overflow-hidden bg-surface-container">
@@ -60,6 +64,8 @@ function Brands() {
                   src={brand.imageUrl}
                   alt={brand.name}
                   className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
 

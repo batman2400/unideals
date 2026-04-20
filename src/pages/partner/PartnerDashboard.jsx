@@ -485,10 +485,23 @@ function PartnerDashboard() {
   if (roleLoading || loading || (role === "partner" && brandLoading)) {
     return (
       <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
-        <div className="min-h-[45vh] flex items-center justify-center">
-          <div className="flex items-center gap-3 text-on-surface-variant">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-headline font-bold">Loading partner dashboard...</p>
+        <div className="space-y-6">
+          <div className="space-y-2">
+            <div className="h-5 w-40 rounded-lg bg-surface-container-low animate-pulse" />
+            <div className="h-12 w-80 max-w-full rounded-2xl bg-surface-container-low animate-pulse" />
+            <div className="h-4 w-96 max-w-full rounded-lg bg-surface-container-low animate-pulse" />
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="h-36 rounded-2xl skeleton-shimmer" />
+            <div className="h-36 rounded-2xl skeleton-shimmer" />
+            <div className="h-36 rounded-2xl skeleton-shimmer" />
+          </div>
+
+          <div className="rounded-2xl border border-outline-variant/10 bg-surface p-5 md:p-6 space-y-4">
+            <div className="h-7 w-56 rounded-lg skeleton-shimmer" />
+            <div className="h-20 rounded-xl skeleton-shimmer" />
+            <div className="h-20 rounded-xl skeleton-shimmer" />
           </div>
         </div>
       </section>

@@ -9,8 +9,9 @@
  *   - deals : array of deal objects from mockData.js
  */
 import DealCard from "./DealCard";
+import { memo } from "react";
 
-function DealGrid({ deals }) {
+function DealGrid({ deals, enableStagger = true }) {
   if (!deals || deals.length === 0) {
     return (
       <div className="text-center py-20">
@@ -29,11 +30,17 @@ function DealGrid({ deals }) {
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-      {deals.map((deal) => (
-        <DealCard key={deal.id} deal={deal} />
+      {deals.map((deal, index) => (
+        <div
+          key={deal.id}
+          className={enableStagger ? "animate-stagger-in" : ""}
+          style={enableStagger ? { animationDelay: `${Math.min(index, 12) * 45}ms` } : undefined}
+        >
+          <DealCard deal={deal} />
+        </div>
       ))}
     </div>
   );
 }
 
-export default DealGrid;
+export default memo(DealGrid);

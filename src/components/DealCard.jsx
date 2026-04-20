@@ -11,7 +11,7 @@
  * Props:
  *   - deal : object from mockData.js
  */
-import { useState, useEffect } from "react";
+import { memo, useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
@@ -99,6 +99,8 @@ function DealCard({ deal }) {
             alt={title}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             src={imageUrl}
+            loading="lazy"
+            decoding="async"
           />
           {/* Type Badge — visually distinct per redemption method */}
           <div className="absolute top-4 right-4">
@@ -139,4 +141,4 @@ function DealCard({ deal }) {
   );
 }
 
-export default DealCard;
+export default memo(DealCard);

@@ -54,7 +54,8 @@ export function useDeals() {
         return;
       }
 
-      setDeals((data || []).map(mapDeal));
+      const rows = Array.isArray(data) ? data : [];
+      setDeals(rows.map(mapDeal));
       setLoading(false);
     }
 

@@ -9,8 +9,9 @@
  *   - searchQuery : string — optional search filter
  */
 import { Link } from "react-router-dom";
+import { useMemo } from "react";
 import { useDeals } from "../lib/useDeals";
-import DealCard from "./DealCard";
+import DealGrid from "./DealGrid";
 import DealsLoader from "./DealsLoader";
 
 function DealFeed({ searchQuery }) {
@@ -20,16 +21,20 @@ function DealFeed({ searchQuery }) {
   if (loading || error) return <DealsLoader loading={loading} error={error} />;
 
   // Filter by search query if one is active
-  const filtered = searchQuery
-    ? deals.filter(
-        (deal) =>
-          deal.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          deal.brand.toLowerCase().includes(searchQuery.toLowerCase())
-      )
-    : deals;
+  const normalizedQuery = searchQuery.trim().toLowerCase();
+
+  const filtered = useMemo(() => {
+    if (!normalizedQuery) return deals;
+
+    return deals.filter(
+      (deal) =>
+        deal.title.toLowerCase().includes(normalizedQuery)
+        || deal.brand.toLowerCase().includes(normalizedQuery)
+    );
+  }, [deals, normalizedQuery]);
 
   // Show first 6 on the homepage
-  const displayDeals = filtered.slice(0, 6);
+  const displayDeals = useMemo(() => filtered.slice(0, 6), [filtered]);
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
@@ -52,11 +57,7 @@ function DealFeed({ searchQuery }) {
       </div>
 
       {/* Deal Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
-        {displayDeals.map((deal) => (
-          <DealCard key={deal.id} deal={deal} />
-        ))}
-      </div>
+      <DealGrid deals={displayDeals} enableStagger />
     </section>
   );
 }
