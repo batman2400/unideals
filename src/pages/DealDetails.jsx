@@ -311,13 +311,18 @@ function VerificationWall({ isAuthenticated, verificationLoading, onOpenAuthModa
 // ── Main DealDetails Page ───────────────────────────────
 function DealDetails() {
   const { id } = useParams();
-  const { deal, loading, error } = useDeal(id);
   const {
     role,
     isVerified,
     isAuthenticated,
     loading: roleLoading,
   } = useRole();
+  const dealAccessKey = [
+    isAuthenticated ? "auth" : "anon",
+    role ?? "student",
+    isVerified ? "verified" : "unverified",
+  ].join(":");
+  const { deal, loading, error } = useDeal(id, dealAccessKey);
 
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSave, setLoadingSave] = useState(true);
@@ -424,6 +429,7 @@ function DealDetails() {
   const isPrivilegedRole = role === "admin" || role === "partner";
   const canRevealRedemption = isPrivilegedRole || (isAuthenticated && isVerified);
   const showVerificationWall = !canRevealRedemption;
+  const hasRedemptionCode = typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
 
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
@@ -579,14 +585,25 @@ function DealDetails() {
             />
           ) : (
             <>
-              {isInStore ? (
-                <InStoreRedemption redemptionCode={redemptionCode} brand={brand} />
+              {hasRedemptionCode ? (
+                <>
+                  {isInStore ? (
+                    <InStoreRedemption redemptionCode={redemptionCode} brand={brand} />
+                  ) : (
+                    <OnlineRedemption
+                      redemptionCode={redemptionCode}
+                      brand={brand}
+                      storeUrl={storeUrl}
+                    />
+                  )}
+                </>
               ) : (
-                <OnlineRedemption
-                  redemptionCode={redemptionCode}
-                  brand={brand}
-                  storeUrl={storeUrl}
-                />
+                <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 text-sm text-on-surface-variant">
+                  <p className="font-headline font-bold text-on-surface mb-2">Redemption code unavailable</p>
+                  <p>
+                    This offer does not currently have a valid redemption code. Please try again later or contact support.
+                  </p>
+                </div>
               )}
             </>
           )}

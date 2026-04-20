@@ -175,7 +175,7 @@ function Profile({ isLoggedIn, user }) {
                 <div
                   id={unverifiedTooltipId}
                   role="tooltip"
-                  className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-outline-variant/20 bg-surface px-3.5 py-3 text-left text-xs leading-relaxed text-on-surface-variant shadow-xl opacity-0 translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+                  className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 w-[calc(100vw-2rem)] max-w-72 -translate-x-1/2 rounded-xl border border-outline-variant/20 bg-surface px-3.5 py-3 text-left text-xs leading-relaxed text-on-surface-variant shadow-xl opacity-0 translate-y-1 transition-all duration-200 sm:left-0 sm:max-w-none sm:w-72 sm:translate-x-0 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
                 >
                   Register with a valid university email (.ac.lk, .edu.lk, or .edu) to verify your account and view deal codes.
                 </div>

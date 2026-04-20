@@ -8,7 +8,7 @@
 -- 1) Adds public.user_roles.is_verified (default false)
 -- 2) Updates/creates public.handle_new_user_role() to auto-verify
 --    eligible university email domains on signup
--- 3) Re-wires auth.users signup trigger to call handle_new_user_role()
+-- 3) Re-wires auth.users triggers to call handle_new_user_role()
 -- 4) Backfills existing admin/partner users as verified
 -- ============================================================
 
@@ -40,7 +40,10 @@ BEGIN
   VALUES (NEW.id, 'student', NEW.email, email_is_verified)
   ON CONFLICT (user_id) DO UPDATE
     SET user_email = EXCLUDED.user_email,
-        is_verified = EXCLUDED.is_verified;
+        is_verified = CASE
+          WHEN public.user_roles.role IN ('admin', 'partner') THEN TRUE
+          ELSE EXCLUDED.is_verified
+        END;
 
   RETURN NEW;
 END
@@ -69,12 +72,13 @@ BEGIN
 END
 $$;
 
--- Also drop common legacy trigger names if present.
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP TRIGGER IF EXISTS on_auth_user_created_set_role ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_email_updated_set_role ON auth.users;
+DROP TRIGGER IF EXISTS on_auth_user_created_or_email_updated_set_role ON auth.users;
 
-CREATE TRIGGER on_auth_user_created_set_role
-  AFTER INSERT ON auth.users
+CREATE TRIGGER on_auth_user_created_or_email_updated_set_role
+  AFTER INSERT OR UPDATE OF email ON auth.users
   FOR EACH ROW
   EXECUTE FUNCTION public.handle_new_user_role();
 

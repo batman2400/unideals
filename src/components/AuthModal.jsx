@@ -50,6 +50,7 @@ function AuthModal({ isOpen, onClose }) {
   // ── Frontend Validation ───────────────────────────────
   const validate = () => {
     const newErrors = {};
+    const normalizedEmail = email.trim().toLowerCase();
 
     if (activeTab === "signup" && fullName.trim().length === 0) {
       newErrors.fullName = "Full name is required.";
@@ -59,9 +60,9 @@ function AuthModal({ isOpen, onClose }) {
       newErrors.username = "Username must be at least 3 characters.";
     }
 
-    if (!email.includes("@")) {
+    if (!normalizedEmail.includes("@")) {
       newErrors.email = "Please enter a valid email address (must contain @).";
-    } else if (email.trim().length < 3) {
+    } else if (normalizedEmail.length < 3) {
       newErrors.email = "Email is too short.";
     }
 
@@ -78,6 +79,8 @@ function AuthModal({ isOpen, onClose }) {
     e.preventDefault();
     setAuthError("");
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     if (!validate()) return;
 
     setLoading(true);
@@ -86,7 +89,7 @@ function AuthModal({ isOpen, onClose }) {
       if (activeTab === "signup") {
         // ── Sign Up ──────────────────────────────────────
         const { error } = await supabase.auth.signUp({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
           options: {
             data: {
@@ -108,7 +111,7 @@ function AuthModal({ isOpen, onClose }) {
       } else {
         // ── Login ────────────────────────────────────────
         const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: normalizedEmail,
           password,
         });
 

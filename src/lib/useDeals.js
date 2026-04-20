@@ -43,10 +43,7 @@ export function useDeals() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from("deals")
-        .select("*")
-        .order("id", { ascending: true });
+      const { data, error: fetchError } = await supabase.rpc("get_public_deals");
 
       if (cancelled) return;
 
@@ -71,7 +68,7 @@ export function useDeals() {
 /**
  * Fetch a single deal by ID from Supabase.
  */
-export function useDeal(id) {
+export function useDeal(id, accessKey = "") {
   const [deal, setDeal] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -83,11 +80,17 @@ export function useDeal(id) {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase
-        .from("deals")
-        .select("*")
-        .eq("id", Number(id))
-        .single();
+      const parsedId = Number(id);
+      if (!Number.isFinite(parsedId)) {
+        setDeal(null);
+        setError("Invalid deal id.");
+        setLoading(false);
+        return;
+      }
+
+      const { data, error: fetchError } = await supabase.rpc("get_public_deal_by_id", {
+        target_deal_id: parsedId,
+      });
 
       if (cancelled) return;
 
@@ -99,13 +102,14 @@ export function useDeal(id) {
         return;
       }
 
-      setDeal(data ? mapDeal(data) : null);
+      const row = Array.isArray(data) ? (data[0] ?? null) : data;
+      setDeal(row ? mapDeal(row) : null);
       setLoading(false);
     }
 
     if (id) fetchDeal();
     return () => { cancelled = true; };
-  }, [id]);
+  }, [id, accessKey]);
 
   return { deal, loading, error };
 }

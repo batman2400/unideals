@@ -70,7 +70,11 @@ export function useRole() {
             resolveRole();
           }
         )
-        .subscribe();
+        .subscribe((status) => {
+          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+            resolveRole();
+          }
+        });
 
       roleChannelUserIdRef.current = userId;
     }
@@ -165,9 +169,27 @@ export function useRole() {
       resolveRole(session);
     });
 
+    const refreshOnVisible = () => {
+      if (document.visibilityState === "visible") {
+        resolveRole();
+      }
+    };
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshOnVisible);
+    }
+
+    const refreshIntervalId = setInterval(() => {
+      resolveRole();
+    }, 120000);
+
     return () => {
       active = false;
       subscription.unsubscribe();
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshOnVisible);
+      }
+      clearInterval(refreshIntervalId);
       detachRoleChannel();
     };
   }, [refreshKey]);
