@@ -14,6 +14,7 @@ import { useParams, Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "../lib/supabaseClient";
 import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
+import { useRole } from "../lib/useRole";
 import DealsLoader from "../components/DealsLoader";
 
 // ── Countdown Timer Hook ────────────────────────────────
@@ -238,14 +239,93 @@ function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
   );
 }
 
+function VerificationWall({ isAuthenticated, verificationLoading, onOpenAuthModal }) {
+  const helperText = verificationLoading
+    ? "Checking your account verification status..."
+    : isAuthenticated
+      ? "Your account is signed in, but not yet verified. Add a valid university email to unlock redemption codes."
+      : "Sign in or create an account with a valid university email to unlock this redemption code.";
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 shadow-[0_18px_55px_-35px_rgba(6,26,20,0.8)] animate-modal-enter">
+      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl" aria-hidden="true" />
+      <div className="absolute -bottom-16 -left-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl" aria-hidden="true" />
+
+      <div className="relative z-10 space-y-5">
+        <div className="w-14 h-14 rounded-2xl bg-surface border border-primary/20 flex items-center justify-center shadow-sm">
+          <span className="material-symbols-outlined text-primary text-3xl">lock</span>
+        </div>
+
+        <div>
+          <p className="text-xs font-bold tracking-[0.15em] uppercase text-primary mb-2">
+            Verification Required
+          </p>
+          <h3 className="font-headline font-extrabold text-2xl tracking-tight text-on-background mb-2">
+            Verify your university status to reveal this code
+          </h3>
+          <p className="text-sm text-on-surface-variant leading-relaxed">
+            {helperText}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-dashed border-outline-variant/25 bg-surface/60 backdrop-blur-sm px-4 py-5">
+          <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-on-surface-variant/60 mb-2">
+            Locked Redemption Code
+          </p>
+          <p className="font-headline font-black text-2xl tracking-[0.22em] text-on-surface-variant/50 select-none">
+            •••• •••• ••••
+          </p>
+        </div>
+
+        <div className="flex flex-col sm:flex-row gap-3">
+          {isAuthenticated ? (
+            <Link
+              to="/profile?tab=settings"
+              className="flex-1 emerald-gradient text-on-primary py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all text-center"
+            >
+              Update Profile Email
+            </Link>
+          ) : (
+            <button
+              type="button"
+              onClick={onOpenAuthModal}
+              className="flex-1 emerald-gradient text-on-primary py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+            >
+              Sign In / Create Account
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onOpenAuthModal}
+            className="flex-1 border border-outline-variant/25 bg-surface text-on-surface-variant hover:text-on-surface hover:border-primary/25 py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight transition-all"
+          >
+            {isAuthenticated ? "Re-register with University Email" : "Already Verified? Sign In"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main DealDetails Page ───────────────────────────────
 function DealDetails() {
   const { id } = useParams();
   const { deal, loading, error } = useDeal(id);
+  const {
+    role,
+    isVerified,
+    isAuthenticated,
+    loading: roleLoading,
+  } = useRole();
 
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSave, setLoadingSave] = useState(true);
   const [saveError, setSaveError] = useState("");
+
+  const handleOpenAuthModal = useCallback(() => {
+    window.dispatchEvent(new Event("open-auth-modal"));
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -272,7 +352,7 @@ function DealDetails() {
 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
-      window.dispatchEvent(new Event("open-auth-modal"));
+      handleOpenAuthModal();
       return;
     }
 
@@ -341,6 +421,9 @@ function DealDetails() {
 
   const { title, brand, discount, type, category, imageUrl, description, redemptionCode, storeUrl } = deal;
   const isInStore = type === "In-Store";
+  const isPrivilegedRole = role === "admin" || role === "partner";
+  const canRevealRedemption = isPrivilegedRole || (isAuthenticated && isVerified);
+  const showVerificationWall = !canRevealRedemption;
 
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
@@ -488,14 +571,24 @@ function DealDetails() {
           </div>
 
           {/* ── Redemption Section ────────────────────────── */}
-          {isInStore ? (
-            <InStoreRedemption redemptionCode={redemptionCode} brand={brand} />
-          ) : (
-            <OnlineRedemption
-              redemptionCode={redemptionCode}
-              brand={brand}
-              storeUrl={storeUrl}
+          {showVerificationWall ? (
+            <VerificationWall
+              isAuthenticated={isAuthenticated}
+              verificationLoading={roleLoading && isAuthenticated}
+              onOpenAuthModal={handleOpenAuthModal}
             />
+          ) : (
+            <>
+              {isInStore ? (
+                <InStoreRedemption redemptionCode={redemptionCode} brand={brand} />
+              ) : (
+                <OnlineRedemption
+                  redemptionCode={redemptionCode}
+                  brand={brand}
+                  storeUrl={storeUrl}
+                />
+              )}
+            </>
           )}
 
           {/* Back link */}

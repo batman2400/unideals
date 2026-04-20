@@ -10,6 +10,7 @@ import { supabase } from "./supabaseClient";
 export function useRole() {
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [isVerified, setIsVerified] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -105,6 +106,7 @@ export function useRole() {
 
         if (!nextUser) {
           setRole(null);
+          setIsVerified(false);
           setLoading(false);
           return;
         }
@@ -113,23 +115,39 @@ export function useRole() {
 
         if (!active) return;
 
-        if (rpcError) {
-          const { data: roleRow, error: roleQueryError } = await supabase
+        let resolvedRole = rpcRole ?? "student";
+        let resolvedIsVerified = false;
+
+        const { data: roleRow, error: roleQueryError } = await supabase
+          .from("user_roles")
+          .select("role, is_verified")
+          .eq("user_id", nextUser.id)
+          .maybeSingle();
+
+        if (roleQueryError) {
+          // Legacy fallback for environments where `is_verified` is not deployed yet.
+          const { data: legacyRoleRow, error: legacyRoleError } = await supabase
             .from("user_roles")
             .select("role")
             .eq("user_id", nextUser.id)
             .maybeSingle();
 
-          if (roleQueryError) {
-            throw roleQueryError;
+          if (legacyRoleError && rpcError) {
+            throw legacyRoleError;
           }
 
-          setRole(roleRow?.role ?? "student");
-          setLoading(false);
-          return;
+          if (rpcError) {
+            resolvedRole = legacyRoleRow?.role ?? "student";
+          }
+        } else {
+          if (rpcError) {
+            resolvedRole = roleRow?.role ?? "student";
+          }
+          resolvedIsVerified = !!roleRow?.is_verified;
         }
 
-        setRole(rpcRole ?? "student");
+        setRole(resolvedRole);
+        setIsVerified(resolvedIsVerified);
         setLoading(false);
       } catch (err) {
         if (!active) return;
@@ -161,6 +179,7 @@ export function useRole() {
   return {
     user,
     role,
+    isVerified,
     loading,
     error,
     isAuthenticated: !!user,

@@ -14,6 +14,7 @@ import { useState, useEffect } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useDeals } from "../lib/useDeals";
+import { useRole } from "../lib/useRole";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
@@ -58,6 +59,7 @@ function Profile({ isLoggedIn, user }) {
 
   // ── Fetch deals from Supabase ────────────────────────
   const { deals, loading: dealsLoading, error: dealsError } = useDeals();
+  const { isVerified, loading: verificationLoading } = useRole();
 
   // ── Fetch user's saved deals ─────────────────────────
   const [savedDealIds, setSavedDealIds] = useState([]);
@@ -108,6 +110,7 @@ function Profile({ isLoggedIn, user }) {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const unverifiedTooltipId = "profile-unverified-tooltip";
 
   // ── Settings form state ──────────────────────────────
   const [settingsEmail, setSettingsEmail] = useState(userEmail);
@@ -139,23 +142,68 @@ function Profile({ isLoggedIn, user }) {
 
         {/* Info */}
         <div className="flex-1">
-          <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background mb-1">
-            {fullName}
-          </h1>
+          <div className="flex flex-wrap items-center gap-3 mb-1">
+            <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background">
+              {fullName}
+            </h1>
+
+            {verificationLoading ? (
+              <span className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant border border-outline-variant/20 text-xs font-bold px-3 py-1.5 rounded-full">
+                <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
+                Checking Status
+              </span>
+            ) : isVerified ? (
+              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/25 text-xs font-bold px-3 py-1.5 rounded-full shadow-[0_0_26px_rgba(41,105,91,0.28)]">
+                <span
+                  className="material-symbols-outlined text-sm"
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  verified
+                </span>
+                Verified Student
+              </span>
+            ) : (
+              <div className="relative group">
+                <button
+                  type="button"
+                  aria-describedby={unverifiedTooltipId}
+                  className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant border border-outline-variant/25 text-xs font-bold px-3 py-1.5 rounded-full hover:border-primary/30 hover:text-on-surface transition-colors"
+                >
+                  <span className="material-symbols-outlined text-sm">gpp_maybe</span>
+                  Unverified Account
+                </button>
+                <div
+                  id={unverifiedTooltipId}
+                  role="tooltip"
+                  className="pointer-events-none absolute left-0 top-full z-20 mt-2 w-72 rounded-xl border border-outline-variant/20 bg-surface px-3.5 py-3 text-left text-xs leading-relaxed text-on-surface-variant shadow-xl opacity-0 translate-y-1 transition-all duration-200 group-hover:opacity-100 group-hover:translate-y-0 group-focus-within:opacity-100 group-focus-within:translate-y-0"
+                >
+                  Register with a valid university email (.ac.lk, .edu.lk, or .edu) to verify your account and view deal codes.
+                </div>
+              </div>
+            )}
+          </div>
+
           <p className="text-on-surface-variant text-base md:text-lg mb-3">
             {userEmail}
           </p>
 
-          {/* Verification Badge */}
+          {/* Verification CTA */}
           <div className="flex flex-wrap items-center gap-3">
-            <span className="inline-flex items-center gap-1.5 bg-primary-container/40 text-primary border border-primary/15 text-xs font-bold px-3 py-1.5 rounded-full">
-              <span className="material-symbols-outlined text-sm">verified</span>
-              Student Status: Verified
-            </span>
-            <button className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant/60 hover:text-primary border border-outline-variant/20 px-3 py-1.5 rounded-full transition-colors">
-              <span className="material-symbols-outlined text-sm">id_card</span>
-              Re-verify ID
-            </button>
+            {!verificationLoading && !isVerified ? (
+              <button
+                type="button"
+                onClick={() => setActiveTab("settings")}
+                className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant/70 hover:text-primary border border-outline-variant/25 px-3 py-1.5 rounded-full transition-colors"
+              >
+                <span className="material-symbols-outlined text-sm">id_card</span>
+                Update Verification Email
+              </button>
+            ) : (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary/90 bg-primary/10 border border-primary/15 px-3 py-1.5 rounded-full">
+                <span className="material-symbols-outlined text-sm">lock_open</span>
+                Deal codes unlocked
+              </span>
+            )}
           </div>
         </div>
 
