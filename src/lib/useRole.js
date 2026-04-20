@@ -14,6 +14,13 @@ export function useRole() {
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const roleChannelRef = useRef(null);
+  const roleChannelUserIdRef = useRef(null);
+  const roleChannelSequenceRef = useRef(0);
+  const roleChannelInstanceIdRef = useRef(
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2)
+  );
 
   useEffect(() => {
     let active = true;
@@ -23,17 +30,33 @@ export function useRole() {
         supabase.removeChannel(roleChannelRef.current);
         roleChannelRef.current = null;
       }
+
+      roleChannelUserIdRef.current = null;
     }
 
     function attachRoleChannel(userId) {
-      detachRoleChannel();
-
       if (!userId) {
+        detachRoleChannel();
         return;
       }
 
+      // Keep existing subscription when the authenticated user hasn't changed.
+      if (roleChannelRef.current && roleChannelUserIdRef.current === userId) {
+        return;
+      }
+
+      detachRoleChannel();
+
+      roleChannelSequenceRef.current += 1;
+      const channelName = [
+        "user-role-sync",
+        userId,
+        roleChannelInstanceIdRef.current,
+        roleChannelSequenceRef.current,
+      ].join("-");
+
       roleChannelRef.current = supabase
-        .channel(`user-role-sync-${userId}`)
+        .channel(channelName)
         .on(
           "postgres_changes",
           {
@@ -47,6 +70,8 @@ export function useRole() {
           }
         )
         .subscribe();
+
+      roleChannelUserIdRef.current = userId;
     }
 
     async function resolveRole(sessionOverride = null) {
