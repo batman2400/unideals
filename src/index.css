@@ -124,6 +124,164 @@
   animation: skeleton-shimmer 1.3s linear infinite;
 }
 
+/* ===================================
+   Hero Slide Animations
+   =================================== */
+
+@keyframes hero-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+    filter: blur(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+}
+@keyframes hero-slide-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0px);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-12px) scale(1.01);
+    filter: blur(3px);
+  }
+}
+
+.hero-slide-active {
+  animation: hero-slide-in 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+.hero-slide-exit {
+  animation: hero-slide-out 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  position: absolute;
+  inset: 0;
+}
+
+/* Auto-progress bar for hero slides */
+@keyframes hero-progress {
+  from { width: 0%; }
+  to   { width: 100%; }
+}
+.hero-progress-bar {
+  animation: hero-progress linear forwards;
+}
+
+/* ===================================
+   Verified Badge Glow
+   =================================== */
+
+@keyframes verified-pulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(41, 105, 91, 0.3), 0 0 20px rgba(41, 105, 91, 0.1);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(41, 105, 91, 0.5), 0 0 36px rgba(41, 105, 91, 0.2);
+  }
+}
+.verified-glow {
+  animation: verified-pulse 2.5s ease-in-out infinite;
+}
+
+@keyframes verified-icon-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 4px rgba(41, 105, 91, 0.4));
+  }
+  50% {
+    filter: drop-shadow(0 0 10px rgba(41, 105, 91, 0.7));
+  }
+}
+.verified-icon-glow {
+  animation: verified-icon-glow 2.5s ease-in-out infinite;
+}
+
+/* ===================================
+   Avatar Upload Overlay
+   =================================== */
+
+.avatar-upload-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  cursor: pointer;
+}
+.avatar-upload-container:hover .avatar-upload-overlay {
+  opacity: 1;
+}
+
+/* ===================================
+   ID Card Glassmorphism
+   =================================== */
+
+.id-card-glass {
+  background: linear-gradient(
+    135deg,
+    rgba(175, 239, 221, 0.12) 0%,
+    rgba(41, 105, 91, 0.06) 50%,
+    rgba(175, 239, 221, 0.08) 100%
+  );
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(175, 239, 221, 0.25);
+  box-shadow:
+    0 8px 32px rgba(41, 105, 91, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+}
+
+/* Unverified amber pulse */
+@keyframes amber-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.amber-pulse {
+  animation: amber-pulse 1.8s ease-in-out infinite;
+}
+
+/* Number counter animation */
+@keyframes count-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-count-up {
+  animation: count-up 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Confetti burst for verification success */
+@keyframes confetti-burst {
+  0% {
+    opacity: 1;
+    transform: scale(0.3);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+.confetti-burst {
+  animation: confetti-burst 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
 @layer base {
   button,
   [role="button"] {

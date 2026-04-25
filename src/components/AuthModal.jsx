@@ -300,12 +300,14 @@ function AuthModal({ isOpen, onClose }) {
                         : "border-outline-variant/20"
                     }`}
                   />
-                    <div className="mt-2 rounded-lg border border-primary/15 bg-primary-container/20 px-3 py-2">
-                      <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-on-surface-variant/80">
-                        <span className="material-symbols-outlined text-sm text-primary mt-0.5">school</span>
-                        Use your university email (.ac.lk or .edu) for instant student verification.
-                      </p>
-                    </div>
+                    {activeTab === "signup" && (
+                      <div className="mt-2 rounded-lg border border-primary/15 bg-primary-container/20 px-3 py-2">
+                        <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-on-surface-variant/80">
+                          <span className="material-symbols-outlined text-sm text-primary mt-0.5">mail</span>
+                          Sign up with any email — you can link your university email later in your profile for instant student verification.
+                        </p>
+                      </div>
+                    )}
                   {errors.email && (
                     <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
                       <span className="material-symbols-outlined text-xs">error</span>

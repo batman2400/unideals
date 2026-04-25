@@ -53,6 +53,7 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
     .join("")
     .toUpperCase()
     .slice(0, 2);
+  const avatarUrl = user?.user_metadata?.avatar_url || null;
 
   // Nav link data
   const navLinks = [
@@ -121,8 +122,14 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                   aria-label="User menu"
                 >
                   {/* Avatar circle */}
-                  <div className="w-9 h-9 rounded-full emerald-gradient flex items-center justify-center shadow-sm">
-                    <span className="text-on-primary font-headline font-black text-sm">{initials}</span>
+                  <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm flex-shrink-0">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full emerald-gradient flex items-center justify-center">
+                        <span className="text-on-primary font-headline font-black text-sm">{initials}</span>
+                      </div>
+                    )}
                   </div>
                   <span className="material-symbols-outlined text-on-surface-variant/60 text-lg">
                     {avatarMenuOpen ? "expand_less" : "expand_more"}
@@ -268,8 +275,14 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
               <div className="pt-4 border-t border-outline-variant/10 space-y-2">
                 {/* User info */}
                 <div className="flex items-center gap-3 py-2">
-                  <div className="w-9 h-9 rounded-full emerald-gradient flex items-center justify-center shadow-sm">
-                    <span className="text-on-primary font-headline font-black text-sm">{initials}</span>
+                  <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm flex-shrink-0">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full emerald-gradient flex items-center justify-center">
+                        <span className="text-on-primary font-headline font-black text-sm">{initials}</span>
+                      </div>
+                    )}
                   </div>
                   <div>
                     <p className="font-headline font-bold text-sm text-on-background">{fullName}</p>
