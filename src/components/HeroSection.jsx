@@ -77,6 +77,7 @@ function HeroSection({ searchQuery, onSearchChange }) {
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
   const progressRef = useRef(null);
+  const exitTimeoutRef = useRef(null);
 
   const goToSlide = useCallback(
     (nextIndex) => {
@@ -84,7 +85,8 @@ function HeroSection({ searchQuery, onSearchChange }) {
       setExitIndex(activeIndex);
       setActiveIndex(nextIndex);
       // Clear exit slide after animation completes
-      setTimeout(() => setExitIndex(null), 500);
+      clearTimeout(exitTimeoutRef.current);
+      exitTimeoutRef.current = setTimeout(() => setExitIndex(null), 500);
     },
     [activeIndex]
   );
@@ -101,7 +103,10 @@ function HeroSection({ searchQuery, onSearchChange }) {
     }
 
     timerRef.current = setInterval(nextSlide, SLIDE_INTERVAL);
-    return () => clearInterval(timerRef.current);
+    return () => {
+      clearInterval(timerRef.current);
+      clearTimeout(exitTimeoutRef.current);
+    };
   }, [isPaused, nextSlide]);
 
   // Reset progress bar animation on slide change
@@ -253,7 +258,7 @@ function SlideContent({ slide, navigate }) {
       {/* CTA button */}
       <button
         onClick={() => navigate(slide.link)}
-        className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.97] transition-all"
+        className="inline-flex items-center gap-2 w-fit emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.97] transition-all"
       >
         {slide.cta}
         <span className="material-symbols-outlined text-lg">arrow_forward</span>

@@ -290,7 +290,7 @@ function AuthModal({ isOpen, onClose }) {
                   </label>
                   <input
                     type="text"
-                    placeholder="you@university.edu"
+                    placeholder="you@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={loading}
