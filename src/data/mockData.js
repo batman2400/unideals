@@ -10,7 +10,7 @@
  *   brand          – parent brand
  *   discount       – display string ("20% OFF", "FREE MONTH", etc.)
  *   type           – "Online" or "In-Store"
- *   category       – one of: Tech, Coffee, Clothing, Fitness, Home, Creative
+ *   category       – one of: Fashion, Food & Drink, Tech & Mobile, Beauty & Care, Learning, Travel & Auto, Health & Fitness, Household, Finance, Events & Tickets
  *   imageUrl       – product image
  *   description    – short blurb
  *   redemptionCode – promo code (Online) or UUID ticket (In-Store)

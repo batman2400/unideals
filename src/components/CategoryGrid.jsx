@@ -33,7 +33,7 @@ function CategoryGrid() {
             key={category.label}
             onClick={() => {
               const params = new URLSearchParams({
-                filter: encodeURIComponent(category.label),
+                filter: category.label,
               });
               navigate(`/categories?${params.toString()}`);
             }}

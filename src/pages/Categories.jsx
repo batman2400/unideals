@@ -42,17 +42,28 @@ const categoryMeta = {
   "Events & Tickets": { icon: "confirmation_number",   color: "text-purple-500" },
 };
 
+// Migration map: old placeholder categories → new V1 names
+const OLD_TO_NEW = {
+  "Tech":     "Tech & Mobile",
+  "Coffee":   "Food & Drink",
+  "Clothing": "Fashion",
+  "Fitness":  "Health & Fitness",
+  "Home":     "Household",
+  "Creative": "Learning",
+};
+
 function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { deals, loading, error } = useDeals();
   const [activeCategory, setActiveCategory] = useState("all");
 
-  // Group deals by category
+  // Group deals by category, migrating old names to new V1 taxonomy
   const grouped = useMemo(
     () =>
       deals.reduce((acc, deal) => {
-        if (!acc[deal.category]) acc[deal.category] = [];
-        acc[deal.category].push(deal);
+        const cat = OLD_TO_NEW[deal.category] || deal.category;
+        if (!acc[cat]) acc[cat] = [];
+        acc[cat].push(deal);
         return acc;
       }, {}),
     [deals]
@@ -66,18 +77,15 @@ function Categories() {
 
   // Decode the URL filter param — handles both encoded (%26) and raw (&)
   useEffect(() => {
-    const rawFilter = searchParams.get("filter");
+    const filterParam = searchParams.get("filter");
 
-    if (!rawFilter) {
+    if (!filterParam) {
       setActiveCategory("all");
       return;
     }
 
-    // Decode in case the value was double-encoded by encodeURIComponent
-    const decodedFilter = decodeURIComponent(rawFilter);
-
     const matchedCategory = OFFICIAL_CATEGORIES.find(
-      (category) => category.toLowerCase() === decodedFilter.toLowerCase()
+      (category) => category.toLowerCase() === filterParam.toLowerCase()
     );
 
     setActiveCategory(matchedCategory || "all");
