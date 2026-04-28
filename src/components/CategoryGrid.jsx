@@ -1,22 +1,25 @@
 /**
  * CategoryGrid Component
  *
- * A row of category buttons (Coffee, Laptops, Clothing, etc.)
- * that users can click to navigate to the Categories page.
+ * A grid of category cards for the 10 official V1 categories.
+ * Each card navigates to the Categories page with a URL-safe filter param.
  *
- * TIP: The categories are stored in a simple array at the top.
- * To add/remove categories, just edit this array!
+ * Uses Material Symbols for premium icons.
  */
 import { useNavigate } from "react-router-dom";
 
-// Each category has an icon name (from Material Symbols) and a label
+// Official V1 taxonomy — icon (Material Symbols) + label
 const categories = [
-  { icon: "coffee", label: "Coffee" },
-  { icon: "laptop_mac", label: "Tech" },
-  { icon: "apparel", label: "Clothing" },
-  { icon: "fitness_center", label: "Fitness" },
-  { icon: "home", label: "Home" },
-  { icon: "palette", label: "Creative" },
+  { icon: "checkroom",       label: "Fashion" },
+  { icon: "restaurant",      label: "Food & Drink" },
+  { icon: "smartphone",      label: "Tech & Mobile" },
+  { icon: "spa",             label: "Beauty & Care" },
+  { icon: "school",          label: "Learning" },
+  { icon: "flight",          label: "Travel & Auto" },
+  { icon: "fitness_center",  label: "Health & Fitness" },
+  { icon: "home",            label: "Household" },
+  { icon: "account_balance", label: "Finance" },
+  { icon: "confirmation_number", label: "Events & Tickets" },
 ];
 
 function CategoryGrid() {
@@ -24,12 +27,14 @@ function CategoryGrid() {
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-12">
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-5 gap-4">
         {categories.map((category) => (
           <button
             key={category.label}
             onClick={() => {
-              const params = new URLSearchParams({ filter: category.label });
+              const params = new URLSearchParams({
+                filter: encodeURIComponent(category.label),
+              });
               navigate(`/categories?${params.toString()}`);
             }}
             className="bg-surface-container-low p-6 flex flex-col items-center justify-center gap-4 rounded-xl group hover:bg-surface-container transition-colors cursor-pointer active:scale-[0.97]"

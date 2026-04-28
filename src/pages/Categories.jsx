@@ -5,6 +5,8 @@
  * each group as a titled section with its own DealGrid.
  * Syncs active category with the `filter` URL search param.
  * Fetches from Supabase.
+ *
+ * V1 — 10 official categories with URL-decoded filter support.
  */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
@@ -12,14 +14,32 @@ import { useDeals } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
+// Official V1 category taxonomy
+const OFFICIAL_CATEGORIES = [
+  "Fashion",
+  "Food & Drink",
+  "Tech & Mobile",
+  "Beauty & Care",
+  "Learning",
+  "Travel & Auto",
+  "Health & Fitness",
+  "Household",
+  "Finance",
+  "Events & Tickets",
+];
+
 // Category metadata — icon + colour accent for each section header
 const categoryMeta = {
-  Tech:     { icon: "laptop_mac",       color: "text-blue-500" },
-  Coffee:   { icon: "coffee",           color: "text-amber-600" },
-  Clothing: { icon: "apparel",          color: "text-pink-500" },
-  Fitness:  { icon: "fitness_center",   color: "text-orange-500" },
-  Home:     { icon: "home",             color: "text-teal-500" },
-  Creative: { icon: "palette",          color: "text-purple-500" },
+  "Fashion":          { icon: "checkroom",            color: "text-pink-500" },
+  "Food & Drink":     { icon: "restaurant",           color: "text-amber-600" },
+  "Tech & Mobile":    { icon: "smartphone",           color: "text-blue-500" },
+  "Beauty & Care":    { icon: "spa",                  color: "text-rose-400" },
+  "Learning":         { icon: "school",               color: "text-indigo-500" },
+  "Travel & Auto":    { icon: "flight",               color: "text-sky-500" },
+  "Health & Fitness": { icon: "fitness_center",        color: "text-orange-500" },
+  "Household":        { icon: "home",                 color: "text-teal-500" },
+  "Finance":          { icon: "account_balance",       color: "text-emerald-500" },
+  "Events & Tickets": { icon: "confirmation_number",   color: "text-purple-500" },
 };
 
 function Categories() {
@@ -38,22 +58,30 @@ function Categories() {
     [deals]
   );
 
-  const categoryNames = useMemo(() => Object.keys(grouped), [grouped]);
+  // Use official categories that have deals, preserving official order
+  const categoryNames = useMemo(() => {
+    const withDeals = new Set(Object.keys(grouped));
+    return OFFICIAL_CATEGORIES.filter((cat) => withDeals.has(cat));
+  }, [grouped]);
 
+  // Decode the URL filter param — handles both encoded (%26) and raw (&)
   useEffect(() => {
-    const filterParam = searchParams.get("filter");
+    const rawFilter = searchParams.get("filter");
 
-    if (!filterParam) {
+    if (!rawFilter) {
       setActiveCategory("all");
       return;
     }
 
-    const matchedCategory = categoryNames.find(
-      (category) => category.toLowerCase() === filterParam.toLowerCase()
+    // Decode in case the value was double-encoded by encodeURIComponent
+    const decodedFilter = decodeURIComponent(rawFilter);
+
+    const matchedCategory = OFFICIAL_CATEGORIES.find(
+      (category) => category.toLowerCase() === decodedFilter.toLowerCase()
     );
 
     setActiveCategory(matchedCategory || "all");
-  }, [searchParams, categoryNames]);
+  }, [searchParams]);
 
   const handleCategoryChange = (category) => {
     setActiveCategory(category);
@@ -82,11 +110,11 @@ function Categories() {
           Deals by <span className="text-primary italic">Category.</span>
         </h1>
         <p className="text-on-surface-variant text-lg max-w-xl">
-          Find student deals sorted by what matters to you — from tech and
-          coffee to fitness and fashion.
+          Find student deals sorted by what matters to you — from fashion and
+          food to tech and events.
         </p>
 
-        {/* Category Filter Controls */}
+        {/* Category Filter Tabs */}
         {!loading && !error && categoryNames.length > 0 && (
           <div className="flex flex-wrap gap-3 mt-8">
             <button
@@ -100,7 +128,7 @@ function Categories() {
               All Categories
             </button>
 
-            {categoryNames.map((category) => (
+            {OFFICIAL_CATEGORIES.map((category) => (
               <button
                 key={category}
                 onClick={() => handleCategoryChange(category)}

@@ -15,7 +15,18 @@ import {
 } from "../../lib/dealOffer";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 
-const CATEGORY_OPTIONS = ["Tech", "Coffee", "Clothing", "Fitness", "Home", "Creative"];
+const CATEGORY_OPTIONS = [
+  "Fashion",
+  "Food & Drink",
+  "Tech & Mobile",
+  "Beauty & Care",
+  "Learning",
+  "Travel & Auto",
+  "Health & Fitness",
+  "Household",
+  "Finance",
+  "Events & Tickets",
+];
 const TYPE_OPTIONS = ["Online", "In-Store"];
 
 const INITIAL_FORM = {
@@ -23,7 +34,7 @@ const INITIAL_FORM = {
   brand: "",
   discount: "",
   type: "Online",
-  category: "Tech",
+  category: "Fashion",
   imageUrl: "",
   description: "",
   redemptionCode: "",
