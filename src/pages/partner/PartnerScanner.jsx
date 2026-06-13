@@ -80,6 +80,76 @@ function PartnerScanner() {
     setCameraActive(false);
   }, []);
 
+  // Use a ref so the interval callback always calls the latest processCode
+  const processCodeRef = useRef(null);
+
+  const processCode = useCallback(async (code, method = "manual") => {
+    setVerifying(true);
+    setError("");
+    setResult(null);
+
+    try {
+      // Try the new ticket-based validation first
+      const { data, error: rpcError } = await supabase.rpc(
+        "validate_instore_ticket",
+        {
+          scanned_payload: code,
+          scan_method: method,
+        },
+      );
+
+      if (!isMountedRef.current) return;
+
+      if (rpcError) {
+        throw rpcError;
+      }
+
+      const row = data?.[0];
+      if (row) {
+        setResult(row);
+      } else {
+        setResult({
+          result: "error",
+          message: "Unexpected response from server.",
+        });
+      }
+    } catch (err) {
+      if (!isMountedRef.current) return;
+
+      // Fallback to legacy scanner if new RPC doesn't exist
+      try {
+        const { data, error: legacyError } = await supabase.rpc(
+          "record_partner_redemption_scan",
+          {
+            scanned_payload: code,
+            scan_method: method,
+          },
+        );
+
+        if (!isMountedRef.current) return;
+
+        if (legacyError) throw legacyError;
+
+        const row = data?.[0];
+        if (row) {
+          setResult(row);
+        }
+      } catch (fallbackErr) {
+        if (!isMountedRef.current) return;
+        setError(
+          fallbackErr?.message || "Verification failed. Please try again.",
+        );
+      }
+    } finally {
+      if (isMountedRef.current) setVerifying(false);
+    }
+  }, []);
+
+  // Keep the ref always pointing to the latest processCode
+  useEffect(() => {
+    processCodeRef.current = processCode;
+  }, [processCode]);
+
   const startCamera = useCallback(async () => {
     setCameraError("");
     setResult(null);
@@ -143,7 +213,7 @@ function PartnerScanner() {
           }
         }
 
-        if (!codeValue && jsQR) {
+        if (!codeValue) {
           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const qr = jsQR(imgData.data, canvas.width, canvas.height);
           if (qr) codeValue = qr.data;
@@ -151,7 +221,9 @@ function PartnerScanner() {
 
         if (codeValue) {
           stopCamera();
-          processCode(codeValue, "camera");
+          if (processCodeRef.current) {
+            processCodeRef.current(codeValue, "camera");
+          }
         }
       }, 350);
     } catch (err) {
@@ -160,67 +232,6 @@ function PartnerScanner() {
     }
   }, [stopCamera]);
 
-  const processCode = useCallback(async (code, method = "manual") => {
-    setVerifying(true);
-    setError("");
-    setResult(null);
-
-    try {
-      // Try the new ticket-based validation first
-      const { data, error: rpcError } = await supabase.rpc(
-        "validate_instore_ticket",
-        {
-          scanned_payload: code,
-          scan_method: method,
-        },
-      );
-
-      if (!isMountedRef.current) return;
-
-      if (rpcError) {
-        throw rpcError;
-      }
-
-      const row = data?.[0];
-      if (row) {
-        setResult(row);
-      } else {
-        setResult({
-          result: "error",
-          message: "Unexpected response from server.",
-        });
-      }
-    } catch (err) {
-      if (!isMountedRef.current) return;
-
-      // Fallback to legacy scanner if new RPC doesn't exist
-      try {
-        const { data, error: legacyError } = await supabase.rpc(
-          "record_partner_redemption_scan",
-          {
-            scanned_payload: code,
-            scan_method: method,
-          },
-        );
-
-        if (!isMountedRef.current) return;
-
-        if (legacyError) throw legacyError;
-
-        const row = data?.[0];
-        if (row) {
-          setResult(row);
-        }
-      } catch (fallbackErr) {
-        if (!isMountedRef.current) return;
-        setError(
-          fallbackErr?.message || "Verification failed. Please try again.",
-        );
-      }
-    } finally {
-      if (isMountedRef.current) setVerifying(false);
-    }
-  }, []);
 
   const handleManualSubmit = useCallback(
     (e) => {
