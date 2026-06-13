@@ -139,37 +139,103 @@ function Profile({ isLoggedIn, user }) {
   };
 
   // ── University email verification ───────────────────
+  const [verificationStep, setVerificationStep] = useState(1);
   const [uniEmail, setUniEmail] = useState("");
+  const [otpCode, setOtpCode] = useState("");
   const [uniVerifying, setUniVerifying] = useState(false);
   const [uniError, setUniError] = useState("");
   const [uniSuccess, setUniSuccess] = useState(false);
+  
+  // Custom allowed domains from backend
+  const [allowedDomains, setAllowedDomains] = useState([]);
+  
+  // Countdown timer for resend OTP
+  const [resendCooldown, setResendCooldown] = useState(0);
 
-  const handleUniVerify = async (e) => {
-    e.preventDefault();
+  useEffect(() => {
+    let active = true;
+    async function fetchAllowedDomains() {
+      const { data, error } = await supabase.from('allowed_domains').select('domain');
+      if (active && !error && data) {
+        setAllowedDomains(data.map(d => d.domain.toLowerCase()));
+      }
+    }
+    fetchAllowedDomains();
+    return () => { active = false; };
+  }, []);
+
+  useEffect(() => {
+    let timer;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleRequestVerification = async (e) => {
+    e?.preventDefault();
     setUniError("");
     setUniSuccess(false);
+    
     const normalized = uniEmail.trim().toLowerCase();
     if (!normalized.includes("@")) {
       setUniError("Please enter a valid email address.");
       return;
     }
-    if (
-      !(
-        normalized.endsWith(".ac.lk") ||
-        normalized.endsWith(".edu.lk") ||
-        normalized.endsWith(".sliit.lk") ||
-        normalized.endsWith(".edu") ||
-        normalized.endsWith(".edu.au") ||
-        normalized.endsWith(".ac.uk")
-      )
-    ) {
-      setUniError("Email must end with .ac.lk, .edu.lk, .sliit.lk, .edu, .edu.au, or .ac.uk");
+    
+    const domainPart = normalized.split("@")[1];
+    const isUniversalSuffix = 
+      normalized.endsWith(".ac.lk") ||
+      normalized.endsWith(".edu.lk") ||
+      normalized.endsWith(".sliit.lk") ||
+      normalized.endsWith(".edu") ||
+      normalized.endsWith(".edu.au") ||
+      normalized.endsWith(".ac.uk");
+      
+    const isCustomDomain = allowedDomains.includes(domainPart);
+    
+    if (!isUniversalSuffix && !isCustomDomain) {
+      setUniError("Please use your official university or institutional student email address.");
       return;
     }
+    
     setUniVerifying(true);
     try {
-      const { data, error } = await supabase.rpc("verify_university_email", {
-        uni_email: normalized,
+      const { data, error } = await supabase.rpc("request_university_verification", {
+        target_email: normalized,
+      });
+      if (error) throw error;
+      if (data?.success) {
+        setVerificationStep(2);
+        setResendCooldown(60); // 60 seconds cooldown
+        // Note: For beta testing, we could log the OTP here. 
+        console.log("OTP for testing:", data.otp);
+      } else {
+        setUniError(data?.error || "Failed to request verification.");
+      }
+    } catch (err) {
+      setUniError(err.message || "An error occurred.");
+    } finally {
+      setUniVerifying(false);
+    }
+  };
+
+  const handleConfirmVerification = async (e) => {
+    e.preventDefault();
+    setUniError("");
+    
+    if (otpCode.length !== 6) {
+      setUniError("Please enter a valid 6-digit code.");
+      return;
+    }
+    
+    setUniVerifying(true);
+    try {
+      const { data, error } = await supabase.rpc("confirm_university_verification", {
+        entered_email: uniEmail.trim().toLowerCase(),
+        entered_code: otpCode,
       });
       if (error) throw error;
       if (data?.success) {
@@ -182,6 +248,12 @@ function Profile({ isLoggedIn, user }) {
       setUniError(err.message || "An error occurred.");
     } finally {
       setUniVerifying(false);
+    }
+  };
+
+  const handleResendOtp = () => {
+    if (resendCooldown === 0) {
+      handleRequestVerification();
     }
   };
 
@@ -624,33 +696,79 @@ function Profile({ isLoggedIn, user }) {
                   </p>
                 </div>
               </div>
-              <form
-                onSubmit={handleUniVerify}
-                className="flex flex-col sm:flex-row gap-3"
-              >
-                <input
-                  type="email"
-                  placeholder="you@university.edu"
-                  value={uniEmail}
-                  onChange={(e) => setUniEmail(e.target.value)}
-                  disabled={uniVerifying}
-                  className="flex-1 bg-surface border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50"
-                />
-                <button
-                  type="submit"
-                  disabled={uniVerifying}
-                  className="emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
+              {verificationStep === 1 ? (
+                <form
+                  onSubmit={handleRequestVerification}
+                  className="flex flex-col sm:flex-row gap-3 animate-fade-in"
                 >
-                  {uniVerifying ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                      Verifying...
-                    </>
-                  ) : (
-                    "Verify Email"
-                  )}
-                </button>
-              </form>
+                  <input
+                    type="email"
+                    placeholder="you@university.edu"
+                    value={uniEmail}
+                    onChange={(e) => setUniEmail(e.target.value)}
+                    disabled={uniVerifying}
+                    className="flex-1 bg-surface border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50"
+                  />
+                  <button
+                    type="submit"
+                    disabled={uniVerifying}
+                    className="emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
+                  >
+                    {uniVerifying ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                        Sending...
+                      </>
+                    ) : (
+                      "Send Code"
+                    )}
+                  </button>
+                </form>
+              ) : (
+                <div className="animate-fade-in space-y-3">
+                  <form
+                    onSubmit={handleConfirmVerification}
+                    className="flex flex-col sm:flex-row gap-3"
+                  >
+                    <input
+                      type="text"
+                      placeholder="Enter 6-digit code"
+                      maxLength={6}
+                      value={otpCode}
+                      onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                      disabled={uniVerifying}
+                      className="flex-1 bg-surface border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body text-center tracking-widest focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50"
+                    />
+                    <button
+                      type="submit"
+                      disabled={uniVerifying || otpCode.length !== 6}
+                      className="emerald-gradient text-on-primary px-6 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2 whitespace-nowrap"
+                    >
+                      {uniVerifying ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                          Verifying...
+                        </>
+                      ) : (
+                        "Verify Code"
+                      )}
+                    </button>
+                  </form>
+                  <div className="flex items-center justify-between text-xs font-bold text-on-surface-variant px-1">
+                    <span>Sent to {uniEmail}</span>
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={resendCooldown > 0 || uniVerifying}
+                      className="text-primary hover:underline disabled:text-on-surface-variant/50 disabled:no-underline transition-colors"
+                    >
+                      {resendCooldown > 0
+                        ? `Resend available in ${resendCooldown}s`
+                        : "Resend Code"}
+                    </button>
+                  </div>
+                </div>
+              )}
               {uniError && (
                 <div className="flex items-center gap-2 mt-3 text-error text-xs font-bold">
                   <span className="material-symbols-outlined text-xs">
