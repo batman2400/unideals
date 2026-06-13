@@ -141,11 +141,13 @@ function PartnerOverview() {
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
-        {metricCards.map((card) => (
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
+        {metricCards.map((card, idx) => (
           <article
             key={card.label}
-            className="bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow"
+            className={`bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow ${
+              idx === 4 ? "col-span-2 md:col-span-1" : ""
+            }`}
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">

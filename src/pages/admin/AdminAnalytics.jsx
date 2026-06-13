@@ -178,30 +178,48 @@ function AdminAnalytics() {
             <div className="p-8 text-center text-on-surface-variant text-sm">No brand analytics yet.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
-                <thead>
-                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Brand</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Total Scans</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Valid</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Failed</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Confirmed</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Conv. Rate</th>
+              <table className="w-full block md:table">
+                <thead className="hidden md:table-header-group">
+                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Brand</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Total Scans</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Valid</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Failed</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Confirmed</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Conv. Rate</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-outline-variant/8">
+                <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                   {shopStats.map((row) => {
                     const rate = row.total_scans > 0
                       ? ((row.confirmed_redemptions / row.total_scans) * 100).toFixed(1)
                       : "0.0";
                     return (
-                      <tr key={row.brand} className="hover:bg-surface-container-low/30 transition-colors">
-                        <td className="px-4 py-3 font-headline font-bold text-sm text-on-background">{row.brand}</td>
-                        <td className="px-4 py-3 text-sm text-right text-on-background tabular-nums">{row.total_scans}</td>
-                        <td className="px-4 py-3 text-sm text-right text-emerald-600 font-bold tabular-nums">{row.valid_scans}</td>
-                        <td className="px-4 py-3 text-sm text-right text-red-600 font-bold tabular-nums">{row.failed_scans}</td>
-                        <td className="px-4 py-3 text-sm text-right text-on-background font-bold tabular-nums">{row.confirmed_redemptions}</td>
-                        <td className="px-4 py-3 text-sm text-right text-primary font-bold tabular-nums">{rate}%</td>
+                      <tr key={row.brand} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
+                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Brand</span>
+                          <span className="text-right md:text-left">{row.brand}</span>
+                        </td>
+                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background tabular-nums">
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Total Scans</span>
+                          <span className="text-right md:text-right">{row.total_scans}</span>
+                        </td>
+                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold tabular-nums">
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Valid</span>
+                          <span className="text-right md:text-right">{row.valid_scans}</span>
+                        </td>
+                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-red-600 font-bold tabular-nums">
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Failed</span>
+                          <span className="text-right md:text-right">{row.failed_scans}</span>
+                        </td>
+                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold tabular-nums">
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Confirmed</span>
+                          <span className="text-right md:text-right">{row.confirmed_redemptions}</span>
+                        </td>
+                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm text-primary font-bold tabular-nums">
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Conv. Rate</span>
+                          <span className="text-right md:text-right">{rate}%</span>
+                        </td>
                       </tr>
                     );
                   })}
@@ -215,21 +233,25 @@ function AdminAnalytics() {
             <div className="p-8 text-center text-on-surface-variant text-sm">No deal analytics for this brand.</div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[700px]">
-                <thead>
-                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Deal</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Status</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Reveals</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Tickets</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Redeemed</th>
+              <table className="w-full block md:table">
+                <thead className="hidden md:table-header-group">
+                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Deal</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Status</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Reveals</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Tickets</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Redeemed</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-outline-variant/8">
+                <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                   {filteredDeals.map((d) => (
-                    <tr key={d.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-4 py-3 font-headline font-bold text-sm text-on-background">{d.title}</td>
-                      <td className="px-4 py-3">
+                    <tr key={d.id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Deal</span>
+                        <span className="text-right md:text-left truncate max-w-[200px]">{d.title}</span>
+                      </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Status</span>
                         <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
                           d.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                           d.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
@@ -238,9 +260,18 @@ function AdminAnalytics() {
                           {d.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_reveals}</td>
-                      <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_tickets_generated}</td>
-                      <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600 tabular-nums">{d.total_tickets_redeemed}</td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Reveals</span>
+                        <span className="text-right md:text-right">{d.total_reveals}</span>
+                      </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Tickets</span>
+                        <span className="text-right md:text-right">{d.total_tickets_generated}</span>
+                      </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Redeemed</span>
+                        <span className="text-right md:text-right">{d.total_tickets_redeemed}</span>
+                      </td>
                     </tr>
                   ))}
                 </tbody>

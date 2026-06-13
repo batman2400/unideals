@@ -179,33 +179,34 @@ function AdminAllDeals() {
       ) : (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px]">
-              <thead>
-                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Deal</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Brand</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Status</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Type</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Reveals</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Tickets</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Redeemed</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Actions</th>
+            <table className="w-full block md:table">
+              <thead className="hidden md:table-header-group">
+                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Deal</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Brand</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Status</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Type</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Reveals</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Tickets</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Redeemed</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant/8">
+              <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {deals.map((deal) => {
                   const isActing = actingDealId === deal.id;
                   const badge = STATUS_BADGE[deal.status] || STATUS_BADGE.pending;
 
                   return (
-                    <tr key={deal.id} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden bg-surface-container-low flex-shrink-0">
+                    <tr key={deal.id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Deal</span>
+                        <div className="flex items-center gap-3 max-w-[220px] md:max-w-none text-right md:text-left">
+                          <div className="hidden md:block w-10 h-10 rounded-lg overflow-hidden bg-surface-container-low flex-shrink-0">
                             <img src={deal.image_url} alt="" className="w-full h-full object-cover" />
                           </div>
                           <div className="min-w-0">
-                            <p className="font-headline font-bold text-sm text-on-background truncate max-w-[200px]">
+                            <p className="font-headline font-bold text-sm text-on-background truncate max-w-[150px] md:max-w-[200px]">
                               {deal.title}
                             </p>
                             <p className="text-[10px] text-on-surface-variant font-bold tracking-wider uppercase">
@@ -214,24 +215,34 @@ function AdminAllDeals() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-on-surface-variant font-bold">{deal.brand}</td>
-                      <td className="px-4 py-3">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant font-bold">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Brand</span>
+                        <span className="text-right md:text-left">{deal.brand}</span>
+                      </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Status</span>
                         <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}>
                           {deal.status}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-on-surface-variant">{deal.type}</td>
-                      <td className="px-4 py-3 text-sm text-right text-on-background font-bold tabular-nums">
-                        {deal.total_reveals ?? 0}
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Type</span>
+                        <span className="text-right md:text-left">{deal.type}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-right text-on-background font-bold tabular-nums">
-                        {deal.total_tickets_generated ?? 0}
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-right tabular-nums">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Reveals</span>
+                        <span>{deal.total_reveals ?? 0}</span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-right text-emerald-600 font-bold tabular-nums">
-                        {deal.total_tickets_redeemed ?? 0}
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-right tabular-nums">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Tickets</span>
+                        <span>{deal.total_tickets_generated ?? 0}</span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center justify-end gap-1.5">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold md:text-right tabular-nums">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Redeemed</span>
+                        <span>{deal.total_tickets_redeemed ?? 0}</span>
+                      </td>
+                      <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
+                        <div className="flex items-center justify-end gap-1.5 w-full md:w-auto">
                           {deal.status !== "approved" && (
                             <button
                               onClick={() => handleStatusChange(deal.id, "approved")}

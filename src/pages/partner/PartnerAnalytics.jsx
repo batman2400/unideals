@@ -192,25 +192,32 @@ function PartnerAnalytics() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <thead>
-                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Deal</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Type</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Status</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Reveals</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Copies</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Clicks</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Tickets</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Redeemed</th>
+            <table className="w-full block md:table">
+              <thead className="hidden md:table-header-group">
+                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Deal</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Type</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Status</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Reveals</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Copies</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Clicks</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Tickets</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Redeemed</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant/8">
+              <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {dealStats.map((d) => (
-                  <tr key={d.deal_id} className="hover:bg-surface-container-low/30 transition-colors">
-                    <td className="px-4 py-3 font-headline font-bold text-sm text-on-background">{d.deal_title}</td>
-                    <td className="px-4 py-3 text-sm text-on-surface-variant">{d.deal_type}</td>
-                    <td className="px-4 py-3">
+                  <tr key={d.deal_id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Deal</span>
+                      <span className="text-right md:text-left truncate max-w-[200px]">{d.deal_title}</span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Type</span>
+                      <span className="text-right md:text-left">{d.deal_type}</span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Status</span>
                       <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
                         d.deal_status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
                         d.deal_status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
@@ -219,11 +226,26 @@ function PartnerAnalytics() {
                         {d.deal_status}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_reveals}</td>
-                    <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_copies}</td>
-                    <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_click_throughs}</td>
-                    <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_tickets_generated}</td>
-                    <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600 tabular-nums">{d.total_tickets_redeemed}</td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Reveals</span>
+                      <span className="text-right md:text-right">{d.total_reveals}</span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Copies</span>
+                      <span className="text-right md:text-right">{d.total_copies}</span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Clicks</span>
+                      <span className="text-right md:text-right">{d.total_click_throughs}</span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Tickets</span>
+                      <span className="text-right md:text-right">{d.total_tickets_generated}</span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Redeemed</span>
+                      <span className="text-right md:text-right">{d.total_tickets_redeemed}</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>

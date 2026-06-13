@@ -250,33 +250,36 @@ function AdminUsers() {
       ) : (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px]">
-              <thead>
-                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Email</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Role</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Verified</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Brand</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Joined</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Actions</th>
+            <table className="w-full block md:table">
+              <thead className="hidden md:table-header-group">
+                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Email</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Role</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Verified</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Brand</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Joined</th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-outline-variant/8">
+              <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {users.map((u) => {
                   const badge = ROLE_BADGE[u.role] || ROLE_BADGE.student;
                   const isActing = actingUserId === u.user_id;
 
                   return (
-                    <tr key={u.user_id} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-bold text-on-background truncate max-w-[240px]">{u.email}</p>
+                    <tr key={u.user_id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Email</span>
+                        <p className="text-sm font-bold text-on-background truncate max-w-[200px] md:max-w-[240px] text-right md:text-left">{u.email}</p>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Role</span>
                         <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}>
                           {u.role}
                         </span>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Verified</span>
                         {u.is_verified ? (
                           <span className="material-symbols-outlined text-emerald-500 text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
                             verified
@@ -287,14 +290,16 @@ function AdminUsers() {
                           </span>
                         )}
                       </td>
-                      <td className="px-4 py-3 text-sm text-on-surface-variant">
-                        {u.brand_name || "—"}
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Brand</span>
+                        <span className="text-right md:text-left">{u.brand_name || "—"}</span>
                       </td>
-                      <td className="px-4 py-3 text-xs text-on-surface-variant">
-                        {new Date(u.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-xs text-on-surface-variant">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Joined</span>
+                        <span>{new Date(u.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}</span>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex justify-end gap-1.5">
+                      <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
+                        <div className="flex justify-end gap-1.5 w-full md:w-auto">
                           {u.role === "partner" && (
                             <button
                               onClick={() => handleDemote(u.user_id, u.email)}
