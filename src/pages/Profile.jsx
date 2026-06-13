@@ -39,7 +39,7 @@ function Profile({ isLoggedIn, user }) {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const { deals, loading: dealsLoading, error: dealsError } = useDeals();
-  const { isVerified, loading: verificationLoading, refreshRole } = useRoleContext();
+  const { isVerified, role, loading: verificationLoading, refreshRole } = useRoleContext();
 
   // ── Saved deals ─────────────────────────────────────
   const [savedDealIds, setSavedDealIds] = useState([]);
@@ -181,9 +181,11 @@ function Profile({ isLoggedIn, user }) {
           </div>
           <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
           {/* Verified mini badge on avatar */}
-          {!verificationLoading && isVerified && (
+          {!verificationLoading && (isVerified || role === "admin" || role === "partner") && (
             <div className="absolute -bottom-1.5 -right-1.5 w-7 h-7 rounded-full bg-background flex items-center justify-center shadow-md verified-glow">
-              <span className="material-symbols-outlined text-primary text-base verified-icon-glow" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+              <span className="material-symbols-outlined text-primary text-base verified-icon-glow" style={{ fontVariationSettings: "'FILL' 1" }}>
+                {role === "admin" ? "verified_user" : "verified"}
+              </span>
             </div>
           )}
         </div>
@@ -196,6 +198,16 @@ function Profile({ isLoggedIn, user }) {
               <span className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant border border-outline-variant/20 text-xs font-bold px-3 py-1.5 rounded-full">
                 <span className="material-symbols-outlined text-sm animate-spin">progress_activity</span>
                 Checking Status
+              </span>
+            ) : role === "admin" ? (
+              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/25 text-xs font-bold px-3 py-1.5 rounded-full shadow-[0_0_26px_rgba(41,105,91,0.28)]">
+                <span className="material-symbols-outlined text-sm verified-icon-glow" style={{ fontVariationSettings: "'FILL' 1" }}>verified_user</span>
+                Verified Admin
+              </span>
+            ) : role === "partner" ? (
+              <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/25 text-xs font-bold px-3 py-1.5 rounded-full shadow-[0_0_26px_rgba(41,105,91,0.28)]">
+                <span className="material-symbols-outlined text-sm verified-icon-glow" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
+                Verified Brand
               </span>
             ) : isVerified ? (
               <span className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/25 text-xs font-bold px-3 py-1.5 rounded-full shadow-[0_0_26px_rgba(41,105,91,0.28)]">
@@ -212,13 +224,13 @@ function Profile({ isLoggedIn, user }) {
           </div>
           <p className="text-on-surface-variant text-base md:text-lg mb-3">{userEmail}</p>
           <div className="flex flex-wrap items-center gap-3">
-            {!verificationLoading && !isVerified && (
+            {!verificationLoading && role === "student" && !isVerified && (
               <button type="button" onClick={() => setActiveTab("settings")} className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant/70 hover:text-primary border border-outline-variant/25 px-3 py-1.5 rounded-full transition-colors">
                 <span className="material-symbols-outlined text-sm">id_card</span>
                 Verify Student Status
               </button>
             )}
-            {!verificationLoading && isVerified && (
+            {!verificationLoading && (isVerified || role === "admin" || role === "partner") && (
               <span className="inline-flex items-center gap-1.5 text-xs font-bold text-primary/90 bg-primary/10 border border-primary/15 px-3 py-1.5 rounded-full">
                 <span className="material-symbols-outlined text-sm">lock_open</span>
                 Deal codes unlocked
@@ -264,7 +276,7 @@ function Profile({ isLoggedIn, user }) {
           <div>
             <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Status</p>
             <p className="font-headline font-bold text-on-background flex items-center gap-1.5">
-              {isVerified ? (
+              {(isVerified || role === "admin" || role === "partner") ? (
                 <><span className="w-2 h-2 rounded-full bg-primary" />Verified</>
               ) : (
                 <><span className="w-2 h-2 rounded-full bg-[#d4a017] amber-pulse" />Pending</>
@@ -360,7 +372,7 @@ function Profile({ isLoggedIn, user }) {
           </div>
 
           {/* University Email Verification */}
-          {!isVerified && (
+          {role === "student" && !isVerified && (
             <div className="bg-primary-container/15 border border-primary/15 rounded-xl p-5 md:p-6 mb-8 animate-modal-enter">
               <div className="flex items-start gap-3 mb-4">
                 <span className="material-symbols-outlined text-primary text-2xl mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
@@ -405,11 +417,13 @@ function Profile({ isLoggedIn, user }) {
           )}
 
           {/* Verified university email display */}
-          {isVerified && !uniSuccess && (
+          {(isVerified || role === "admin" || role === "partner") && !uniSuccess && (
             <div className="bg-primary/5 border border-primary/15 rounded-xl p-5 mb-8 flex items-center gap-3">
               <span className="material-symbols-outlined text-primary text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>verified</span>
               <div>
-                <p className="font-headline font-bold text-sm text-on-background">Student Status Verified</p>
+                <p className="font-headline font-bold text-sm text-on-background">
+                  {role === "admin" ? "Admin Status Verified" : role === "partner" ? "Brand Status Verified" : "Student Status Verified"}
+                </p>
                 <p className="text-on-surface-variant text-xs mt-0.5">Full access to all deal codes and in-store perks.</p>
               </div>
             </div>
