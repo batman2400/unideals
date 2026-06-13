@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrandName, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
+import { getPartnerBrand, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 const STATUS_BADGE = {
@@ -49,7 +49,7 @@ function PartnerDeals() {
     async function fetchDeals() {
       setLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
+      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
       if (!active) return;
       if (brandError || !brandName) {
         setError(brandError || "No brand profile found.");

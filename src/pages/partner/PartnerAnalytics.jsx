@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrandName } from "../../lib/partnerBrand";
+import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerAnalytics() {
@@ -35,7 +35,7 @@ function PartnerAnalytics() {
     async function fetchAnalytics() {
       setLoading(true);
 
-      const { brandName } = await getPartnerBrandName(targetUserId);
+      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
       if (!active) return;
       setPartnerBrand(brandName || "");
 

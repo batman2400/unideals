@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrandName } from "../../lib/partnerBrand";
+import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerScanner() {
@@ -46,7 +46,7 @@ function PartnerScanner() {
     let active = true;
 
     async function init() {
-      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
+      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
       if (!active) return;
       setPartnerBrand(brandName || "");
       if (brandError) setError(brandError);

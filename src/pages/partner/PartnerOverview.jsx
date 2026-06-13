@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrandName } from "../../lib/partnerBrand";
+import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerOverview() {
@@ -32,7 +32,7 @@ function PartnerOverview() {
     async function fetchData() {
       setLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
+      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
       if (!active) return;
       if (brandError || !brandName) {
         setError(brandError || "No brand profile found. Create your first deal to set up your brand.");
