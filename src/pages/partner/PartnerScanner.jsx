@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
+import jsQR from "jsqr";
 
 function PartnerScanner() {
   const {
@@ -142,9 +143,9 @@ function PartnerScanner() {
           }
         }
 
-        if (!codeValue && window.jsQR) {
+        if (!codeValue && jsQR) {
           const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const qr = window.jsQR(imgData.data, canvas.width, canvas.height);
+          const qr = jsQR(imgData.data, canvas.width, canvas.height);
           if (qr) codeValue = qr.data;
         }
 
