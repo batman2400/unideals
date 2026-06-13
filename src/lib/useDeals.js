@@ -167,3 +167,61 @@ export async function checkIfSaved(dealId) {
   
   return !!data;
 }
+
+/**
+ * ── Batch Saved Deals Hook ─────────────────────────────
+ *
+ * Fetches ALL saved deal IDs for the current user in a single query.
+ * Returns a Set for O(1) lookup, plus a toggle function.
+ * This replaces the N+1 pattern where each DealCard queried individually.
+ */
+export function useSavedDealIds() {
+  const [savedIds, setSavedIds] = useState(new Set());
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchAllSaved() {
+      setLoading(true);
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (!user) {
+        if (!cancelled) {
+          setSavedIds(new Set());
+          setLoading(false);
+        }
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from("saved_deals")
+        .select("deal_id")
+        .eq("user_id", user.id);
+
+      if (!cancelled) {
+        if (!error && data) {
+          setSavedIds(new Set(data.map((r) => r.deal_id)));
+        }
+        setLoading(false);
+      }
+    }
+
+    fetchAllSaved();
+    return () => { cancelled = true; };
+  }, []);
+
+  const toggleSave = async (dealId) => {
+    const wasSaved = savedIds.has(dealId);
+    if (wasSaved) {
+      await unsaveDeal(dealId);
+      setSavedIds((prev) => { const next = new Set(prev); next.delete(dealId); return next; });
+    } else {
+      await saveDeal(dealId);
+      setSavedIds((prev) => new Set(prev).add(dealId));
+    }
+    return !wasSaved;
+  };
+
+  return { savedIds, loading, toggleSave };
+}

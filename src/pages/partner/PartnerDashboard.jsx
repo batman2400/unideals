@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import jsQR from "jsqr";
 import { supabase } from "../../lib/supabaseClient";
-import { useRole } from "../../lib/useRole";
+import { useRoleContext } from "../../lib/RoleContext";
 import {
   getPartnerBrandName,
   PARTNER_BRAND_REQUIRED_MESSAGE,
@@ -42,7 +43,7 @@ function formatDateTime(value) {
 }
 
 function PartnerDashboard() {
-  const { user, role, loading: roleLoading, error: roleError } = useRole();
+  const { user, role, loading: roleLoading, error: roleError } = useRoleContext();
 
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -244,23 +245,43 @@ function PartnerDashboard() {
         await videoRef.current.play();
       }
 
-      detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+      if (typeof window !== "undefined" && "BarcodeDetector" in window) {
+        detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+      } else {
+        detectorRef.current = null;
+      }
 
       setScannerActive(true);
 
       scanTimerRef.current = window.setInterval(async () => {
-        if (!videoRef.current || !detectorRef.current || videoRef.current.readyState < 2) {
+        if (!videoRef.current || videoRef.current.readyState < 2) {
           return;
         }
 
         try {
-          const codes = await detectorRef.current.detect(videoRef.current);
+          let rawValue = "";
 
-          if (!codes || codes.length === 0) {
-            return;
+          if (detectorRef.current) {
+            const codes = await detectorRef.current.detect(videoRef.current);
+            if (codes && codes.length > 0) {
+              rawValue = String(codes[0]?.rawValue || "").trim();
+            }
+          } else {
+            const video = videoRef.current;
+            const canvas = document.createElement("canvas");
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const code = jsQR(imageData.data, imageData.width, imageData.height);
+              if (code) {
+                rawValue = String(code.data || "").trim();
+              }
+            }
           }
 
-          const rawValue = String(codes[0]?.rawValue || "").trim();
           if (!rawValue) {
             return;
           }
@@ -280,9 +301,7 @@ function PartnerDashboard() {
 
   useEffect(() => {
     const supported =
-      typeof window !== "undefined"
-      && "BarcodeDetector" in window
-      && !!navigator?.mediaDevices?.getUserMedia;
+      typeof window !== "undefined" && !!navigator?.mediaDevices?.getUserMedia;
     setScannerSupported(supported);
 
     return () => {

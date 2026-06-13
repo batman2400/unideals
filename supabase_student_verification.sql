@@ -41,7 +41,17 @@ BEGIN
   ON CONFLICT (user_id) DO UPDATE
     SET user_email = EXCLUDED.user_email,
         is_verified = CASE
+          -- Admins & partners are always verified
           WHEN public.user_roles.role IN ('admin', 'partner') THEN TRUE
+          -- Keep verified if the student already has a verified university email
+          WHEN public.user_roles.is_verified = TRUE
+            AND public.user_roles.university_email IS NOT NULL
+            AND (
+              public.user_roles.university_email ILIKE '%.ac.lk'
+              OR public.user_roles.university_email ILIKE '%.edu.lk'
+              OR public.user_roles.university_email ILIKE '%.edu'
+            ) THEN TRUE
+          -- Otherwise, check the new login email
           ELSE EXCLUDED.is_verified
         END;
 

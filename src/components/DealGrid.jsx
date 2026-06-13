@@ -6,12 +6,16 @@
  * you need a grid of deals.
  *
  * Props:
- *   - deals : array of deal objects from mockData.js
+ *   - deals         : array of deal objects
+ *   - enableStagger : boolean — animate cards on entry
+ *   - savedIds      : Set — IDs of deals saved by the user
+ *   - onToggleSave  : function(dealId) — toggle save/unsave
+ *   - savedLoading  : boolean — whether saved state is loading
  */
 import DealCard from "./DealCard";
 import { memo } from "react";
 
-function DealGrid({ deals, enableStagger = true }) {
+function DealGrid({ deals, enableStagger = true, savedIds, onToggleSave, savedLoading }) {
   if (!deals || deals.length === 0) {
     return (
       <div className="text-center py-20">
@@ -36,7 +40,12 @@ function DealGrid({ deals, enableStagger = true }) {
           className={enableStagger ? "animate-stagger-in" : ""}
           style={enableStagger ? { animationDelay: `${Math.min(index, 12) * 45}ms` } : undefined}
         >
-          <DealCard deal={deal} />
+          <DealCard
+            deal={deal}
+            isSaved={savedIds ? savedIds.has(deal.id) : undefined}
+            onToggleSave={onToggleSave}
+            savedLoading={savedLoading}
+          />
         </div>
       ))}
     </div>
@@ -44,3 +53,4 @@ function DealGrid({ deals, enableStagger = true }) {
 }
 
 export default memo(DealGrid);
+

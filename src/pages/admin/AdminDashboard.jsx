@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
-import { useRole } from "../../lib/useRole";
+import { useRoleContext } from "../../lib/RoleContext";
 
 function formatDateTime(value) {
   if (!value) return "-";
@@ -23,7 +23,7 @@ function shortId(value) {
 }
 
 function AdminDashboard() {
-  const { role, loading: roleLoading, error: roleError } = useRole();
+  const { role, loading: roleLoading, error: roleError } = useRoleContext();
 
   const [pendingDeals, setPendingDeals] = useState([]);
   const [scanEvents, setScanEvents] = useState([]);

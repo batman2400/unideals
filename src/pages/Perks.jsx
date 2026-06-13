@@ -9,7 +9,8 @@
  *   - searchQuery : string — global search text from App state
  */
 import { useMemo, useState } from "react";
-import { useDeals } from "../lib/useDeals";
+import { useSearchParams } from "react-router-dom";
+import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
@@ -20,21 +21,37 @@ const filters = [
 ];
 
 function Perks({ searchQuery }) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const brandFilter = searchParams.get("brand") || "";
   const [activeFilter, setActiveFilter] = useState("all");
   const { deals, loading, error } = useDeals();
+  const { savedIds, loading: savedLoading, toggleSave } = useSavedDealIds();
+
+  const clearBrandFilter = () => {
+    searchParams.delete("brand");
+    setSearchParams(searchParams);
+  };
+
+  // Apply brand filter (from ?brand= param)
+  const filteredByBrand = useMemo(
+    () => brandFilter
+      ? deals.filter((deal) => deal.brand.toLowerCase() === brandFilter.toLowerCase())
+      : deals,
+    [brandFilter, deals]
+  );
 
   // Apply type filter
   const filteredByType = useMemo(
     () => (
       activeFilter === "all"
-        ? deals
-        : deals.filter((deal) => deal.type === activeFilter)
+        ? filteredByBrand
+        : filteredByBrand.filter((deal) => deal.type === activeFilter)
     ),
-    [activeFilter, deals]
+    [activeFilter, filteredByBrand]
   );
 
   // Apply search filter on top of type filter
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const normalizedQuery = (searchQuery ?? "").trim().toLowerCase();
 
   const filteredDeals = useMemo(() => {
     if (!normalizedQuery) return filteredByType;
@@ -61,6 +78,17 @@ function Perks({ searchQuery }) {
           Explore every exclusive offer available to verified students. Filter by
           type to find exactly what you need.
         </p>
+
+        {/* Active brand filter banner */}
+        {brandFilter && (
+          <div className="mt-4 inline-flex items-center gap-2 bg-primary-container/30 text-primary border border-primary/20 px-4 py-2 rounded-full text-sm font-headline font-bold">
+            <span className="material-symbols-outlined text-base">storefront</span>
+            Showing deals from: {brandFilter}
+            <button onClick={clearBrandFilter} className="ml-1 hover:text-error transition-colors">
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Show loader / error */}
@@ -91,7 +119,12 @@ function Perks({ searchQuery }) {
           </div>
 
           {/* Deal Grid */}
-          <DealGrid deals={filteredDeals} />
+          <DealGrid
+            deals={filteredDeals}
+            savedIds={savedIds}
+            onToggleSave={toggleSave}
+            savedLoading={savedLoading}
+          />
         </>
       )}
     </section>

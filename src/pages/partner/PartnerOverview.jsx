@@ -1,0 +1,221 @@
+import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "../../lib/supabaseClient";
+import { useRoleContext } from "../../lib/RoleContext";
+import { getPartnerBrandName } from "../../lib/partnerBrand";
+import PortalLayout from "../../layouts/PortalLayout";
+
+function PartnerOverview() {
+  const { user, role, loading: roleLoading } = useRoleContext();
+  const [partnerBrand, setPartnerBrand] = useState("");
+  const [deals, setDeals] = useState([]);
+  const [recentEvents, setRecentEvents] = useState([]);
+  const [stats, setStats] = useState({ totalScans: 0, confirmedRedemptions: 0 });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (roleLoading || role !== "partner" || !user?.id) return;
+    let active = true;
+
+    async function fetchData() {
+      setLoading(true);
+
+      const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+      if (!active) return;
+      if (brandError || !brandName) {
+        setError(brandError || "No brand profile found. Create your first deal to set up your brand.");
+        setLoading(false);
+        return;
+      }
+
+      setPartnerBrand(brandName);
+
+      const [dealsRes, scansRes, confirmedRes, eventsRes] = await Promise.all([
+        supabase
+          .from("deals")
+          .select("id, title, discount, type, category, status, created_at")
+          .eq("partner_id", user.id)
+          .eq("brand", brandName)
+          .order("created_at", { ascending: false }),
+        supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("partner_id", user.id),
+        supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }).eq("partner_id", user.id),
+        supabase.from("redemption_events")
+          .select("id, scanned_code, scan_result, scan_method, created_at")
+          .eq("partner_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(6),
+      ]);
+
+      if (!active) return;
+
+      setDeals(dealsRes.data || []);
+      setStats({
+        totalScans: scansRes.count ?? 0,
+        confirmedRedemptions: confirmedRes.count ?? 0,
+      });
+      setRecentEvents(eventsRes.data || []);
+      setLoading(false);
+    }
+
+    fetchData();
+    return () => { active = false; };
+  }, [role, roleLoading, user?.id]);
+
+  const metrics = useMemo(() => {
+    const total = deals.length;
+    const approved = deals.filter((d) => d.status === "approved").length;
+    const pending = deals.filter((d) => d.status === "pending").length;
+    return { total, approved, pending };
+  }, [deals]);
+
+  if (roleLoading || loading) {
+    return (
+      <PortalLayout portalType="partner" brandName="">
+        <div className="space-y-5">
+          <div className="h-8 w-48 rounded-xl skeleton-shimmer" />
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="h-28 rounded-2xl skeleton-shimmer" />
+            ))}
+          </div>
+          <div className="h-64 rounded-2xl skeleton-shimmer" />
+        </div>
+      </PortalLayout>
+    );
+  }
+
+  const metricCards = [
+    { label: "Total Deals", value: metrics.total, icon: "inventory_2", color: "text-on-background" },
+    { label: "Active", value: metrics.approved, icon: "check_circle", color: "text-emerald-600" },
+    { label: "Pending", value: metrics.pending, icon: "pending_actions", color: "text-amber-600" },
+    { label: "Total Scans", value: stats.totalScans, icon: "qr_code_scanner", color: "text-on-background" },
+    { label: "Redemptions", value: stats.confirmedRedemptions, icon: "task_alt", color: "text-primary" },
+  ];
+
+  const scanResultColor = {
+    valid: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    not_found: "text-red-600 bg-red-50 border-red-200",
+    wrong_brand: "text-red-600 bg-red-50 border-red-200",
+    not_approved: "text-amber-600 bg-amber-50 border-amber-200",
+    invalid: "text-red-600 bg-red-50 border-red-200",
+  };
+
+  return (
+    <PortalLayout portalType="partner" brandName={partnerBrand}>
+      <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
+        <div>
+          <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
+            Dashboard
+          </h1>
+          <p className="text-on-surface-variant text-sm">
+            {partnerBrand
+              ? `Overview for ${partnerBrand} — deals, scans, and redemptions.`
+              : "Set up your brand by creating your first deal."}
+          </p>
+        </div>
+        <Link
+          to="/partner/create-deal"
+          className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
+        >
+          <span className="material-symbols-outlined text-lg">add_circle</span>
+          Create Deal
+        </Link>
+      </div>
+
+      {error && (
+        <div className="mb-5 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+          <p className="text-error text-sm font-bold">{error}</p>
+        </div>
+      )}
+
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
+        {metricCards.map((card) => (
+          <article
+            key={card.label}
+            className="bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow"
+          >
+            <div className="flex items-center justify-between gap-2 mb-3">
+              <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
+                {card.label}
+              </p>
+              <span className={`material-symbols-outlined text-lg ${card.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                {card.icon}
+              </span>
+            </div>
+            <p className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}>
+              {card.value}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      {/* Quick Links + Recent Activity */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        {/* Quick Links */}
+        <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
+          <h2 className="font-headline font-bold text-lg text-on-background mb-4">Quick Actions</h2>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { to: "/partner/deals", icon: "local_offer", label: "My Deals", desc: "View all deals" },
+              { to: "/partner/create-deal", icon: "add_circle", label: "Create Deal", desc: "Submit new offer" },
+              { to: "/partner/scanner", icon: "qr_code_scanner", label: "Scanner", desc: "Scan tickets" },
+              { to: "/partner/analytics", icon: "monitoring", label: "Analytics", desc: "View stats" },
+            ].map((link) => (
+              <Link
+                key={link.to}
+                to={link.to}
+                className="flex items-center gap-3 p-4 rounded-xl border border-outline-variant/10 bg-surface-container-low/50 hover:bg-surface-container-low hover:border-primary/15 transition-all group"
+              >
+                <span className="material-symbols-outlined text-xl text-on-surface-variant group-hover:text-primary transition-colors">
+                  {link.icon}
+                </span>
+                <div>
+                  <p className="font-headline font-bold text-sm text-on-background">{link.label}</p>
+                  <p className="text-[10px] text-on-surface-variant">{link.desc}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Activity */}
+        <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
+          <div className="px-5 py-4 border-b border-outline-variant/10">
+            <h2 className="font-headline font-bold text-lg text-on-background">Recent Scans</h2>
+          </div>
+
+          {recentEvents.length === 0 ? (
+            <div className="p-8 text-center">
+              <span className="material-symbols-outlined text-3xl text-on-surface-variant/30 mb-2 block">
+                qr_code_scanner
+              </span>
+              <p className="text-on-surface-variant text-sm">No scan activity yet.</p>
+            </div>
+          ) : (
+            <ul className="divide-y divide-outline-variant/8">
+              {recentEvents.map((event) => (
+                <li key={event.id} className="px-5 py-3 flex items-center gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-on-background truncate">
+                      {event.scanned_code || "—"}
+                    </p>
+                    <p className="text-[10px] text-on-surface-variant">
+                      {event.scan_method} · {new Date(event.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                    </p>
+                  </div>
+                  <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}>
+                    {event.scan_result}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
+    </PortalLayout>
+  );
+}
+
+export default PartnerOverview;

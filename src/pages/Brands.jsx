@@ -84,7 +84,7 @@ function Brands() {
                 </p>
 
                 <Link
-                  to="/perks"
+                  to={`/perks?brand=${encodeURIComponent(brand.name)}`}
                   className="inline-flex items-center gap-1 text-primary font-headline font-bold text-sm hover:gap-2 transition-all"
                 >
                   View Deals

@@ -10,12 +10,13 @@
  */
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
-import { useDeals } from "../lib/useDeals";
+import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import DealGrid from "./DealGrid";
 import DealsLoader from "./DealsLoader";
 
 function DealFeed({ searchQuery }) {
   const { deals, loading, error } = useDeals();
+  const { savedIds, loading: savedLoading, toggleSave } = useSavedDealIds();
 
   // Compute derived lists on every render to keep hook ordering stable.
   const normalizedQuery = (searchQuery ?? "").trim().toLowerCase();
@@ -57,9 +58,16 @@ function DealFeed({ searchQuery }) {
       </div>
 
       {/* Deal Cards Grid */}
-      <DealGrid deals={displayDeals} enableStagger />
+      <DealGrid
+        deals={displayDeals}
+        enableStagger
+        savedIds={savedIds}
+        onToggleSave={toggleSave}
+        savedLoading={savedLoading}
+      />
     </section>
   );
 }
 
 export default DealFeed;
+

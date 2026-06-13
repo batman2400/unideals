@@ -16,7 +16,7 @@ import { useState, useEffect, useRef } from "react";
 import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useDeals } from "../lib/useDeals";
-import { useRole } from "../lib/useRole";
+import { useRoleContext } from "../lib/RoleContext";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
@@ -39,7 +39,7 @@ function Profile({ isLoggedIn, user }) {
   const [activeTab, setActiveTab] = useState(initialTab);
 
   const { deals, loading: dealsLoading, error: dealsError } = useDeals();
-  const { isVerified, loading: verificationLoading, refreshRole } = useRole();
+  const { isVerified, loading: verificationLoading, refreshRole } = useRoleContext();
 
   // ── Saved deals ─────────────────────────────────────
   const [savedDealIds, setSavedDealIds] = useState([]);
@@ -125,11 +125,33 @@ function Profile({ isLoggedIn, user }) {
   const [notifyNewsletter, setNotifyNewsletter] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
 
-  const handleSettingsSave = (e) => {
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsError, setSettingsError] = useState("");
+
+  const handleSettingsSave = async (e) => {
     e.preventDefault();
-    console.log("[Settings] Saved:", { settingsEmail, notifyDeals, notifyNewsletter });
-    setSettingsSaved(true);
-    setTimeout(() => setSettingsSaved(false), 2500);
+    setSettingsError("");
+    setSettingsSaving(true);
+    try {
+      const updates = {};
+      if (settingsEmail && settingsEmail !== userEmail) {
+        updates.email = settingsEmail;
+      }
+      if (settingsPassword) {
+        updates.password = settingsPassword;
+      }
+      if (Object.keys(updates).length > 0) {
+        const { error } = await supabase.auth.updateUser(updates);
+        if (error) throw error;
+      }
+      setSettingsSaved(true);
+      setSettingsPassword("");
+      setTimeout(() => setSettingsSaved(false), 2500);
+    } catch (err) {
+      setSettingsError(err.message || "Failed to save settings.");
+    } finally {
+      setSettingsSaving(false);
+    }
   };
 
   if (!isLoggedIn) return <Navigate to="/" replace />;
@@ -210,7 +232,7 @@ function Profile({ isLoggedIn, user }) {
           {[
             { value: savedDeals.length, label: "Saved", color: "text-on-background" },
             { value: activeSubscriptions.filter((s) => s.status === "Active").length, label: "Active", color: "text-on-background" },
-            { value: 12, label: "Claimed", color: "text-primary" },
+            { value: "—", label: "Claimed", color: "text-primary" },
           ].map((stat, i) => (
             <div key={stat.label} className="text-center animate-count-up" style={{ animationDelay: `${i * 100}ms` }}>
               <p className={`font-headline font-black text-2xl ${stat.color}`}>{stat.value}</p>
@@ -435,9 +457,19 @@ function Profile({ isLoggedIn, user }) {
               </div>
             </div>
 
-            <button type="submit"
-              className={`px-8 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md active:scale-[0.98] transition-all ${settingsSaved ? "bg-primary text-on-primary" : "emerald-gradient text-on-primary hover:shadow-lg"}`}>
-              {settingsSaved ? (<span className="flex items-center gap-2"><span className="material-symbols-outlined text-lg">check_circle</span>Saved!</span>) : "Save Changes"}
+            {settingsError && (
+              <div className="flex items-center gap-2 text-error text-xs font-bold">
+                <span className="material-symbols-outlined text-xs">error</span>{settingsError}
+              </div>
+            )}
+
+            <button type="submit" disabled={settingsSaving}
+              className={`px-8 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md active:scale-[0.98] transition-all disabled:opacity-60 ${settingsSaved ? "bg-primary text-on-primary" : "emerald-gradient text-on-primary hover:shadow-lg"}`}>
+              {settingsSaving ? (
+                <span className="flex items-center gap-2"><div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />Saving...</span>
+              ) : settingsSaved ? (
+                <span className="flex items-center gap-2"><span className="material-symbols-outlined text-lg">check_circle</span>Saved!</span>
+              ) : "Save Changes"}
             </button>
           </form>
         </div>

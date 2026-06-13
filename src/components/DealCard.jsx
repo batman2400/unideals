@@ -9,44 +9,56 @@
  * amber accent) vs Online (with globe icon + emerald accent) at a glance.
  *
  * Props:
- *   - deal : object from mockData.js
+ *   - deal          : object — deal data
+ *   - isSaved       : boolean|undefined — batch-provided saved state (from parent)
+ *   - onToggleSave  : function(dealId)|undefined — batch toggle (from parent)
+ *   - savedLoading  : boolean|undefined — batch loading state (from parent)
+ *
+ * When batch props are provided (via DealGrid ← useSavedDealIds),
+ * the card uses them directly instead of querying the database individually.
+ * This eliminates the N+1 query problem.
  */
-import { memo, useState, useEffect } from "react";
+import { memo, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 
-function DealCard({ deal }) {
+function DealCard({ deal, isSaved: batchSaved, onToggleSave: batchToggle, savedLoading: batchLoading }) {
   const { id, title, type, discount, imageUrl, description } = deal;
 
   const isInStore = type === "In-Store";
+  const isDemo = typeof id === "string" && id.startsWith("demo-");
 
-  const [isSaved, setIsSaved] = useState(false);
-  const [loadingSave, setLoadingSave] = useState(true);
+  // ── Determine if we're using batch mode or standalone mode ──
+  const isBatchMode = batchSaved !== undefined;
+
+  // ── Standalone state (used only when batch props are NOT provided) ──
+  const [localSaved, setLocalSaved] = useState(false);
+  const [localLoading, setLocalLoading] = useState(!isBatchMode);
   const [saveError, setSaveError] = useState("");
 
+  // Standalone: fetch saved state individually (only if no batch props)
   useEffect(() => {
+    if (isBatchMode || isDemo) { setLocalLoading(false); return; }
     let active = true;
     checkIfSaved(id).then((saved) => {
-      if (active) {
-        setIsSaved(saved);
-        setLoadingSave(false);
-      }
+      if (active) { setLocalSaved(saved); setLocalLoading(false); }
     }).catch(() => {
-      if (active) {
-        setSaveError("Could not verify saved state right now.");
-        setLoadingSave(false);
-      }
+      if (active) { setSaveError("Could not verify saved state right now."); setLocalLoading(false); }
     });
     return () => { active = false; };
-  }, [id]);
+  }, [id, isDemo, isBatchMode]);
 
-  const handleToggleSave = async (e) => {
+  // ── Resolve actual values ──
+  const saved = isBatchMode ? !!batchSaved : localSaved;
+  const loading = isBatchMode ? !!batchLoading : localLoading;
+
+  const handleToggleSave = useCallback(async (e) => {
     e.preventDefault();
     e.stopPropagation();
     setSaveError("");
 
-    // Check login state: if not logged in, trigger custom event to open AuthModal
+    // Check login state
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       window.dispatchEvent(new Event("open-auth-modal"));
@@ -54,46 +66,52 @@ function DealCard({ deal }) {
     }
 
     try {
-      setLoadingSave(true);
-      if (isSaved) {
-        await unsaveDeal(id);
-        setIsSaved(false);
+      if (isBatchMode && batchToggle) {
+        await batchToggle(id);
       } else {
-        await saveDeal(id);
-        setIsSaved(true);
+        setLocalLoading(true);
+        if (localSaved) {
+          await unsaveDeal(id);
+          setLocalSaved(false);
+        } else {
+          await saveDeal(id);
+          setLocalSaved(true);
+        }
+        setLocalLoading(false);
       }
     } catch (err) {
       console.error("Error toggling save:", err);
       setSaveError(err?.message || "Could not update saved state. Please try again.");
-    } finally {
-      setLoadingSave(false);
+      if (!isBatchMode) setLocalLoading(false);
     }
-  };
+  }, [id, isBatchMode, batchToggle, localSaved]);
 
   return (
     <div className="flex flex-col group cursor-pointer relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-xl">
       {/* Deal Image */}
-      <Link to={`/perks/${id}`} className="block relative">
+      <Link to={isDemo ? "#" : `/perks/${id}`} className="block relative" onClick={isDemo ? (e) => e.preventDefault() : undefined}>
         <div className="aspect-[16/10] overflow-hidden rounded-xl relative bg-surface-container">
           {/* Save Button */}
-          <button
-            onClick={handleToggleSave}
-            disabled={loadingSave}
-            className={`absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-sm ${
-              loadingSave ? "opacity-50 cursor-not-allowed" : "hover:scale-110"
-            } ${
-              isSaved
-                ? "bg-primary text-on-primary"
-                : "bg-surface/80 text-on-surface hover:bg-surface"
-            }`}
-          >
-            <span
-              className="material-symbols-outlined text-xl"
-              style={isSaved ? { fontVariationSettings: "'FILL' 1" } : {}}
+          {!isDemo && (
+            <button
+              onClick={handleToggleSave}
+              disabled={loading}
+              className={`absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-sm ${
+                loading ? "opacity-50 cursor-not-allowed" : "hover:scale-110"
+              } ${
+                saved
+                  ? "bg-primary text-on-primary"
+                  : "bg-surface/80 text-on-surface hover:bg-surface"
+              }`}
             >
-              bookmark
-            </span>
-          </button>
+              <span
+                className="material-symbols-outlined text-xl"
+                style={saved ? { fontVariationSettings: "'FILL' 1" } : {}}
+              >
+                bookmark
+              </span>
+            </button>
+          )}
 
           <img
             alt={title}
@@ -130,12 +148,20 @@ function DealCard({ deal }) {
         {saveError && (
           <p className="text-error text-xs font-bold mb-3">{saveError}</p>
         )}
-        <Link
-          to={`/perks/${id}`}
-          className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center group-hover:bg-primary group-hover:text-on-primary transition-all active:scale-[0.98]"
-        >
-          {isInStore ? "Show at Register" : "Claim Code"}
-        </Link>
+        {isDemo ? (
+          <span
+            className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center text-on-surface-variant/50 cursor-default"
+          >
+            Coming Soon
+          </span>
+        ) : (
+          <Link
+            to={`/perks/${id}`}
+            className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center group-hover:bg-primary group-hover:text-on-primary transition-all active:scale-[0.98]"
+          >
+            {isInStore ? "Show at Register" : "Claim Code"}
+          </Link>
+        )}
       </div>
     </div>
   );

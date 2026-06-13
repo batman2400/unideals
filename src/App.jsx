@@ -16,7 +16,7 @@
  *   /profile     → User dashboard & settings
  */
 import { lazy, Suspense, useState, useEffect } from "react";
-import { Routes, Route, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
 import Navbar from "./components/Navbar";
@@ -32,10 +32,17 @@ const Brands = lazy(() => import("./pages/Brands"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Profile = lazy(() => import("./pages/Profile"));
-const PartnerDashboard = lazy(() => import("./pages/partner/PartnerDashboard"));
+const PartnerOverview = lazy(() => import("./pages/partner/PartnerOverview"));
+const PartnerDeals = lazy(() => import("./pages/partner/PartnerDeals"));
+const PartnerScanner = lazy(() => import("./pages/partner/PartnerScanner"));
+const PartnerAnalytics = lazy(() => import("./pages/partner/PartnerAnalytics"));
 const CreateDeal = lazy(() => import("./pages/partner/CreateDeal"));
 const EditDeal = lazy(() => import("./pages/partner/EditDeal"));
-const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
+const AdminPendingDeals = lazy(() => import("./pages/admin/AdminPendingDeals"));
+const AdminAllDeals = lazy(() => import("./pages/admin/AdminAllDeals"));
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 
 function RouteSkeleton() {
   return (
@@ -178,19 +185,31 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route index element={<PartnerDashboard />} />
+                <Route index element={<PartnerOverview />} />
+                <Route path="deals" element={<PartnerDeals />} />
                 <Route path="create-deal" element={<CreateDeal />} />
                 <Route path="edit-deal/:id" element={<EditDeal />} />
+                <Route path="scanner" element={<PartnerScanner />} />
+                <Route path="analytics" element={<PartnerAnalytics />} />
               </Route>
 
               <Route
                 path="/admin"
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminDashboard />
+                    <Outlet />
                   </ProtectedRoute>
                 }
-              />
+              >
+                <Route index element={<AdminOverview />} />
+                <Route path="pending" element={<AdminPendingDeals />} />
+                <Route path="deals" element={<AdminAllDeals />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="analytics" element={<AdminAnalytics />} />
+              </Route>
+
+              {/* Catch-all 404 → redirect to home */}
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
           </div>
         </Suspense>

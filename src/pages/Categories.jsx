@@ -10,7 +10,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useDeals } from "../lib/useDeals";
+import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
@@ -69,6 +69,7 @@ const demoImages = {
 function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
   const { deals, loading, error } = useDeals();
+  const { savedIds, loading: savedLoading, toggleSave } = useSavedDealIds();
   const [activeCategory, setActiveCategory] = useState("all");
 
   // Group deals by category, injecting demo data for empty ones
@@ -220,7 +221,12 @@ function Categories() {
                 </div>
               </div>
 
-              <DealGrid deals={grouped[cat]} />
+              <DealGrid
+                deals={grouped[cat]}
+                savedIds={savedIds}
+                onToggleSave={toggleSave}
+                savedLoading={savedLoading}
+              />
             </div>
           );
         })

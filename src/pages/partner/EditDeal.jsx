@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { useRole } from "../../lib/useRole";
+import { useRoleContext } from "../../lib/RoleContext";
 import { getPartnerBrandName, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
 import {
   buildOfferLabel,
@@ -13,7 +13,18 @@ import {
 } from "../../lib/dealOffer";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 
-const CATEGORY_OPTIONS = ["Tech", "Coffee", "Clothing", "Fitness", "Home", "Creative"];
+const CATEGORY_OPTIONS = [
+  "Fashion",
+  "Food & Drink",
+  "Tech & Mobile",
+  "Beauty & Care",
+  "Learning",
+  "Travel & Auto",
+  "Health & Fitness",
+  "Household",
+  "Finance",
+  "Events & Tickets",
+];
 const TYPE_OPTIONS = ["Online", "In-Store"];
 
 const INITIAL_FORM = {
@@ -21,7 +32,7 @@ const INITIAL_FORM = {
   brand: "",
   discount: "",
   type: "Online",
-  category: "Tech",
+  category: "Fashion",
   imageUrl: "",
   description: "",
   redemptionCode: "",
@@ -29,7 +40,7 @@ const INITIAL_FORM = {
 
 function EditDeal() {
   const { id } = useParams();
-  const { user, role, loading: roleLoading, error: roleError } = useRole();
+  const { user, role, loading: roleLoading, error: roleError } = useRoleContext();
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [offerType, setOfferType] = useState("percentage_off");
@@ -141,7 +152,7 @@ function EditDeal() {
         brand: data.brand || brandName,
         discount: data.discount || "",
         type: data.type || "Online",
-        category: data.category || "Tech",
+        category: data.category || "Fashion",
         imageUrl: data.image_url || "",
         description: data.description || "",
         redemptionCode: data.redemption_code || "",

@@ -14,51 +14,116 @@ import { useParams, Link } from "react-router-dom";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "../lib/supabaseClient";
 import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
-import { useRole } from "../lib/useRole";
+import { useRoleContext } from "../lib/RoleContext";
 import DealsLoader from "../components/DealsLoader";
 
-// ── Countdown Timer Hook ────────────────────────────────
-function useCountdown(totalSeconds) {
-  const [secondsLeft, setSecondsLeft] = useState(totalSeconds);
 
-  useEffect(() => {
-    if (secondsLeft <= 0) return;
-    const id = setInterval(() => setSecondsLeft((s) => s - 1), 1000);
-    return () => clearInterval(id);
-  }, [secondsLeft]);
+// ── In-Store Redemption (Server-Generated Unique Ticket) ─
+function InStoreRedemption({ dealId, brand }) {
+  const [ticket, setTicket] = useState(null);
+  const [generating, setGenerating] = useState(false);
+  const [ticketError, setTicketError] = useState("");
 
-  const minutes = Math.floor(secondsLeft / 60);
-  const seconds = secondsLeft % 60;
-  const progress = secondsLeft / totalSeconds; // 1 → 0
+  const generateTicket = useCallback(async () => {
+    setGenerating(true);
+    setTicketError("");
 
-  return { minutes, seconds, progress, expired: secondsLeft <= 0 };
-}
+    try {
+      const { data, error: rpcError } = await supabase.rpc("generate_instore_ticket", {
+        target_deal_id: dealId,
+        ticket_duration_minutes: 15,
+      });
 
-// ── In-Store Redemption (QR Ticket) ─────────────────────
-function InStoreRedemption({ redemptionCode, brand }) {
-  const { minutes, seconds, progress, expired } = useCountdown(15 * 60);
-  const [activated, setActivated] = useState(false);
+      if (rpcError) throw rpcError;
 
-  if (!activated) {
+      const row = data?.[0];
+      if (!row) throw new Error("No ticket returned from server.");
+
+      setTicket({
+        ticketCode: row.ticket_code,
+        expiresAt: new Date(row.expires_at),
+        alreadyActive: row.already_active,
+      });
+    } catch (err) {
+      setTicketError(err?.message || "Could not generate ticket. Please try again.");
+    } finally {
+      setGenerating(false);
+    }
+  }, [dealId]);
+
+  const handleRegenerate = useCallback(() => {
+    setTicket(null);
+    setTicketError("");
+  }, []);
+
+  if (!ticket) {
     return (
       <div className="text-center">
+        {ticketError && (
+          <div className="mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+            <p className="text-error text-sm font-bold">{ticketError}</p>
+          </div>
+        )}
         <button
-          onClick={() => setActivated(true)}
-          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          onClick={generateTicket}
+          disabled={generating}
+          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
         >
-          <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
-          Show at Register
+          {generating ? (
+            <>
+              <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+              Generating Ticket...
+            </>
+          ) : (
+            <>
+              <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
+              Generate In-Store Ticket
+            </>
+          )}
         </button>
         <p className="text-on-surface-variant/50 text-xs mt-3">
-          Activating starts a 15-minute timer. Show the QR code to the cashier.
+          Generates a unique single-use ticket with a 15-minute timer.
+          The cashier will scan this QR code.
         </p>
       </div>
     );
   }
 
   return (
+    <InStoreTicketDisplay
+      ticketCode={ticket.ticketCode}
+      expiresAt={ticket.expiresAt}
+      brand={brand}
+      alreadyActive={ticket.alreadyActive}
+      onRegenerate={handleRegenerate}
+    />
+  );
+}
+
+// ── Ticket Display with Server-Side Expiry Countdown ────
+function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onRegenerate }) {
+  const [secondsLeft, setSecondsLeft] = useState(() =>
+    Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000))
+  );
+  const totalSeconds = 15 * 60;
+
+  useEffect(() => {
+    const tick = () => {
+      const remaining = Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000));
+      setSecondsLeft(remaining);
+      if (remaining <= 0) clearInterval(id);
+    };
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, [expiresAt]);
+
+  const minutes = Math.floor(secondsLeft / 60);
+  const seconds = secondsLeft % 60;
+  const progress = secondsLeft / totalSeconds;
+  const expired = secondsLeft <= 0;
+
+  return (
     <div className="animate-modal-enter">
-      {/* QR Ticket Card */}
       <div
         className={`relative border-2 rounded-2xl overflow-hidden transition-colors ${
           expired ? "border-error/40 bg-error/5" : "border-primary/30 bg-surface-container-low"
@@ -72,7 +137,7 @@ function InStoreRedemption({ redemptionCode, brand }) {
               <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
             </span>
             <span className="text-primary text-xs font-headline font-bold tracking-wide uppercase">
-              Live Ticket
+              {alreadyActive ? "Active Ticket" : "Live Ticket"}
             </span>
           </div>
         )}
@@ -87,6 +152,16 @@ function InStoreRedemption({ redemptionCode, brand }) {
         )}
 
         <div className="p-6 md:p-8 flex flex-col items-center">
+          {/* Ticket Code Display */}
+          <p className="text-[10px] font-bold tracking-[0.15em] text-on-surface-variant/60 uppercase mb-2">
+            Ticket Code
+          </p>
+          <p className={`font-headline font-black text-xl tracking-[0.2em] mb-4 ${
+            expired ? "text-on-surface-variant/40" : "text-primary"
+          }`}>
+            {ticketCode}
+          </p>
+
           {/* QR Code */}
           <div
             className={`p-4 bg-white rounded-xl shadow-sm mb-5 transition-opacity ${
@@ -94,7 +169,7 @@ function InStoreRedemption({ redemptionCode, brand }) {
             }`}
           >
             <QRCodeSVG
-              value={`unideals://redeem/${redemptionCode}`}
+              value={`unideals://ticket/${ticketCode}`}
               size={180}
               level="H"
               fgColor={expired ? "#9e9c9c" : "#29695b"}
@@ -133,19 +208,19 @@ function InStoreRedemption({ redemptionCode, brand }) {
                     ? "bg-error"
                     : "emerald-gradient"
               }`}
-              style={{ width: `${progress * 100}%` }}
+              style={{ width: `${Math.max(progress * 100, 0)}%` }}
             />
           </div>
 
-          {/* Instructions */}
           <p className="text-on-surface-variant text-sm text-center leading-relaxed">
             {expired ? (
-              <>This ticket has expired. Please generate a new one.</>
+              <>This ticket has expired. Generate a new one to redeem.</>
             ) : (
               <>
                 Present this QR code at any{" "}
                 <span className="font-bold text-on-surface">{brand}</span> register.
                 The cashier will scan it to apply your discount.
+                This is a <span className="font-bold">single-use ticket</span> — it cannot be reused.
               </>
             )}
           </p>
@@ -155,7 +230,7 @@ function InStoreRedemption({ redemptionCode, brand }) {
       {/* Regenerate button when expired */}
       {expired && (
         <button
-          onClick={() => window.location.reload()}
+          onClick={onRegenerate}
           className="w-full mt-4 py-3 rounded-xl border border-outline-variant/20 font-headline font-bold text-sm text-on-surface-variant hover:bg-surface-container transition-all active:scale-[0.98]"
         >
           Generate New Ticket
@@ -165,17 +240,34 @@ function InStoreRedemption({ redemptionCode, brand }) {
   );
 }
 
-// ── Online Redemption (Promo Code) ──────────────────────
-function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
+// ── Online Redemption (Promo Code + Tracking) ───────────
+function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
   const [copied, setCopied] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  const logEvent = useCallback(async (eventType) => {
+    try {
+      await supabase.rpc("log_online_code_event", {
+        target_deal_id: dealId,
+        target_event_type: eventType,
+      });
+    } catch {
+      // Silent fail for analytics
+    }
+  }, [dealId]);
+
+  const handleReveal = useCallback(() => {
+    setRevealed(true);
+    logEvent("reveal");
+  }, [logEvent]);
 
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(redemptionCode);
       setCopied(true);
+      logEvent("copy");
       setTimeout(() => setCopied(false), 2000);
     } catch {
-      // Fallback for older browsers
       const textarea = document.createElement("textarea");
       textarea.value = redemptionCode;
       document.body.appendChild(textarea);
@@ -183,13 +275,34 @@ function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
       document.execCommand("copy");
       document.body.removeChild(textarea);
       setCopied(true);
+      logEvent("copy");
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [redemptionCode]);
+  }, [redemptionCode, logEvent]);
+
+  const handleClickThrough = useCallback(() => {
+    logEvent("click_through");
+  }, [logEvent]);
+
+  if (!revealed) {
+    return (
+      <div className="text-center">
+        <button
+          onClick={handleReveal}
+          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined text-xl">visibility</span>
+          Reveal Promo Code
+        </button>
+        <p className="text-on-surface-variant/50 text-xs mt-3">
+          Click to reveal your exclusive promo code for {brand}.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4 animate-modal-enter">
-      {/* Promo Code Display */}
       <div className="bg-surface-container-low border-2 border-dashed border-primary/30 rounded-2xl p-6 md:p-8 text-center">
         <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-3 flex items-center justify-center gap-1.5">
           <span className="material-symbols-outlined text-primary text-sm">confirmation_number</span>
@@ -199,7 +312,6 @@ function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
           {redemptionCode}
         </p>
 
-        {/* Copy Button */}
         <button
           onClick={handleCopy}
           className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight transition-all active:scale-[0.98] ${
@@ -215,20 +327,26 @@ function OnlineRedemption({ redemptionCode, brand, storeUrl }) {
         </button>
       </div>
 
-      {/* Go to Store Button */}
-      <a
-        href={storeUrl || "#"}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => {
-          e.preventDefault();
-          alert(`🔗 Redirecting to ${brand}...\n\n(This would open: ${storeUrl})`);
-        }}
-        className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
-      >
-        <span className="material-symbols-outlined text-xl">open_in_new</span>
-        Go to {brand} Store
-      </a>
+      {storeUrl && storeUrl !== "#" ? (
+        <a
+          href={storeUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={handleClickThrough}
+          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined text-xl">open_in_new</span>
+          Go to {brand} Store
+        </a>
+      ) : (
+        <button
+          disabled
+          className="w-full bg-surface-container text-on-surface-variant/50 py-4 rounded-xl font-headline font-bold text-base tracking-tight cursor-not-allowed flex items-center justify-center gap-2"
+        >
+          <span className="material-symbols-outlined text-xl">link_off</span>
+          Store link unavailable
+        </button>
+      )}
 
       <p className="text-on-surface-variant/50 text-xs text-center leading-relaxed">
         Apply code <span className="font-bold text-on-surface-variant">{redemptionCode}</span> at
@@ -315,7 +433,7 @@ function DealDetails() {
     isVerified,
     isAuthenticated,
     loading: roleLoading,
-  } = useRole();
+  } = useRoleContext();
   const dealAccessKey = [
     isAuthenticated ? "auth" : "anon",
     role ?? "student",
@@ -586,12 +704,13 @@ function DealDetails() {
             />
           ) : (
             <>
-              {hasRedemptionCode ? (
+              {(isInStore || hasRedemptionCode) ? (
                 <>
                   {isInStore ? (
-                    <InStoreRedemption redemptionCode={redemptionCode} brand={brand} />
+                    <InStoreRedemption dealId={deal.id} brand={brand} />
                   ) : (
                     <OnlineRedemption
+                      dealId={deal.id}
                       redemptionCode={redemptionCode}
                       brand={brand}
                       storeUrl={storeUrl}

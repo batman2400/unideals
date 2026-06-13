@@ -1,9 +1,9 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
-import { useRole } from "../lib/useRole";
+import { useRoleContext } from "../lib/RoleContext";
 
 function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   const location = useLocation();
-  const { role, loading, error, isAuthenticated, refreshRole } = useRole();
+  const { role, loading, error, isAuthenticated, refreshRole } = useRoleContext();
 
   if (loading) {
     return (

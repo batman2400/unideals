@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
-import { useRole } from "../../lib/useRole";
+import { useRoleContext } from "../../lib/RoleContext";
 import {
   getPartnerBrandName,
   upsertPartnerBrandName,
@@ -41,7 +41,7 @@ const INITIAL_FORM = {
 };
 
 function CreateDeal() {
-  const { user, role, loading: roleLoading } = useRole();
+  const { user, role, loading: roleLoading } = useRoleContext();
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [offerType, setOfferType] = useState("percentage_off");

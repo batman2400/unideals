@@ -19,14 +19,14 @@
  */
 import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { useRole } from "../lib/useRole";
+import { useRoleContext } from "../lib/RoleContext";
 
 function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onLogout }) {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
   const avatarRef = useRef(null);
-  const { role } = useRole();
+  const { role } = useRoleContext();
 
   const canAccessPartnerPortal = role === "partner" || role === "admin";
   const canAccessAdminPanel = role === "admin";
