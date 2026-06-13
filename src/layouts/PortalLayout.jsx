@@ -120,6 +120,26 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                 </Link>
               );
             })}
+
+            {role === "admin" && portalType === "partner" && (
+              <div className="px-4 py-3 mt-2 border-t border-outline-variant/10">
+                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">
+                  Impersonate Brand
+                </label>
+                <select
+                  value={impersonatedPartnerId || ""}
+                  onChange={(e) => setImpersonatedPartnerId(e.target.value || null)}
+                  className="w-full bg-surface-container-low border border-outline-variant/30 text-xs font-bold rounded-lg px-2 py-2 text-on-background focus:ring-2 focus:ring-primary/30 outline-none"
+                >
+                  <option value="">-- None (Admin View) --</option>
+                  {partners.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
           </nav>
         </div>
       )}
