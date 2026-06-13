@@ -42,6 +42,7 @@ const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
 const AdminPendingDeals = lazy(() => import("./pages/admin/AdminPendingDeals"));
 const AdminAllDeals = lazy(() => import("./pages/admin/AdminAllDeals"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 
 function RouteSkeleton() {
@@ -205,6 +206,7 @@ function App() {
                 <Route path="pending" element={<AdminPendingDeals />} />
                 <Route path="deals" element={<AdminAllDeals />} />
                 <Route path="users" element={<AdminUsers />} />
+                <Route path="brands" element={<AdminBrands />} />
                 <Route path="analytics" element={<AdminAnalytics />} />
               </Route>
 

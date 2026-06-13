@@ -11,9 +11,9 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
 
   useEffect(() => {
     if (role === "admin" && portalType === "partner") {
-      supabase.from("partner_profiles").select("user_id, brand_name").then(({ data }) => {
+      supabase.from("brands").select("id, name").then(({ data }) => {
         if (data) {
-          setPartners(data.sort((a, b) => a.brand_name.localeCompare(b.brand_name)));
+          setPartners(data.sort((a, b) => a.name.localeCompare(b.name)));
         }
       });
     }
@@ -32,6 +32,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
     { path: "/admin/pending", label: "Pending Queue", icon: "pending_actions" },
     { path: "/admin/deals", label: "All Deals", icon: "storefront" },
     { path: "/admin/users", label: "Users", icon: "group" },
+    { path: "/admin/brands", label: "Brands", icon: "add_business" },
     { path: "/admin/analytics", label: "Analytics", icon: "monitoring" },
   ];
 
@@ -204,8 +205,8 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                     >
                       <option value="">-- None (Admin View) --</option>
                       {partners.map((p) => (
-                        <option key={p.user_id} value={p.user_id}>
-                          {p.brand_name}
+                        <option key={p.id} value={p.id}>
+                          {p.name}
                         </option>
                       ))}
                     </select>

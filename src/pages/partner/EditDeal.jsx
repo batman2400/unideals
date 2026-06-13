@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrandName, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
+import { getPartnerBrand, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
 import {
   buildOfferLabel,
   getOfferValueLabel,
@@ -47,6 +47,7 @@ function EditDeal() {
   const [offerType, setOfferType] = useState("percentage_off");
   const [offerValue, setOfferValue] = useState("");
   const [partnerBrand, setPartnerBrand] = useState("");
+  const [partnerBrandId, setPartnerBrandId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -116,7 +117,7 @@ function EditDeal() {
         return;
       }
 
-      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
+      const { brandId, brandName, error: brandError } = await getPartnerBrand(targetUserId);
 
       if (!active) return;
 
@@ -133,6 +134,7 @@ function EditDeal() {
       }
 
       setPartnerBrand(brandName);
+      setPartnerBrandId(brandId);
 
       const { data, error: fetchError } = await supabase
         .from("deals")
@@ -264,6 +266,7 @@ function EditDeal() {
       const payload = {
         title: formData.title.trim(),
         brand: partnerBrand,
+        brand_id: partnerBrandId,
         discount: offerPreview,
         type: formData.type,
         category: formData.category,
@@ -277,7 +280,6 @@ function EditDeal() {
         .update(payload)
         .eq("id", Number(id))
         .eq("partner_id", targetUserId)
-        .eq("brand", partnerBrand)
         .select("id")
         .maybeSingle();
 
@@ -380,16 +382,11 @@ function EditDeal() {
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
               Brand
             </label>
-            <input
-              name="brand"
-              type="text"
-              value={formData.brand}
-              readOnly
-              disabled
-              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body"
-            />
+            <div className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body text-on-surface-variant">
+              {partnerBrand || "Not Assigned"}
+            </div>
             <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
-              Brand is locked after creation.
+              Assigned by admin.
             </p>
           </div>
 

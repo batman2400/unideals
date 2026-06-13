@@ -25,11 +25,12 @@ function AdminUsers() {
   const [roleFilter, setRoleFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [actingUserId, setActingUserId] = useState(null);
+  const [brands, setBrands] = useState([]);
 
   // Promote form
   const [showPromote, setShowPromote] = useState(false);
   const [promoteEmail, setPromoteEmail] = useState("");
-  const [promoteBrand, setPromoteBrand] = useState("");
+  const [promoteBrandId, setPromoteBrandId] = useState("");
   const [promoting, setPromoting] = useState(false);
   const isMountedRef = useRef(true);
 
@@ -57,10 +58,17 @@ function AdminUsers() {
     setLoading(false);
   }, [role, searchQuery, roleFilter]);
 
+  const fetchBrands = useCallback(async () => {
+    if (role !== "admin") return;
+    const { data } = await supabase.from("brands").select("id, name").order("name");
+    setBrands(data || []);
+  }, [role]);
+
   useEffect(() => {
     if (roleLoading) return;
     fetchUsers();
-  }, [roleLoading, fetchUsers]);
+    fetchBrands();
+  }, [roleLoading, fetchUsers, fetchBrands]);
 
   const showMsg = useCallback((text) => {
     setMessage(text);
@@ -69,14 +77,14 @@ function AdminUsers() {
 
   const handlePromote = useCallback(async (e) => {
     e.preventDefault();
-    if (!promoteEmail.trim() || !promoteBrand.trim()) return;
+    if (!promoteEmail.trim() || !promoteBrandId) return;
 
     setPromoting(true);
     setError("");
 
     const { error: promoteError } = await supabase.rpc("promote_user_to_partner", {
       target_email: promoteEmail.trim(),
-      target_brand: promoteBrand.trim(),
+      target_brand_id: promoteBrandId,
     });
 
     if (!isMountedRef.current) return;
@@ -90,10 +98,10 @@ function AdminUsers() {
     setPromoting(false);
     setShowPromote(false);
     setPromoteEmail("");
-    setPromoteBrand("");
-    showMsg(`Promoted ${promoteEmail} to partner with brand "${promoteBrand}".`);
+    setPromoteBrandId("");
+    showMsg(`Promoted ${promoteEmail} to partner.`);
     fetchUsers();
-  }, [promoteEmail, promoteBrand, showMsg, fetchUsers]);
+  }, [promoteEmail, promoteBrandId, showMsg, fetchUsers]);
 
   const handleDemote = useCallback(async (userId, email) => {
     if (!window.confirm(`Demote ${email} back to student? Their partner profile will be removed.`)) return;
@@ -175,14 +183,17 @@ function AdminUsers() {
               required
               className="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             />
-            <input
-              type="text"
-              value={promoteBrand}
-              onChange={(e) => setPromoteBrand(e.target.value)}
-              placeholder="Brand name"
+            <select
+              value={promoteBrandId}
+              onChange={(e) => setPromoteBrandId(e.target.value)}
               required
               className="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-            />
+            >
+              <option value="" disabled>Select Brand</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
             <button
               type="submit"
               disabled={promoting}

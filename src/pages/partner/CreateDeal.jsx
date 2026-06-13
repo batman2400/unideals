@@ -3,8 +3,8 @@ import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import {
-  getPartnerBrandName,
-  upsertPartnerBrandName,
+  getPartnerBrand,
+  PARTNER_BRAND_REQUIRED_MESSAGE,
 } from "../../lib/partnerBrand";
 import {
   buildOfferLabel,
@@ -51,7 +51,7 @@ function CreateDeal() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [partnerBrand, setPartnerBrand] = useState("");
-  const [brandSetupRequired, setBrandSetupRequired] = useState(false);
+  const [partnerBrandId, setPartnerBrandId] = useState(null);
   const [brandLoading, setBrandLoading] = useState(true);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
@@ -88,7 +88,7 @@ function CreateDeal() {
       if (!user?.id) {
         if (!active) return;
         setPartnerBrand("");
-        setBrandSetupRequired(false);
+        setPartnerBrandId(null);
         setBrandLoading(false);
         return;
       }
@@ -99,7 +99,7 @@ function CreateDeal() {
         if (!active) return;
         setError("Admin View: Please impersonate a brand from the sidebar to create deals.");
         setPartnerBrand("");
-        setBrandSetupRequired(false);
+        setPartnerBrandId(null);
         setBrandLoading(false);
         return;
       }
@@ -108,7 +108,7 @@ function CreateDeal() {
         if (!active) return;
         setError("Access denied. Partner role required.");
         setPartnerBrand("");
-        setBrandSetupRequired(false);
+        setPartnerBrandId(null);
         setBrandLoading(false);
         return;
       }
@@ -116,32 +116,28 @@ function CreateDeal() {
       if (!active) return;
       setBrandLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
+      const { brandId, brandName, error: brandError } = await getPartnerBrand(targetUserId);
 
       if (!active) return;
 
       if (brandError) {
         setError(brandError);
         setPartnerBrand("");
-        setBrandSetupRequired(false);
+        setPartnerBrandId(null);
         setBrandLoading(false);
         return;
       }
 
       if (!brandName) {
-        setError(
-          "No brand profile found yet. Set your brand name below to create your first offer."
-        );
+        setError(PARTNER_BRAND_REQUIRED_MESSAGE);
         setPartnerBrand("");
-        setBrandSetupRequired(true);
-        setFormData((prev) => ({ ...prev, brand: "" }));
+        setPartnerBrandId(null);
         setBrandLoading(false);
         return;
       }
 
-      setError("");
       setPartnerBrand(brandName);
-      setBrandSetupRequired(false);
+      setPartnerBrandId(brandId);
       setFormData((prev) => ({ ...prev, brand: brandName }));
       setBrandLoading(false);
     }
@@ -228,26 +224,9 @@ function CreateDeal() {
     try {
       let effectiveBrand = partnerBrand;
 
-      if (!effectiveBrand) {
-        const requestedBrand = formData.brand.trim();
-
-        if (!requestedBrand) {
-          setError("Please provide a brand name before submitting your first offer.");
-          return;
-        }
-
-        const { brandName: savedBrand, error: brandSaveError } = await upsertPartnerBrandName(
-          targetUserId,
-          requestedBrand
-        );
-
-        if (brandSaveError) {
-          throw new Error(brandSaveError);
-        }
-
-        effectiveBrand = savedBrand || requestedBrand;
-        setPartnerBrand(effectiveBrand);
-        setBrandSetupRequired(false);
+      if (!effectiveBrand || !partnerBrandId) {
+        setError(PARTNER_BRAND_REQUIRED_MESSAGE);
+        return;
       }
 
       let effectiveImageUrl = formData.imageUrl.trim();
@@ -266,6 +245,7 @@ function CreateDeal() {
       const payload = {
         title: formData.title.trim(),
         brand: effectiveBrand,
+        brand_id: partnerBrandId,
         discount: offerPreview,
         type: formData.type,
         category: formData.category,
@@ -362,25 +342,12 @@ function CreateDeal() {
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
               Brand
             </label>
-            <input
-              name="brand"
-              type="text"
-              value={brandLoading ? "Loading partner brand..." : formData.brand}
-              onChange={onChange}
-              readOnly={!!partnerBrand && !brandSetupRequired}
-              disabled={submitting || brandLoading || (!!partnerBrand && !brandSetupRequired)}
-              placeholder={brandSetupRequired ? "Enter your brand name" : "Assigned by profile"}
-              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-            />
-            {brandSetupRequired ? (
-              <p className="text-[11px] text-primary mt-2 font-bold tracking-wide uppercase">
-                Set this once to create your brand profile.
-              </p>
-            ) : (
-              <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
-                Brand is locked to your partner profile.
-              </p>
-            )}
+            <div className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body text-on-surface-variant">
+              {brandLoading ? "Loading partner brand..." : (partnerBrand || "Not Assigned")}
+            </div>
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Assigned by admin.
+            </p>
           </div>
 
           <div>
