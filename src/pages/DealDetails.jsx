@@ -114,12 +114,14 @@ function InStoreTicketDisplay({
   alreadyActive,
   onRegenerate,
 }) {
+  const [alreadyRedeemed, setAlreadyRedeemed] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000)),
   );
   const totalSeconds = 15 * 60;
 
   useEffect(() => {
+    if (alreadyRedeemed || secondsLeft <= 0) return;
     const tick = () => {
       const remaining = Math.max(
         0,
@@ -130,24 +132,53 @@ function InStoreTicketDisplay({
     };
     const id = setInterval(tick, 1000);
     return () => clearInterval(id);
-  }, [expiresAt]);
+  }, [expiresAt, alreadyRedeemed, secondsLeft]);
+
+  useEffect(() => {
+    if (alreadyRedeemed || secondsLeft <= 0) return;
+
+    const channel = supabase
+      .channel(`ticket-${ticketCode}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "student_redemption_tickets",
+          filter: `ticket_code=eq.${ticketCode}`,
+        },
+        (payload) => {
+          if (payload.new && payload.new.redeemed_at) {
+            setAlreadyRedeemed(true);
+            setSecondsLeft(0);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [ticketCode, alreadyRedeemed, secondsLeft]);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
   const progress = secondsLeft / totalSeconds;
-  const expired = secondsLeft <= 0;
+  const expired = secondsLeft <= 0 && !alreadyRedeemed;
 
   return (
     <div className="animate-modal-enter">
       <div
         className={`relative border-2 rounded-2xl overflow-hidden transition-colors ${
-          expired
-            ? "border-error/40 bg-error/5"
-            : "border-primary/30 bg-surface-container-low"
+          alreadyRedeemed
+            ? "border-emerald-400 bg-emerald-50/50"
+            : expired
+              ? "border-error/40 bg-error/5"
+              : "border-primary/30 bg-surface-container-low"
         }`}
       >
         {/* Live indicator */}
-        {!expired && (
+        {!expired && !alreadyRedeemed && (
           <div className="flex items-center justify-center gap-2 bg-primary/10 py-2.5 px-4">
             <span className="relative flex h-2.5 w-2.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
@@ -159,13 +190,24 @@ function InStoreTicketDisplay({
           </div>
         )}
 
-        {expired && (
+        {expired && !alreadyRedeemed && (
           <div className="flex items-center justify-center gap-2 bg-error/10 py-2.5 px-4">
             <span className="material-symbols-outlined text-error text-sm">
               timer_off
             </span>
             <span className="text-error text-xs font-headline font-bold tracking-wide uppercase">
               Ticket Expired
+            </span>
+          </div>
+        )}
+
+        {alreadyRedeemed && (
+          <div className="flex items-center justify-center gap-2 bg-emerald-50 py-2.5 px-4 border-b border-emerald-100/50">
+            <span className="material-symbols-outlined text-emerald-500 text-sm">
+              verified
+            </span>
+            <span className="text-emerald-700 text-xs font-headline font-bold tracking-wide uppercase">
+              Redeemed Successfully
             </span>
           </div>
         )}
@@ -177,81 +219,104 @@ function InStoreTicketDisplay({
           </p>
           <p
             className={`font-headline font-black text-xl tracking-[0.2em] mb-4 ${
-              expired ? "text-on-surface-variant/40" : "text-primary"
+              alreadyRedeemed 
+                ? "text-emerald-600" 
+                : expired ? "text-on-surface-variant/40" : "text-primary"
             }`}
           >
             {ticketCode}
           </p>
 
           {/* QR Code */}
-          <div
-            className={`p-4 bg-white rounded-xl shadow-sm mb-5 transition-opacity ${
-              expired ? "opacity-30 grayscale" : ""
-            }`}
-          >
-            <QRCodeSVG
-              value={`unideals://ticket/${ticketCode}`}
-              size={180}
-              level="H"
-              fgColor={expired ? "#9e9c9c" : "#29695b"}
-              bgColor="#ffffff"
-              includeMargin={false}
-            />
-          </div>
-
-          {/* Countdown Timer */}
-          <div className="text-center mb-4">
-            <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-              {expired ? "Time Expired" : "Time Remaining"}
-            </p>
-            <div className="flex items-center justify-center gap-1.5">
-              <span
-                className={`font-headline font-black text-4xl tabular-nums tracking-tight ${
-                  expired
-                    ? "text-error"
-                    : progress < 0.2
-                      ? "text-error animate-pulse"
-                      : "text-on-background"
-                }`}
-              >
-                {String(minutes).padStart(2, "0")}:
-                {String(seconds).padStart(2, "0")}
-              </span>
-            </div>
-          </div>
-
-          {/* Progress bar */}
-          <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden mb-4">
+          {!alreadyRedeemed && (
             <div
-              className={`h-full rounded-full transition-all duration-1000 ease-linear ${
-                expired
-                  ? "bg-error"
-                  : progress < 0.2
-                    ? "bg-error"
-                    : "emerald-gradient"
+              className={`p-4 bg-white rounded-xl shadow-sm mb-5 transition-opacity ${
+                expired ? "opacity-30 grayscale" : ""
               }`}
-              style={{ width: `${Math.max(progress * 100, 0)}%` }}
-            />
-          </div>
+            >
+              <QRCodeSVG
+                value={`unideals://ticket/${ticketCode}`}
+                size={180}
+                level="H"
+                fgColor={expired ? "#9e9c9c" : "#29695b"}
+                bgColor="#ffffff"
+                includeMargin={false}
+              />
+            </div>
+          )}
 
-          <p className="text-on-surface-variant text-sm text-center leading-relaxed">
-            {expired ? (
-              <>This ticket has expired. Generate a new one to redeem.</>
-            ) : (
-              <>
-                Present this QR code at any{" "}
-                <span className="font-bold text-on-surface">{brand}</span>{" "}
-                register. The cashier will scan it to apply your discount. This
-                is a <span className="font-bold">single-use ticket</span> — it
-                cannot be reused.
-              </>
-            )}
-          </p>
+          {/* Countdown Timer or Success state */}
+          {!alreadyRedeemed ? (
+            <>
+              <div className="text-center mb-4">
+                <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                  {expired ? "Time Expired" : "Time Remaining"}
+                </p>
+                <div className="flex items-center justify-center gap-1.5">
+                  <span
+                    className={`font-headline font-black text-4xl tabular-nums tracking-tight ${
+                      expired
+                        ? "text-error"
+                        : progress < 0.2
+                          ? "text-error animate-pulse"
+                          : "text-on-background"
+                    }`}
+                  >
+                    {String(minutes).padStart(2, "0")}:
+                    {String(seconds).padStart(2, "0")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Progress bar */}
+              <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden mb-4">
+                <div
+                  className={`h-full rounded-full transition-all duration-1000 ease-linear ${
+                    expired
+                      ? "bg-error"
+                      : progress < 0.2
+                        ? "bg-error"
+                        : "emerald-gradient"
+                  }`}
+                  style={{ width: `${Math.max(progress * 100, 0)}%` }}
+                />
+              </div>
+
+              <p className="text-on-surface-variant text-sm text-center leading-relaxed">
+                {expired ? (
+                  <>This ticket has expired. Generate a new one to redeem.</>
+                ) : (
+                  <>
+                    Present this QR code at any{" "}
+                    <span className="font-bold text-on-surface">{brand}</span>{" "}
+                    register. The cashier will scan it to apply your discount. This
+                    is a <span className="font-bold">single-use ticket</span> — it
+                    cannot be reused.
+                  </>
+                )}
+              </p>
+            </>
+          ) : (
+            <div className="text-center my-6 animate-scale-in">
+              <span 
+                className="material-symbols-outlined text-7xl text-emerald-500 mb-4 drop-shadow-sm" 
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
+                check_circle
+              </span>
+              <h3 className="font-headline font-black text-2xl text-emerald-800 mb-2">
+                You're all set!
+              </h3>
+              <p className="text-emerald-700/80 text-sm">
+                The cashier has successfully scanned your ticket. Enjoy your {brand} discount!
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
       {/* Regenerate button when expired */}
-      {expired && (
+      {expired && !alreadyRedeemed && (
         <button
           onClick={onRegenerate}
           className="w-full mt-4 py-3 rounded-xl border border-outline-variant/20 font-headline font-bold text-sm text-on-surface-variant hover:bg-surface-container transition-all active:scale-[0.98]"
