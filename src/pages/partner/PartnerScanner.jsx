@@ -35,6 +35,8 @@ function PartnerScanner() {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
     
+    setError("");
+    
     if (role === "admin" && !impersonatedPartnerId) {
       setError("Admin View: Please impersonate a brand from the sidebar to scan tickets.");
       setLoading(false);

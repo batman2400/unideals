@@ -36,6 +36,8 @@ function PartnerDeals() {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
     
+    setError("");
+    
     if (role === "admin" && !impersonatedPartnerId) {
       setError("Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.");
       setLoading(false);

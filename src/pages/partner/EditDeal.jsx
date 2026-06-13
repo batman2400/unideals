@@ -106,6 +106,8 @@ function EditDeal() {
         setLoading(false);
         return;
       }
+      
+      setError("");
 
       const dealId = Number(id);
       if (!Number.isFinite(dealId)) {

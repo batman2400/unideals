@@ -92,6 +92,8 @@ function CreateDeal() {
         setBrandLoading(false);
         return;
       }
+      
+      setError("");
 
       if (role === "admin" && !impersonatedPartnerId) {
         if (!active) return;
