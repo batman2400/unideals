@@ -157,12 +157,13 @@ function Profile({ isLoggedIn, user }) {
       !(
         normalized.endsWith(".ac.lk") ||
         normalized.endsWith(".edu.lk") ||
+        normalized.endsWith(".sliit.lk") ||
         normalized.endsWith(".edu") ||
         normalized.endsWith(".edu.au") ||
         normalized.endsWith(".ac.uk")
       )
     ) {
-      setUniError("Email must end with .ac.lk, .edu.lk, .edu, .edu.au, or .ac.uk");
+      setUniError("Email must end with .ac.lk, .edu.lk, .sliit.lk, .edu, .edu.au, or .ac.uk");
       return;
     }
     setUniVerifying(true);

@@ -41,13 +41,14 @@ BEGIN
   IF NOT (
     normalized ILIKE '%.ac.lk'
     OR normalized ILIKE '%.edu.lk'
+    OR normalized ILIKE '%.sliit.lk'
     OR normalized ILIKE '%.edu'
     OR normalized ILIKE '%.edu.au'
     OR normalized ILIKE '%.ac.uk'
   ) THEN
     RETURN json_build_object(
       'success', false,
-      'error', 'Email must end with .ac.lk, .edu.lk, .edu, .edu.au, or .ac.uk'
+      'error', 'Email must end with .ac.lk, .edu.lk, .sliit.lk, .edu, .edu.au, or .ac.uk'
     );
   END IF;
 
