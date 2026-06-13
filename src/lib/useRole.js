@@ -20,7 +20,7 @@ export function useRole() {
   const roleChannelInstanceIdRef = useRef(
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
-      : Math.random().toString(36).slice(2)
+      : Math.random().toString(36).slice(2),
   );
 
   useEffect(() => {
@@ -68,10 +68,14 @@ export function useRole() {
           },
           () => {
             resolveRole();
-          }
+          },
         )
         .subscribe((status) => {
-          if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          if (
+            status === "CHANNEL_ERROR" ||
+            status === "TIMED_OUT" ||
+            status === "CLOSED"
+          ) {
             resolveRole();
           }
         });
@@ -115,7 +119,8 @@ export function useRole() {
           return;
         }
 
-        const { data: rpcRole, error: rpcError } = await supabase.rpc("get_user_role");
+        const { data: rpcRole, error: rpcError } =
+          await supabase.rpc("get_user_role");
 
         if (!active) return;
 

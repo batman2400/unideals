@@ -13,7 +13,9 @@ function sanitizePathSegment(value) {
 }
 
 function extractExtension(fileName) {
-  const match = String(fileName ?? "").toLowerCase().match(/\.([a-z0-9]+)$/);
+  const match = String(fileName ?? "")
+    .toLowerCase()
+    .match(/\.([a-z0-9]+)$/);
   return match ? match[1] : "png";
 }
 

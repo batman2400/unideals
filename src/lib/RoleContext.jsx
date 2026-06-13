@@ -23,7 +23,9 @@ export function RoleProvider({ children }) {
   const [impersonatedPartnerId, setImpersonatedPartnerId] = useState(null);
 
   return (
-    <RoleContext.Provider value={{ ...roleState, impersonatedPartnerId, setImpersonatedPartnerId }}>
+    <RoleContext.Provider
+      value={{ ...roleState, impersonatedPartnerId, setImpersonatedPartnerId }}
+    >
       {children}
     </RoleContext.Provider>
   );

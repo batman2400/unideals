@@ -6,25 +6,30 @@ import { supabase } from "../lib/supabaseClient";
 function PortalLayout({ children, portalType = "partner", brandName = "" }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { role, impersonatedPartnerId, setImpersonatedPartnerId } = useRoleContext();
+  const { role, impersonatedPartnerId, setImpersonatedPartnerId } =
+    useRoleContext();
   const [partners, setPartners] = useState([]);
 
   useEffect(() => {
     if (role === "admin" && portalType === "partner") {
       supabase
         .from("partner_profiles")
-        .select(`
+        .select(
+          `
           user_id,
           brand_name,
           brands ( name )
-        `)
+        `,
+        )
         .then(({ data }) => {
           if (data) {
             const partnerList = data.map((p) => {
               const brand = p.brands?.name || p.brand_name || "Unknown Brand";
               return { id: p.user_id, name: brand };
             });
-            setPartners(partnerList.sort((a, b) => a.name.localeCompare(b.name)));
+            setPartners(
+              partnerList.sort((a, b) => a.name.localeCompare(b.name)),
+            );
           }
         });
     }
@@ -56,8 +61,10 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
   ];
 
   const navLinks = portalType === "admin" ? adminLinks : partnerLinks;
-  const portalTitle = portalType === "admin" ? "Admin Portal" : "Partner Portal";
-  const portalIcon = portalType === "admin" ? "admin_panel_settings" : "handshake";
+  const portalTitle =
+    portalType === "admin" ? "Admin Portal" : "Partner Portal";
+  const portalIcon =
+    portalType === "admin" ? "admin_panel_settings" : "handshake";
 
   const isActive = (link) => {
     if (link.exact) {
@@ -139,7 +146,9 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                 </label>
                 <select
                   value={impersonatedPartnerId || ""}
-                  onChange={(e) => setImpersonatedPartnerId(e.target.value || null)}
+                  onChange={(e) =>
+                    setImpersonatedPartnerId(e.target.value || null)
+                  }
                   className="w-full bg-surface-container-low border border-outline-variant/30 text-xs font-bold rounded-lg px-2 py-2 text-on-background focus:ring-2 focus:ring-primary/30 outline-none"
                 >
                   <option value="">-- None (Admin View) --</option>
@@ -202,7 +211,9 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                           ? "text-primary"
                           : "text-on-surface-variant group-hover:text-on-surface"
                       }`}
-                      style={active ? { fontVariationSettings: "'FILL' 1" } : {}}
+                      style={
+                        active ? { fontVariationSettings: "'FILL' 1" } : {}
+                      }
                     >
                       {link.icon}
                     </span>
@@ -231,7 +242,9 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                     </label>
                     <select
                       value={impersonatedPartnerId || ""}
-                      onChange={(e) => setImpersonatedPartnerId(e.target.value || null)}
+                      onChange={(e) =>
+                        setImpersonatedPartnerId(e.target.value || null)
+                      }
                       className="w-full bg-surface border border-outline-variant/30 text-xs font-bold rounded-lg px-2 py-2 text-on-background focus:ring-2 focus:ring-primary/30 outline-none"
                     >
                       <option value="">-- None (Admin View) --</option>
@@ -249,9 +262,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 min-w-0 animate-fade-in">
-          {children}
-        </main>
+        <main className="flex-1 min-w-0 animate-fade-in">{children}</main>
       </div>
     </div>
   );

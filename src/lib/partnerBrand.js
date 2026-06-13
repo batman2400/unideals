@@ -16,7 +16,8 @@ export async function getPartnerBrand(userId) {
   // Use a join to get the brand details
   const { data: profile, error: profileError } = await supabase
     .from("partner_profiles")
-    .select(`
+    .select(
+      `
       brand_id,
       brand_name,
       brands (
@@ -24,7 +25,8 @@ export async function getPartnerBrand(userId) {
         name,
         logo_url
       )
-    `)
+    `,
+    )
     .eq("user_id", userId)
     .maybeSingle();
 
@@ -60,7 +62,8 @@ export async function getPartnerBrand(userId) {
   return {
     brandId: null,
     brandName: null,
-    error: "No brand is assigned to this partner account yet. Please contact an admin to be assigned a brand.",
+    error:
+      "No brand is assigned to this partner account yet. Please contact an admin to be assigned a brand.",
   };
 }
 

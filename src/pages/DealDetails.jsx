@@ -17,7 +17,6 @@ import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
 import DealsLoader from "../components/DealsLoader";
 
-
 // ── In-Store Redemption (Server-Generated Unique Ticket) ─
 function InStoreRedemption({ dealId, brand }) {
   const [ticket, setTicket] = useState(null);
@@ -29,10 +28,13 @@ function InStoreRedemption({ dealId, brand }) {
     setTicketError("");
 
     try {
-      const { data, error: rpcError } = await supabase.rpc("generate_instore_ticket", {
-        target_deal_id: dealId,
-        ticket_duration_minutes: 15,
-      });
+      const { data, error: rpcError } = await supabase.rpc(
+        "generate_instore_ticket",
+        {
+          target_deal_id: dealId,
+          ticket_duration_minutes: 15,
+        },
+      );
 
       if (rpcError) throw rpcError;
 
@@ -45,7 +47,9 @@ function InStoreRedemption({ dealId, brand }) {
         alreadyActive: row.already_active,
       });
     } catch (err) {
-      setTicketError(err?.message || "Could not generate ticket. Please try again.");
+      setTicketError(
+        err?.message || "Could not generate ticket. Please try again.",
+      );
     } finally {
       setGenerating(false);
     }
@@ -76,14 +80,16 @@ function InStoreRedemption({ dealId, brand }) {
             </>
           ) : (
             <>
-              <span className="material-symbols-outlined text-xl">qr_code_scanner</span>
+              <span className="material-symbols-outlined text-xl">
+                qr_code_scanner
+              </span>
               Generate In-Store Ticket
             </>
           )}
         </button>
         <p className="text-on-surface-variant/50 text-xs mt-3">
-          Generates a unique single-use ticket with a 15-minute timer.
-          The cashier will scan this QR code.
+          Generates a unique single-use ticket with a 15-minute timer. The
+          cashier will scan this QR code.
         </p>
       </div>
     );
@@ -101,15 +107,24 @@ function InStoreRedemption({ dealId, brand }) {
 }
 
 // ── Ticket Display with Server-Side Expiry Countdown ────
-function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onRegenerate }) {
+function InStoreTicketDisplay({
+  ticketCode,
+  expiresAt,
+  brand,
+  alreadyActive,
+  onRegenerate,
+}) {
   const [secondsLeft, setSecondsLeft] = useState(() =>
-    Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000))
+    Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000)),
   );
   const totalSeconds = 15 * 60;
 
   useEffect(() => {
     const tick = () => {
-      const remaining = Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000));
+      const remaining = Math.max(
+        0,
+        Math.round((expiresAt.getTime() - Date.now()) / 1000),
+      );
       setSecondsLeft(remaining);
       if (remaining <= 0) clearInterval(id);
     };
@@ -126,7 +141,9 @@ function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onR
     <div className="animate-modal-enter">
       <div
         className={`relative border-2 rounded-2xl overflow-hidden transition-colors ${
-          expired ? "border-error/40 bg-error/5" : "border-primary/30 bg-surface-container-low"
+          expired
+            ? "border-error/40 bg-error/5"
+            : "border-primary/30 bg-surface-container-low"
         }`}
       >
         {/* Live indicator */}
@@ -144,7 +161,9 @@ function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onR
 
         {expired && (
           <div className="flex items-center justify-center gap-2 bg-error/10 py-2.5 px-4">
-            <span className="material-symbols-outlined text-error text-sm">timer_off</span>
+            <span className="material-symbols-outlined text-error text-sm">
+              timer_off
+            </span>
             <span className="text-error text-xs font-headline font-bold tracking-wide uppercase">
               Ticket Expired
             </span>
@@ -156,9 +175,11 @@ function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onR
           <p className="text-[10px] font-bold tracking-[0.15em] text-on-surface-variant/60 uppercase mb-2">
             Ticket Code
           </p>
-          <p className={`font-headline font-black text-xl tracking-[0.2em] mb-4 ${
-            expired ? "text-on-surface-variant/40" : "text-primary"
-          }`}>
+          <p
+            className={`font-headline font-black text-xl tracking-[0.2em] mb-4 ${
+              expired ? "text-on-surface-variant/40" : "text-primary"
+            }`}
+          >
             {ticketCode}
           </p>
 
@@ -193,7 +214,8 @@ function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onR
                       : "text-on-background"
                 }`}
               >
-                {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+                {String(minutes).padStart(2, "0")}:
+                {String(seconds).padStart(2, "0")}
               </span>
             </div>
           </div>
@@ -218,9 +240,10 @@ function InStoreTicketDisplay({ ticketCode, expiresAt, brand, alreadyActive, onR
             ) : (
               <>
                 Present this QR code at any{" "}
-                <span className="font-bold text-on-surface">{brand}</span> register.
-                The cashier will scan it to apply your discount.
-                This is a <span className="font-bold">single-use ticket</span> — it cannot be reused.
+                <span className="font-bold text-on-surface">{brand}</span>{" "}
+                register. The cashier will scan it to apply your discount. This
+                is a <span className="font-bold">single-use ticket</span> — it
+                cannot be reused.
               </>
             )}
           </p>
@@ -245,16 +268,19 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
 
-  const logEvent = useCallback(async (eventType) => {
-    try {
-      await supabase.rpc("log_online_code_event", {
-        target_deal_id: dealId,
-        target_event_type: eventType,
-      });
-    } catch {
-      // Silent fail for analytics
-    }
-  }, [dealId]);
+  const logEvent = useCallback(
+    async (eventType) => {
+      try {
+        await supabase.rpc("log_online_code_event", {
+          target_deal_id: dealId,
+          target_event_type: eventType,
+        });
+      } catch {
+        // Silent fail for analytics
+      }
+    },
+    [dealId],
+  );
 
   const handleReveal = useCallback(() => {
     setRevealed(true);
@@ -305,7 +331,9 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
     <div className="space-y-4 animate-modal-enter">
       <div className="bg-surface-container-low border-2 border-dashed border-primary/30 rounded-2xl p-6 md:p-8 text-center">
         <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-3 flex items-center justify-center gap-1.5">
-          <span className="material-symbols-outlined text-primary text-sm">confirmation_number</span>
+          <span className="material-symbols-outlined text-primary text-sm">
+            confirmation_number
+          </span>
           Your Promo Code
         </p>
         <p className="font-headline font-black text-3xl md:text-4xl text-primary tracking-[0.15em] mb-4 select-all">
@@ -349,14 +377,21 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
       )}
 
       <p className="text-on-surface-variant/50 text-xs text-center leading-relaxed">
-        Apply code <span className="font-bold text-on-surface-variant">{redemptionCode}</span> at
-        checkout on {brand}'s website to receive your discount.
+        Apply code{" "}
+        <span className="font-bold text-on-surface-variant">
+          {redemptionCode}
+        </span>{" "}
+        at checkout on {brand}'s website to receive your discount.
       </p>
     </div>
   );
 }
 
-function VerificationWall({ isAuthenticated, verificationLoading, onOpenAuthModal }) {
+function VerificationWall({
+  isAuthenticated,
+  verificationLoading,
+  onOpenAuthModal,
+}) {
   const helperText = verificationLoading
     ? "Checking your account verification status..."
     : isAuthenticated
@@ -365,12 +400,20 @@ function VerificationWall({ isAuthenticated, verificationLoading, onOpenAuthModa
 
   return (
     <div className="relative overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 shadow-[0_18px_55px_-35px_rgba(6,26,20,0.8)] animate-modal-enter">
-      <div className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl" aria-hidden="true" />
-      <div className="absolute -bottom-16 -left-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl" aria-hidden="true" />
+      <div
+        className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl"
+        aria-hidden="true"
+      />
+      <div
+        className="absolute -bottom-16 -left-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl"
+        aria-hidden="true"
+      />
 
       <div className="relative z-10 space-y-5">
         <div className="w-14 h-14 rounded-2xl bg-surface border border-primary/20 flex items-center justify-center shadow-sm">
-          <span className="material-symbols-outlined text-primary text-3xl">lock</span>
+          <span className="material-symbols-outlined text-primary text-3xl">
+            lock
+          </span>
         </div>
 
         <div>
@@ -417,7 +460,9 @@ function VerificationWall({ isAuthenticated, verificationLoading, onOpenAuthModa
             onClick={onOpenAuthModal}
             className="flex-1 border border-outline-variant/25 bg-surface text-on-surface-variant hover:text-on-surface hover:border-primary/25 py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight transition-all"
           >
-            {isAuthenticated ? "Re-register with University Email" : "Already Verified? Sign In"}
+            {isAuthenticated
+              ? "Re-register with University Email"
+              : "Already Verified? Sign In"}
           </button>
         </div>
       </div>
@@ -452,19 +497,23 @@ function DealDetails() {
   useEffect(() => {
     let active = true;
     if (id) {
-      checkIfSaved(id).then((saved) => {
-        if (active) {
-          setIsSaved(saved);
-          setLoadingSave(false);
-        }
-      }).catch(() => {
-        if (active) {
-          setSaveError("Could not verify saved state right now.");
-          setLoadingSave(false);
-        }
-      });
+      checkIfSaved(id)
+        .then((saved) => {
+          if (active) {
+            setIsSaved(saved);
+            setLoadingSave(false);
+          }
+        })
+        .catch(() => {
+          if (active) {
+            setSaveError("Could not verify saved state right now.");
+            setLoadingSave(false);
+          }
+        });
     }
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [id]);
 
   const handleToggleSave = async (e) => {
@@ -472,7 +521,9 @@ function DealDetails() {
     e.stopPropagation();
     setSaveError("");
 
-    const { data: { session } } = await supabase.auth.getSession();
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
     if (!session) {
       handleOpenAuthModal();
       return;
@@ -489,12 +540,13 @@ function DealDetails() {
       }
     } catch (err) {
       console.error("Error toggling save:", err);
-      setSaveError(err?.message || "Could not update saved state. Please try again.");
+      setSaveError(
+        err?.message || "Could not update saved state. Please try again.",
+      );
     } finally {
       setLoadingSave(false);
     }
   };
-
 
   // Loading state
   if (loading) {
@@ -533,7 +585,9 @@ function DealDetails() {
             to="/perks"
             className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-8 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
           >
-            <span className="material-symbols-outlined text-lg">arrow_back</span>
+            <span className="material-symbols-outlined text-lg">
+              arrow_back
+            </span>
             Browse All Perks
           </Link>
         </div>
@@ -541,12 +595,24 @@ function DealDetails() {
     );
   }
 
-  const { title, brand, discount, type, category, imageUrl, description, redemptionCode, storeUrl } = deal;
+  const {
+    title,
+    brand,
+    discount,
+    type,
+    category,
+    imageUrl,
+    description,
+    redemptionCode,
+    storeUrl,
+  } = deal;
   const isInStore = type === "In-Store";
   const isPrivilegedRole = role === "admin" || role === "partner";
-  const canRevealRedemption = isPrivilegedRole || (isAuthenticated && isVerified);
+  const canRevealRedemption =
+    isPrivilegedRole || (isAuthenticated && isVerified);
   const showVerificationWall = !canRevealRedemption;
-  const hasRedemptionCode = typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
+  const hasRedemptionCode =
+    typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
 
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
@@ -587,7 +653,9 @@ function DealDetails() {
               onClick={handleToggleSave}
               disabled={loadingSave}
               className={`absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-md ${
-                loadingSave ? "opacity-50 cursor-not-allowed" : "hover:scale-110"
+                loadingSave
+                  ? "opacity-50 cursor-not-allowed"
+                  : "hover:scale-110"
               } ${
                 isSaved
                   ? "bg-primary text-on-primary"
@@ -667,30 +735,44 @@ function DealDetails() {
             </h3>
             <ul className="text-on-surface-variant text-sm leading-relaxed space-y-2">
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
+                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
+                  check_circle
+                </span>
                 Valid student ID or .edu email required for verification.
               </li>
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
+                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
+                  check_circle
+                </span>
                 Offer valid through the current academic semester.
               </li>
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
+                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
+                  check_circle
+                </span>
                 Cannot be combined with other promotions or discounts.
               </li>
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
+                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
+                  check_circle
+                </span>
                 One redemption per verified student account.
               </li>
               {isInStore && (
                 <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
-                  QR ticket expires 15 minutes after activation to prevent screenshot fraud.
+                  <span className="material-symbols-outlined text-primary text-sm mt-0.5">
+                    check_circle
+                  </span>
+                  QR ticket expires 15 minutes after activation to prevent
+                  screenshot fraud.
                 </li>
               )}
               <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">check_circle</span>
-                {brand} reserves the right to modify or cancel this offer at any time.
+                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
+                  check_circle
+                </span>
+                {brand} reserves the right to modify or cancel this offer at any
+                time.
               </li>
             </ul>
           </div>
@@ -704,7 +786,7 @@ function DealDetails() {
             />
           ) : (
             <>
-              {(isInStore || hasRedemptionCode) ? (
+              {isInStore || hasRedemptionCode ? (
                 <>
                   {isInStore ? (
                     <InStoreRedemption dealId={deal.id} brand={brand} />
@@ -719,9 +801,12 @@ function DealDetails() {
                 </>
               ) : (
                 <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 text-sm text-on-surface-variant">
-                  <p className="font-headline font-bold text-on-surface mb-2">Redemption code unavailable</p>
+                  <p className="font-headline font-bold text-on-surface mb-2">
+                    Redemption code unavailable
+                  </p>
                   <p>
-                    This offer does not currently have a valid redemption code. Please try again later or contact support.
+                    This offer does not currently have a valid redemption code.
+                    Please try again later or contact support.
                   </p>
                 </div>
               )}
@@ -733,7 +818,9 @@ function DealDetails() {
             to="/perks"
             className="mt-6 inline-flex items-center gap-1 text-sm text-on-surface-variant/60 hover:text-primary font-headline font-bold transition-colors self-start"
           >
-            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            <span className="material-symbols-outlined text-sm">
+              arrow_back
+            </span>
             Back to all deals
           </Link>
         </div>

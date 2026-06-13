@@ -4,7 +4,7 @@ import jsQR from "jsqr";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import {
-  getPartnerBrandName,
+  getPartnerBrand,
   PARTNER_BRAND_REQUIRED_MESSAGE,
 } from "../../lib/partnerBrand";
 
@@ -43,11 +43,17 @@ function formatDateTime(value) {
 }
 
 function PartnerDashboard() {
-  const { user, role, loading: roleLoading, error: roleError } = useRoleContext();
+  const {
+    user,
+    role,
+    loading: roleLoading,
+    error: roleError,
+  } = useRoleContext();
 
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [partnerBrandId, setPartnerBrandId] = useState("");
   const [partnerBrand, setPartnerBrand] = useState("");
   const [brandLoading, setBrandLoading] = useState(true);
   const [deletingDealId, setDeletingDealId] = useState(null);
@@ -58,7 +64,9 @@ function PartnerDashboard() {
     confirmedRedemptions: 0,
   });
   const [recentScanEvents, setRecentScanEvents] = useState([]);
-  const [recentConfirmedRedemptions, setRecentConfirmedRedemptions] = useState([]);
+  const [recentConfirmedRedemptions, setRecentConfirmedRedemptions] = useState(
+    [],
+  );
   const [trackingWarning, setTrackingWarning] = useState("");
   const [scannerSupported, setScannerSupported] = useState(false);
   const [scannerActive, setScannerActive] = useState(false);
@@ -102,7 +110,13 @@ function PartnerDashboard() {
       return;
     }
 
-    const [totalScansResponse, validScansResponse, confirmedResponse, eventsResponse, recentConfirmedResponse] = await Promise.all([
+    const [
+      totalScansResponse,
+      validScansResponse,
+      confirmedResponse,
+      eventsResponse,
+      recentConfirmedResponse,
+    ] = await Promise.all([
       supabase
         .from("redemption_events")
         .select("id", { count: "exact", head: true })
@@ -118,7 +132,9 @@ function PartnerDashboard() {
         .eq("partner_id", user.id),
       supabase
         .from("redemption_events")
-        .select("id, deal_id, scanned_code, scan_method, scan_result, created_at")
+        .select(
+          "id, deal_id, scanned_code, scan_method, scan_result, created_at",
+        )
         .eq("partner_id", user.id)
         .order("created_at", { ascending: false })
         .limit(10),
@@ -131,14 +147,14 @@ function PartnerDashboard() {
     ]);
 
     if (
-      totalScansResponse.error
-      || validScansResponse.error
-      || confirmedResponse.error
-      || eventsResponse.error
-      || recentConfirmedResponse.error
+      totalScansResponse.error ||
+      validScansResponse.error ||
+      confirmedResponse.error ||
+      eventsResponse.error ||
+      recentConfirmedResponse.error
     ) {
       setTrackingWarning(
-        "Redemption activity history is unavailable. Run the latest SQL migration to enable tracking tables."
+        "Redemption activity history is unavailable. Run the latest SQL migration to enable tracking tables.",
       );
       return;
     }
@@ -166,10 +182,13 @@ function PartnerDashboard() {
         return;
       }
 
-      const { data, error: rpcError } = await supabase.rpc("record_partner_redemption_scan", {
-        scanned_payload: normalizedCode,
-        scan_method: method,
-      });
+      const { data, error: rpcError } = await supabase.rpc(
+        "record_partner_redemption_scan",
+        {
+          scanned_payload: normalizedCode,
+          scan_method: method,
+        },
+      );
 
       if (rpcError) {
         setScanResult({
@@ -218,7 +237,7 @@ function PartnerDashboard() {
 
       await refreshRedemptionStats();
     },
-    [refreshRedemptionStats]
+    [refreshRedemptionStats],
   );
 
   const startScanner = useCallback(async () => {
@@ -246,7 +265,9 @@ function PartnerDashboard() {
       }
 
       if (typeof window !== "undefined" && "BarcodeDetector" in window) {
-        detectorRef.current = new window.BarcodeDetector({ formats: ["qr_code"] });
+        detectorRef.current = new window.BarcodeDetector({
+          formats: ["qr_code"],
+        });
       } else {
         detectorRef.current = null;
       }
@@ -274,8 +295,17 @@ function PartnerDashboard() {
             const ctx = canvas.getContext("2d");
             if (ctx) {
               ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-              const code = jsQR(imageData.data, imageData.width, imageData.height);
+              const imageData = ctx.getImageData(
+                0,
+                0,
+                canvas.width,
+                canvas.height,
+              );
+              const code = jsQR(
+                imageData.data,
+                imageData.width,
+                imageData.height,
+              );
               if (code) {
                 rawValue = String(code.data || "").trim();
               }
@@ -333,12 +363,15 @@ function PartnerDashboard() {
         return;
       }
 
-      let resolvedBrand = "";
+      let resolvedBrandName = "";
+      let resolvedBrandId = "";
 
       if (role === "partner") {
         setBrandLoading(true);
 
-        const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+        const { brandId, brandName, error: brandError } = await getPartnerBrand(
+          user.id,
+        );
 
         if (!active) return;
 
@@ -352,18 +385,22 @@ function PartnerDashboard() {
 
         if (!brandName) {
           setError(
-            "No brand profile found yet. Open Create New Deal to set your brand and publish your first offer."
+            "No brand profile found yet. Open Create New Deal to set your brand and publish your first offer.",
           );
           setPartnerBrand("");
+          setPartnerBrandId("");
           setBrandLoading(false);
           setLoading(false);
           return;
         }
 
-        resolvedBrand = brandName;
+        resolvedBrandName = brandName;
+        resolvedBrandId = brandId;
         setPartnerBrand(brandName);
+        setPartnerBrandId(brandId);
       } else {
         setPartnerBrand("");
+        setPartnerBrandId("");
       }
 
       setBrandLoading(false);
@@ -374,12 +411,16 @@ function PartnerDashboard() {
 
       let query = supabase
         .from("deals")
-        .select("id, partner_id, brand, title, discount, type, category, status, redemption_code, created_at")
-        .eq("partner_id", user.id)
+        .select(
+          "id, partner_id, brand_id, brand, title, discount, type, category, status, redemption_code, created_at",
+        )
         .order("created_at", { ascending: false });
 
       if (role === "partner") {
-        query = query.eq("brand", resolvedBrand);
+        query = query.eq("brand_id", resolvedBrandId);
+      } else if (role === "admin") {
+        // Admin viewing their own dashboard should see all their deals? Or no filter?
+        // Let's just leave it to not filter by brand_id for admin, unless impersonating.
       }
 
       const { data, error: fetchError } = await query;
@@ -426,8 +467,7 @@ function PartnerDashboard() {
       .from("deals")
       .delete()
       .eq("id", dealId)
-      .eq("partner_id", user.id)
-      .eq("brand", partnerBrand)
+      .eq("brand_id", partnerBrandId)
       .select("id");
 
     if (deleteError) {
@@ -497,9 +537,10 @@ function PartnerDashboard() {
     },
   ];
 
-  const metricCards = role === "partner"
-    ? [...baseMetricCards, ...scannerMetricCards]
-    : baseMetricCards;
+  const metricCards =
+    role === "partner"
+      ? [...baseMetricCards, ...scannerMetricCards]
+      : baseMetricCards;
 
   if (roleLoading || loading || (role === "partner" && brandLoading)) {
     return (
@@ -538,7 +579,8 @@ function PartnerDashboard() {
             Deal Performance Dashboard
           </h1>
           <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
-            Track your submission pipeline and monitor moderation outcomes in real time.
+            Track your submission pipeline and monitor moderation outcomes in
+            real time.
           </p>
           {role === "partner" && partnerBrand ? (
             <p className="text-xs font-bold tracking-[0.15em] uppercase text-primary mt-3">
@@ -558,7 +600,9 @@ function PartnerDashboard() {
 
       {role !== "partner" && role !== "admin" ? (
         <div className="bg-error/10 border border-error/20 rounded-xl p-5 mb-6">
-          <p className="text-error text-sm font-bold">Access denied. Partner role required.</p>
+          <p className="text-error text-sm font-bold">
+            Access denied. Partner role required.
+          </p>
         </div>
       ) : null}
 
@@ -582,7 +626,8 @@ function PartnerDashboard() {
                     QR Redemption Scanner
                   </h2>
                   <p className="text-on-surface-variant text-sm mt-1">
-                    Scan student redemption QR codes and verify them server-side. Every attempt is logged.
+                    Scan student redemption QR codes and verify them
+                    server-side. Every attempt is logged.
                   </p>
                 </div>
 
@@ -593,7 +638,9 @@ function PartnerDashboard() {
                       onClick={stopScanner}
                       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border border-error/25 text-error text-sm font-headline font-bold hover:bg-error/10 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-base">stop_circle</span>
+                      <span className="material-symbols-outlined text-base">
+                        stop_circle
+                      </span>
                       Stop Scanner
                     </button>
                   ) : (
@@ -603,7 +650,9 @@ function PartnerDashboard() {
                       disabled={!scannerSupported}
                       className="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg emerald-gradient text-on-primary text-sm font-headline font-bold disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                      <span className="material-symbols-outlined text-base">qr_code_scanner</span>
+                      <span className="material-symbols-outlined text-base">
+                        qr_code_scanner
+                      </span>
                       Start Scanner
                     </button>
                   )}
@@ -633,11 +682,16 @@ function PartnerDashboard() {
                 </div>
 
                 <div>
-                  <form onSubmit={handleManualVerify} className="flex gap-2 mb-3">
+                  <form
+                    onSubmit={handleManualVerify}
+                    className="flex gap-2 mb-3"
+                  >
                     <input
                       type="text"
                       value={manualCode}
-                      onChange={(event) => setManualCode(event.target.value.toUpperCase())}
+                      onChange={(event) =>
+                        setManualCode(event.target.value.toUpperCase())
+                      }
                       placeholder="Enter code manually"
                       className="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                     />
@@ -652,7 +706,9 @@ function PartnerDashboard() {
 
                   {scannerError ? (
                     <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3 mb-3">
-                      <p className="text-error text-sm font-bold">{scannerError}</p>
+                      <p className="text-error text-sm font-bold">
+                        {scannerError}
+                      </p>
                     </div>
                   ) : null}
 
@@ -663,13 +719,16 @@ function PartnerDashboard() {
                       <p className="text-sm font-bold">{scanResult.message}</p>
                       {scanResult.deal ? (
                         <p className="text-xs mt-1 font-bold tracking-wide uppercase opacity-90">
-                          {scanResult.deal.brand} · {scanResult.deal.title} · {scanResult.deal.status}
+                          {scanResult.deal.brand} · {scanResult.deal.title} ·{" "}
+                          {scanResult.deal.status}
                         </p>
                       ) : null}
                       {scanResult.eventId ? (
                         <p className="text-[11px] mt-1 font-bold tracking-wide uppercase opacity-90">
                           Event #{scanResult.eventId}
-                          {scanResult.redemptionId ? ` · Redemption #${scanResult.redemptionId}` : ""}
+                          {scanResult.redemptionId
+                            ? ` · Redemption #${scanResult.redemptionId}`
+                            : ""}
                         </p>
                       ) : null}
                     </div>
@@ -699,9 +758,13 @@ function PartnerDashboard() {
                   <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase">
                     {card.label}
                   </p>
-                  <span className="material-symbols-outlined text-primary text-xl">{card.icon}</span>
+                  <span className="material-symbols-outlined text-primary text-xl">
+                    {card.icon}
+                  </span>
                 </div>
-                <p className="font-headline font-black text-4xl tracking-tight text-on-background">{card.value}</p>
+                <p className="font-headline font-black text-4xl tracking-tight text-on-background">
+                  {card.value}
+                </p>
               </article>
             ))}
           </div>
@@ -719,34 +782,50 @@ function PartnerDashboard() {
 
               {trackingWarning ? (
                 <div className="mb-5 bg-amber-100 border border-amber-200 rounded-lg px-4 py-3">
-                  <p className="text-amber-700 text-sm font-bold">{trackingWarning}</p>
+                  <p className="text-amber-700 text-sm font-bold">
+                    {trackingWarning}
+                  </p>
                 </div>
               ) : null}
 
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                 <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
                   <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
-                    <h3 className="font-headline font-bold text-on-background">Recent Scan Events</h3>
+                    <h3 className="font-headline font-bold text-on-background">
+                      Recent Scan Events
+                    </h3>
                   </div>
 
                   {recentScanEvents.length === 0 ? (
-                    <div className="p-4 text-sm text-on-surface-variant">No scan events yet.</div>
+                    <div className="p-4 text-sm text-on-surface-variant">
+                      No scan events yet.
+                    </div>
                   ) : (
                     <ul className="divide-y divide-outline-variant/10">
                       {recentScanEvents.map((event) => {
-                        const matchedDeal = deals.find((deal) => deal.id === event.deal_id);
-                        const badgeClass = EVENT_BADGE_STYLES[event.scan_result] || EVENT_BADGE_STYLES.invalid;
+                        const matchedDeal = deals.find(
+                          (deal) => deal.id === event.deal_id,
+                        );
+                        const badgeClass =
+                          EVENT_BADGE_STYLES[event.scan_result] ||
+                          EVENT_BADGE_STYLES.invalid;
 
                         return (
                           <li key={event.id} className="px-4 py-3 text-sm">
                             <div className="flex items-center justify-between gap-2 mb-1">
-                              <p className="font-bold text-on-background">{matchedDeal?.title || `Deal #${event.deal_id || "-"}`}</p>
-                              <span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase ${badgeClass}`}>
+                              <p className="font-bold text-on-background">
+                                {matchedDeal?.title ||
+                                  `Deal #${event.deal_id || "-"}`}
+                              </p>
+                              <span
+                                className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-bold tracking-wide uppercase ${badgeClass}`}
+                              >
                                 {event.scan_result}
                               </span>
                             </div>
                             <p className="text-on-surface-variant text-xs">
-                              Code: {event.scanned_code} · Method: {event.scan_method}
+                              Code: {event.scanned_code} · Method:{" "}
+                              {event.scan_method}
                             </p>
                             <p className="text-on-surface-variant text-xs mt-1">
                               {formatDateTime(event.created_at)}
@@ -760,19 +839,27 @@ function PartnerDashboard() {
 
                 <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
                   <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
-                    <h3 className="font-headline font-bold text-on-background">Recent Confirmed Redemptions</h3>
+                    <h3 className="font-headline font-bold text-on-background">
+                      Recent Confirmed Redemptions
+                    </h3>
                   </div>
 
                   {recentConfirmedRedemptions.length === 0 ? (
-                    <div className="p-4 text-sm text-on-surface-variant">No confirmed redemptions yet.</div>
+                    <div className="p-4 text-sm text-on-surface-variant">
+                      No confirmed redemptions yet.
+                    </div>
                   ) : (
                     <ul className="divide-y divide-outline-variant/10">
                       {recentConfirmedRedemptions.map((entry) => {
-                        const matchedDeal = deals.find((deal) => deal.id === entry.deal_id);
+                        const matchedDeal = deals.find(
+                          (deal) => deal.id === entry.deal_id,
+                        );
 
                         return (
                           <li key={entry.id} className="px-4 py-3 text-sm">
-                            <p className="font-bold text-on-background">{matchedDeal?.title || `Deal #${entry.deal_id}`}</p>
+                            <p className="font-bold text-on-background">
+                              {matchedDeal?.title || `Deal #${entry.deal_id}`}
+                            </p>
                             <p className="text-on-surface-variant text-xs mt-1">
                               Code: {entry.redemption_code}
                             </p>
@@ -808,7 +895,9 @@ function PartnerDashboard() {
             ) : (
               <ul className="divide-y divide-outline-variant/10">
                 {deals.map((deal) => {
-                  const badgeClass = STATUS_STYLES[deal.status] || "bg-surface-container-low text-on-surface border-outline-variant/20";
+                  const badgeClass =
+                    STATUS_STYLES[deal.status] ||
+                    "bg-surface-container-low text-on-surface border-outline-variant/20";
 
                   return (
                     <li
@@ -835,7 +924,9 @@ function PartnerDashboard() {
                             to={`/partner/edit-deal/${deal.id}`}
                             className="inline-flex items-center gap-1.5 bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide uppercase hover:bg-primary/15 transition-colors"
                           >
-                            <span className="material-symbols-outlined text-sm">edit</span>
+                            <span className="material-symbols-outlined text-sm">
+                              edit
+                            </span>
                             Edit
                           </Link>
                         ) : null}
@@ -852,7 +943,9 @@ function PartnerDashboard() {
                               </>
                             ) : (
                               <>
-                                <span className="material-symbols-outlined text-sm">delete</span>
+                                <span className="material-symbols-outlined text-sm">
+                                  delete
+                                </span>
                                 Delete
                               </>
                             )}

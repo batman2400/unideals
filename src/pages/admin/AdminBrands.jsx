@@ -21,7 +21,12 @@ function AdminBrands() {
 
   const isMountedRef = useRef(true);
 
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   const fetchBrands = useCallback(async () => {
     if (role !== "admin") return;
@@ -48,7 +53,9 @@ function AdminBrands() {
 
   const showMsg = useCallback((text) => {
     setMessage(text);
-    setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 4000);
+    setTimeout(() => {
+      if (isMountedRef.current) setMessage("");
+    }, 4000);
   }, []);
 
   const handleLogoChange = (e) => {
@@ -83,16 +90,14 @@ function AdminBrands() {
         uploadedLogoUrl = publicUrl;
       }
 
-      const { error: insertError } = await supabase
-        .from("brands")
-        .insert([
-          {
-            name: name.trim(),
-            description: description.trim() || null,
-            website_url: websiteUrl.trim() || null,
-            logo_url: uploadedLogoUrl,
-          },
-        ]);
+      const { error: insertError } = await supabase.from("brands").insert([
+        {
+          name: name.trim(),
+          description: description.trim() || null,
+          website_url: websiteUrl.trim() || null,
+          logo_url: uploadedLogoUrl,
+        },
+      ]);
 
       if (insertError) throw insertError;
 
@@ -144,7 +149,9 @@ function AdminBrands() {
           onClick={() => setShowCreate(!showCreate)}
           className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
         >
-          <span className="material-symbols-outlined text-lg">add_business</span>
+          <span className="material-symbols-outlined text-lg">
+            add_business
+          </span>
           Create Brand
         </button>
       </div>
@@ -163,13 +170,17 @@ function AdminBrands() {
       {showCreate && (
         <div className="mb-6 bg-surface rounded-2xl border border-primary/20 p-5 shadow-sm animate-slide-down">
           <h3 className="font-headline font-bold text-on-background mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">add_business</span>
+            <span className="material-symbols-outlined text-primary text-lg">
+              add_business
+            </span>
             Create New Brand
           </h3>
           <form onSubmit={handleCreate} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Brand Name *</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Brand Name *
+                </label>
                 <input
                   type="text"
                   value={name}
@@ -180,7 +191,9 @@ function AdminBrands() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Website URL</label>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  Website URL
+                </label>
                 <input
                   type="url"
                   value={websiteUrl}
@@ -192,7 +205,9 @@ function AdminBrands() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Description</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                Description
+              </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
@@ -202,10 +217,16 @@ function AdminBrands() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Brand Logo</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                Brand Logo
+              </label>
               <div className="flex items-center gap-4">
                 {logoPreview && (
-                  <img src={logoPreview} alt="Preview" className="w-16 h-16 rounded-xl object-cover border border-outline-variant/20" />
+                  <img
+                    src={logoPreview}
+                    alt="Preview"
+                    className="w-16 h-16 rounded-xl object-cover border border-outline-variant/20"
+                  />
                 )}
                 <input
                   type="file"
@@ -225,7 +246,9 @@ function AdminBrands() {
                 {saving ? (
                   <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <span className="material-symbols-outlined text-lg">check</span>
+                  <span className="material-symbols-outlined text-lg">
+                    check
+                  </span>
                 )}
                 Create Brand
               </button>
@@ -236,35 +259,61 @@ function AdminBrands() {
 
       {brands.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
-          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">storefront</span>
-          <p className="text-on-surface-variant text-sm">No brands found. Create one to get started.</p>
+          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
+            storefront
+          </span>
+          <p className="text-on-surface-variant text-sm">
+            No brands found. Create one to get started.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {brands.map((b) => (
-            <div key={b.id} className="bg-surface border border-outline-variant/20 rounded-2xl p-5 hover:border-primary/30 transition-colors shadow-sm flex flex-col">
+            <div
+              key={b.id}
+              className="bg-surface border border-outline-variant/20 rounded-2xl p-5 hover:border-primary/30 transition-colors shadow-sm flex flex-col"
+            >
               <div className="flex items-start gap-4 mb-3">
                 {b.logo_url ? (
-                  <img src={b.logo_url} alt={b.name} className="w-14 h-14 rounded-xl object-cover border border-outline-variant/10 shadow-sm" />
+                  <img
+                    src={b.logo_url}
+                    alt={b.name}
+                    className="w-14 h-14 rounded-xl object-cover border border-outline-variant/10 shadow-sm"
+                  />
                 ) : (
                   <div className="w-14 h-14 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-on-surface-variant/50 text-2xl">image</span>
+                    <span className="material-symbols-outlined text-on-surface-variant/50 text-2xl">
+                      image
+                    </span>
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-headline font-bold text-on-background text-lg truncate">{b.name}</h3>
+                  <h3 className="font-headline font-bold text-on-background text-lg truncate">
+                    {b.name}
+                  </h3>
                   {b.website_url && (
-                    <a href={b.website_url} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5">
-                      <span className="material-symbols-outlined text-[14px]">link</span>
+                    <a
+                      href={b.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        link
+                      </span>
                       Website
                     </a>
                   )}
                 </div>
               </div>
               {b.description ? (
-                <p className="text-sm text-on-surface-variant line-clamp-2 mt-auto">{b.description}</p>
+                <p className="text-sm text-on-surface-variant line-clamp-2 mt-auto">
+                  {b.description}
+                </p>
               ) : (
-                <p className="text-sm text-on-surface-variant/50 italic mt-auto">No description provided.</p>
+                <p className="text-sm text-on-surface-variant/50 italic mt-auto">
+                  No description provided.
+                </p>
               )}
             </div>
           ))}

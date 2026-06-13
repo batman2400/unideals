@@ -21,7 +21,14 @@ import { useState, useRef, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 
-function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onLogout }) {
+function Navbar({
+  onOpenAuth,
+  searchQuery,
+  onSearchChange,
+  isLoggedIn,
+  user,
+  onLogout,
+}) {
   const { pathname } = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [avatarMenuOpen, setAvatarMenuOpen] = useState(false);
@@ -46,7 +53,10 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
   const userEmail = user?.email ?? "user@example.com";
   const fullName =
     user?.user_metadata?.full_name ||
-    userEmail.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    userEmail
+      .split("@")[0]
+      .replace(/[._]/g, " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
   const initials = fullName
     .split(" ")
     .map((w) => w[0])
@@ -75,11 +85,12 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
       <div className="flex justify-between items-center px-4 sm:px-6 md:px-8 py-3 md:py-4 max-w-[1440px] mx-auto">
         {/* Left side: Logo + Nav Links */}
         <div className="flex items-center gap-6 md:gap-12">
-          <Link
-            to="/"
-            className="flex items-center gap-2"
-          >
-            <img src="/images/logo.png" alt="Uni Deals" className="h-7 md:h-8 w-auto" />
+          <Link to="/" className="flex items-center gap-2">
+            <img
+              src="/images/logo.png"
+              alt="Uni Deals"
+              className="h-7 md:h-8 w-auto"
+            />
             <span className="text-xl md:text-2xl font-black text-[#323233] dark:text-[#fcf9f8] tracking-tighter font-headline">
               Uni Deals
             </span>
@@ -124,10 +135,16 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                   {/* Avatar circle */}
                   <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm flex-shrink-0">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                      <img
+                        src={avatarUrl}
+                        alt={fullName}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full emerald-gradient flex items-center justify-center">
-                        <span className="text-on-primary font-headline font-black text-sm">{initials}</span>
+                        <span className="text-on-primary font-headline font-black text-sm">
+                          {initials}
+                        </span>
                       </div>
                     )}
                   </div>
@@ -156,7 +173,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                         onClick={() => setAvatarMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
                       >
-                        <span className="material-symbols-outlined text-lg">dashboard</span>
+                        <span className="material-symbols-outlined text-lg">
+                          dashboard
+                        </span>
                         My Dashboard
                       </Link>
 
@@ -166,7 +185,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                           onClick={() => setAvatarMenuOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
                         >
-                          <span className="material-symbols-outlined text-lg">storefront</span>
+                          <span className="material-symbols-outlined text-lg">
+                            storefront
+                          </span>
                           Partner Portal
                         </Link>
                       )}
@@ -177,7 +198,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                           onClick={() => setAvatarMenuOpen(false)}
                           className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
                         >
-                          <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+                          <span className="material-symbols-outlined text-lg">
+                            admin_panel_settings
+                          </span>
                           Admin Panel
                         </Link>
                       )}
@@ -187,7 +210,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                         onClick={() => setAvatarMenuOpen(false)}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
                       >
-                        <span className="material-symbols-outlined text-lg">bookmark</span>
+                        <span className="material-symbols-outlined text-lg">
+                          bookmark
+                        </span>
                         Saved Deals
                       </Link>
                     </div>
@@ -201,7 +226,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                         }}
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-error hover:bg-error/5 transition-colors w-full text-left"
                       >
-                        <span className="material-symbols-outlined text-lg">logout</span>
+                        <span className="material-symbols-outlined text-lg">
+                          logout
+                        </span>
                         Log Out
                       </button>
                     </div>
@@ -277,16 +304,26 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                 <div className="flex items-center gap-3 py-2">
                   <div className="w-9 h-9 rounded-full overflow-hidden shadow-sm flex-shrink-0">
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+                      <img
+                        src={avatarUrl}
+                        alt={fullName}
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <div className="w-full h-full emerald-gradient flex items-center justify-center">
-                        <span className="text-on-primary font-headline font-black text-sm">{initials}</span>
+                        <span className="text-on-primary font-headline font-black text-sm">
+                          {initials}
+                        </span>
                       </div>
                     )}
                   </div>
                   <div>
-                    <p className="font-headline font-bold text-sm text-on-background">{fullName}</p>
-                    <p className="text-xs text-on-surface-variant/60">{userEmail}</p>
+                    <p className="font-headline font-bold text-sm text-on-background">
+                      {fullName}
+                    </p>
+                    <p className="text-xs text-on-surface-variant/60">
+                      {userEmail}
+                    </p>
                   </div>
                 </div>
                 <Link
@@ -294,7 +331,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
                 >
-                  <span className="material-symbols-outlined text-lg">dashboard</span>
+                  <span className="material-symbols-outlined text-lg">
+                    dashboard
+                  </span>
                   My Dashboard
                 </Link>
 
@@ -304,7 +343,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
                   >
-                    <span className="material-symbols-outlined text-lg">storefront</span>
+                    <span className="material-symbols-outlined text-lg">
+                      storefront
+                    </span>
                     Partner Portal
                   </Link>
                 )}
@@ -315,7 +356,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                     onClick={() => setMobileOpen(false)}
                     className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
                   >
-                    <span className="material-symbols-outlined text-lg">admin_panel_settings</span>
+                    <span className="material-symbols-outlined text-lg">
+                      admin_panel_settings
+                    </span>
                     Admin Panel
                   </Link>
                 )}
@@ -325,7 +368,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                   onClick={() => setMobileOpen(false)}
                   className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
                 >
-                  <span className="material-symbols-outlined text-lg">bookmark</span>
+                  <span className="material-symbols-outlined text-lg">
+                    bookmark
+                  </span>
                   Saved Deals
                 </Link>
                 <button
@@ -335,7 +380,9 @@ function Navbar({ onOpenAuth, searchQuery, onSearchChange, isLoggedIn, user, onL
                   }}
                   className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-error hover:text-error/80 transition-colors w-full text-left"
                 >
-                  <span className="material-symbols-outlined text-lg">logout</span>
+                  <span className="material-symbols-outlined text-lg">
+                    logout
+                  </span>
                   Log Out
                 </button>
               </div>

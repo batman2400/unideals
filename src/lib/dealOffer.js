@@ -96,7 +96,9 @@ export function parseOfferLabel(offerLabel) {
   const freeMatch = normalized.match(/^FREE\s+(.+)$/i);
   if (freeMatch) {
     const freeValue = freeMatch[1].trim();
-    const likelyTrial = /(month|week|day|trial|subscription|pass)/i.test(freeValue);
+    const likelyTrial = /(month|week|day|trial|subscription|pass)/i.test(
+      freeValue,
+    );
 
     return {
       offerType: likelyTrial ? "free_trial" : "free_item",

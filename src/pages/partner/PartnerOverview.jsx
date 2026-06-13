@@ -6,23 +6,33 @@ import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerOverview() {
-  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const {
+    user,
+    role,
+    loading: roleLoading,
+    impersonatedPartnerId,
+  } = useRoleContext();
   const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
   const [deals, setDeals] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
-  const [stats, setStats] = useState({ totalScans: 0, confirmedRedemptions: 0 });
+  const [stats, setStats] = useState({
+    totalScans: 0,
+    confirmedRedemptions: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
-    
+
     setError("");
-    
+
     if (role === "admin" && !impersonatedPartnerId) {
-      setError("Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.");
+      setError(
+        "Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.",
+      );
       setLoading(false);
       return;
     }
@@ -32,10 +42,14 @@ function PartnerOverview() {
     async function fetchData() {
       setLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
+      const { brandId, brandName, error: brandError } =
+        await getPartnerBrand(targetUserId);
       if (!active) return;
-      if (brandError || !brandName) {
-        setError(brandError || "No brand profile found. Create your first deal to set up your brand.");
+      if (brandError || !brandId) {
+        setError(
+          brandError ||
+            "No brand profile found. Create your first deal to set up your brand.",
+        );
         setLoading(false);
         return;
       }
@@ -46,14 +60,20 @@ function PartnerOverview() {
         supabase
           .from("deals")
           .select("id, title, discount, type, category, status, created_at")
-          .eq("partner_id", targetUserId)
-          .eq("brand", brandName)
+          .eq("brand_id", brandId)
           .order("created_at", { ascending: false }),
-        supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("partner_id", targetUserId),
-        supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }).eq("partner_id", targetUserId),
-        supabase.from("redemption_events")
+        supabase
+          .from("redemption_events")
+          .select("id", { count: "exact", head: true })
+          .eq("brand", brandName),
+        supabase
+          .from("confirmed_redemptions")
+          .select("id", { count: "exact", head: true })
+          .eq("brand", brandName),
+        supabase
+          .from("redemption_events")
           .select("id, scanned_code, scan_result, scan_method, created_at")
-          .eq("partner_id", targetUserId)
+          .eq("brand", brandName)
           .order("created_at", { ascending: false })
           .limit(6),
       ]);
@@ -70,7 +90,9 @@ function PartnerOverview() {
     }
 
     fetchData();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const metrics = useMemo(() => {
@@ -97,11 +119,36 @@ function PartnerOverview() {
   }
 
   const metricCards = [
-    { label: "Total Deals", value: metrics.total, icon: "inventory_2", color: "text-on-background" },
-    { label: "Active", value: metrics.approved, icon: "check_circle", color: "text-emerald-600" },
-    { label: "Pending", value: metrics.pending, icon: "pending_actions", color: "text-amber-600" },
-    { label: "Total Scans", value: stats.totalScans, icon: "qr_code_scanner", color: "text-on-background" },
-    { label: "Redemptions", value: stats.confirmedRedemptions, icon: "task_alt", color: "text-primary" },
+    {
+      label: "Total Deals",
+      value: metrics.total,
+      icon: "inventory_2",
+      color: "text-on-background",
+    },
+    {
+      label: "Active",
+      value: metrics.approved,
+      icon: "check_circle",
+      color: "text-emerald-600",
+    },
+    {
+      label: "Pending",
+      value: metrics.pending,
+      icon: "pending_actions",
+      color: "text-amber-600",
+    },
+    {
+      label: "Total Scans",
+      value: stats.totalScans,
+      icon: "qr_code_scanner",
+      color: "text-on-background",
+    },
+    {
+      label: "Redemptions",
+      value: stats.confirmedRedemptions,
+      icon: "task_alt",
+      color: "text-primary",
+    },
   ];
 
   const scanResultColor = {
@@ -153,11 +200,16 @@ function PartnerOverview() {
               <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
                 {card.label}
               </p>
-              <span className={`material-symbols-outlined text-lg ${card.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className={`material-symbols-outlined text-lg ${card.color}`}
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 {card.icon}
               </span>
             </div>
-            <p className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}>
+            <p
+              className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}
+            >
               {card.value}
             </p>
           </article>
@@ -168,13 +220,35 @@ function PartnerOverview() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Quick Links */}
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
-          <h2 className="font-headline font-bold text-lg text-on-background mb-4">Quick Actions</h2>
+          <h2 className="font-headline font-bold text-lg text-on-background mb-4">
+            Quick Actions
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             {[
-              { to: "/partner/deals", icon: "local_offer", label: "My Deals", desc: "View all deals" },
-              { to: "/partner/create-deal", icon: "add_circle", label: "Create Deal", desc: "Submit new offer" },
-              { to: "/partner/scanner", icon: "qr_code_scanner", label: "Scanner", desc: "Scan tickets" },
-              { to: "/partner/analytics", icon: "monitoring", label: "Analytics", desc: "View stats" },
+              {
+                to: "/partner/deals",
+                icon: "local_offer",
+                label: "My Deals",
+                desc: "View all deals",
+              },
+              {
+                to: "/partner/create-deal",
+                icon: "add_circle",
+                label: "Create Deal",
+                desc: "Submit new offer",
+              },
+              {
+                to: "/partner/scanner",
+                icon: "qr_code_scanner",
+                label: "Scanner",
+                desc: "Scan tickets",
+              },
+              {
+                to: "/partner/analytics",
+                icon: "monitoring",
+                label: "Analytics",
+                desc: "View stats",
+              },
             ].map((link) => (
               <Link
                 key={link.to}
@@ -185,8 +259,12 @@ function PartnerOverview() {
                   {link.icon}
                 </span>
                 <div>
-                  <p className="font-headline font-bold text-sm text-on-background">{link.label}</p>
-                  <p className="text-[10px] text-on-surface-variant">{link.desc}</p>
+                  <p className="font-headline font-bold text-sm text-on-background">
+                    {link.label}
+                  </p>
+                  <p className="text-[10px] text-on-surface-variant">
+                    {link.desc}
+                  </p>
                 </div>
               </Link>
             ))}
@@ -196,7 +274,9 @@ function PartnerOverview() {
         {/* Recent Activity */}
         <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-outline-variant/10">
-            <h2 className="font-headline font-bold text-lg text-on-background">Recent Scans</h2>
+            <h2 className="font-headline font-bold text-lg text-on-background">
+              Recent Scans
+            </h2>
           </div>
 
           {recentEvents.length === 0 ? (
@@ -204,21 +284,32 @@ function PartnerOverview() {
               <span className="material-symbols-outlined text-3xl text-on-surface-variant/30 mb-2 block">
                 qr_code_scanner
               </span>
-              <p className="text-on-surface-variant text-sm">No scan activity yet.</p>
+              <p className="text-on-surface-variant text-sm">
+                No scan activity yet.
+              </p>
             </div>
           ) : (
             <ul className="divide-y divide-outline-variant/8">
               {recentEvents.map((event) => (
-                <li key={event.id} className="px-5 py-3 flex items-center gap-3">
+                <li
+                  key={event.id}
+                  className="px-5 py-3 flex items-center gap-3"
+                >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-on-background truncate">
                       {event.scanned_code || "—"}
                     </p>
                     <p className="text-[10px] text-on-surface-variant">
-                      {event.scan_method} · {new Date(event.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                      {event.scan_method} ·{" "}
+                      {new Date(event.created_at).toLocaleString(undefined, {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })}
                     </p>
                   </div>
-                  <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}>
+                  <span
+                    className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}
+                  >
                     {event.scan_result}
                   </span>
                 </li>

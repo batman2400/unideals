@@ -39,15 +39,41 @@ function AdminOverview() {
           confirmedRes,
           recentEventsRes,
         ] = await Promise.all([
-          supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "pending"),
-          supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "approved"),
-          supabase.from("deals").select("id", { count: "exact", head: true }).eq("status", "rejected"),
-          supabase.rpc("list_users_with_roles", { search_query: "", role_filter: null, page_limit: 1, page_offset: 0 }),
-          supabase.rpc("list_users_with_roles", { search_query: "", role_filter: "partner", page_limit: 1, page_offset: 0 }),
-          supabase.from("redemption_events").select("id", { count: "exact", head: true }),
-          supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }),
-          supabase.from("redemption_events")
-            .select("id, brand, scanned_code, scan_result, scan_method, created_at")
+          supabase
+            .from("deals")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "pending"),
+          supabase
+            .from("deals")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "approved"),
+          supabase
+            .from("deals")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "rejected"),
+          supabase.rpc("list_users_with_roles", {
+            search_query: "",
+            role_filter: null,
+            page_limit: 1,
+            page_offset: 0,
+          }),
+          supabase.rpc("list_users_with_roles", {
+            search_query: "",
+            role_filter: "partner",
+            page_limit: 1,
+            page_offset: 0,
+          }),
+          supabase
+            .from("redemption_events")
+            .select("id", { count: "exact", head: true }),
+          supabase
+            .from("confirmed_redemptions")
+            .select("id", { count: "exact", head: true }),
+          supabase
+            .from("redemption_events")
+            .select(
+              "id, brand, scanned_code, scan_result, scan_method, created_at",
+            )
             .order("created_at", { ascending: false })
             .limit(8),
         ]);
@@ -58,7 +84,10 @@ function AdminOverview() {
         const totalPartners = partnersRes.data?.[0]?.total_count ?? 0;
 
         setMetrics({
-          totalDeals: (pendingRes.count ?? 0) + (approvedRes.count ?? 0) + (rejectedRes.count ?? 0),
+          totalDeals:
+            (pendingRes.count ?? 0) +
+            (approvedRes.count ?? 0) +
+            (rejectedRes.count ?? 0),
           pendingDeals: pendingRes.count ?? 0,
           approvedDeals: approvedRes.count ?? 0,
           rejectedDeals: rejectedRes.count ?? 0,
@@ -77,7 +106,9 @@ function AdminOverview() {
     }
 
     fetchOverview();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [role, roleLoading]);
 
   if (roleLoading || loading) {
@@ -103,21 +134,63 @@ function AdminOverview() {
     return (
       <PortalLayout portalType="admin">
         <div className="bg-error/10 border border-error/20 rounded-2xl p-6">
-          <p className="text-error font-headline font-bold">Access denied. Admin role required.</p>
+          <p className="text-error font-headline font-bold">
+            Access denied. Admin role required.
+          </p>
         </div>
       </PortalLayout>
     );
   }
 
   const metricCards = [
-    { label: "Total Deals", value: metrics.totalDeals, icon: "inventory_2", color: "text-on-background" },
-    { label: "Pending Review", value: metrics.pendingDeals, icon: "pending_actions", color: "text-amber-600" },
-    { label: "Approved", value: metrics.approvedDeals, icon: "check_circle", color: "text-emerald-600" },
-    { label: "Rejected", value: metrics.rejectedDeals, icon: "cancel", color: "text-red-600" },
-    { label: "Total Users", value: metrics.totalUsers, icon: "group", color: "text-on-background" },
-    { label: "Partners", value: metrics.totalPartners, icon: "handshake", color: "text-primary" },
-    { label: "Total Scans", value: metrics.totalScans, icon: "qr_code_scanner", color: "text-on-background" },
-    { label: "Redemptions", value: metrics.confirmedRedemptions, icon: "task_alt", color: "text-emerald-600" },
+    {
+      label: "Total Deals",
+      value: metrics.totalDeals,
+      icon: "inventory_2",
+      color: "text-on-background",
+    },
+    {
+      label: "Pending Review",
+      value: metrics.pendingDeals,
+      icon: "pending_actions",
+      color: "text-amber-600",
+    },
+    {
+      label: "Approved",
+      value: metrics.approvedDeals,
+      icon: "check_circle",
+      color: "text-emerald-600",
+    },
+    {
+      label: "Rejected",
+      value: metrics.rejectedDeals,
+      icon: "cancel",
+      color: "text-red-600",
+    },
+    {
+      label: "Total Users",
+      value: metrics.totalUsers,
+      icon: "group",
+      color: "text-on-background",
+    },
+    {
+      label: "Partners",
+      value: metrics.totalPartners,
+      icon: "handshake",
+      color: "text-primary",
+    },
+    {
+      label: "Total Scans",
+      value: metrics.totalScans,
+      icon: "qr_code_scanner",
+      color: "text-on-background",
+    },
+    {
+      label: "Redemptions",
+      value: metrics.confirmedRedemptions,
+      icon: "task_alt",
+      color: "text-emerald-600",
+    },
   ];
 
   const scanResultColor = {
@@ -157,11 +230,16 @@ function AdminOverview() {
               <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
                 {card.label}
               </p>
-              <span className={`material-symbols-outlined text-lg ${card.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className={`material-symbols-outlined text-lg ${card.color}`}
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 {card.icon}
               </span>
             </div>
-            <p className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}>
+            <p
+              className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}
+            >
               {card.value}
             </p>
           </article>
@@ -181,12 +259,17 @@ function AdminOverview() {
             <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
               qr_code_scanner
             </span>
-            <p className="text-on-surface-variant text-sm">No scan activity yet.</p>
+            <p className="text-on-surface-variant text-sm">
+              No scan activity yet.
+            </p>
           </div>
         ) : (
           <ul className="divide-y divide-outline-variant/8">
             {recentActivity.map((event) => (
-              <li key={event.id} className="px-5 py-3.5 flex items-center gap-4 hover:bg-surface-container-low/40 transition-colors">
+              <li
+                key={event.id}
+                className="px-5 py-3.5 flex items-center gap-4 hover:bg-surface-container-low/40 transition-colors"
+              >
                 <div className="flex-1 min-w-0">
                   <p className="font-headline font-bold text-sm text-on-background truncate">
                     {event.brand}
@@ -195,11 +278,16 @@ function AdminOverview() {
                     Code: {event.scanned_code || "—"} · {event.scan_method}
                   </p>
                 </div>
-                <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}>
+                <span
+                  className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}
+                >
                   {event.scan_result}
                 </span>
                 <p className="text-xs text-on-surface-variant/60 hidden md:block whitespace-nowrap">
-                  {new Date(event.created_at).toLocaleString(undefined, { dateStyle: "short", timeStyle: "short" })}
+                  {new Date(event.created_at).toLocaleString(undefined, {
+                    dateStyle: "short",
+                    timeStyle: "short",
+                  })}
                 </p>
               </li>
             ))}

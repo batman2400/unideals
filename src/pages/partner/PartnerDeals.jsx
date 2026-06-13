@@ -2,7 +2,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrand, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
+import {
+  getPartnerBrand,
+  PARTNER_BRAND_REQUIRED_MESSAGE,
+} from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 const STATUS_BADGE = {
@@ -19,9 +22,15 @@ const STATUS_TABS = [
 ];
 
 function PartnerDeals() {
-  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const {
+    user,
+    role,
+    loading: roleLoading,
+    impersonatedPartnerId,
+  } = useRoleContext();
   const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
+  const [partnerBrandId, setPartnerBrandId] = useState(null);
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -30,16 +39,23 @@ function PartnerDeals() {
   const [deletingDealId, setDeletingDealId] = useState(null);
   const isMountedRef = useRef(true);
 
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
-    
+
     setError("");
-    
+
     if (role === "admin" && !impersonatedPartnerId) {
-      setError("Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.");
+      setError(
+        "Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.",
+      );
       setLoading(false);
       return;
     }
@@ -49,22 +65,26 @@ function PartnerDeals() {
     async function fetchDeals() {
       setLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
+      const { brandId, brandName, error: brandError } =
+        await getPartnerBrand(targetUserId);
       if (!active) return;
-      if (brandError || !brandName) {
+      if (brandError || !brandId) {
         setError(brandError || "No brand profile found.");
         setPartnerBrand("");
+        setPartnerBrandId(null);
         setLoading(false);
         return;
       }
 
       setPartnerBrand(brandName);
+      setPartnerBrandId(brandId);
 
       const { data, error: fetchError } = await supabase
         .from("deals")
-        .select("id, title, brand, discount, type, category, image_url, status, redemption_code, created_at")
-        .eq("partner_id", targetUserId)
-        .eq("brand", brandName)
+        .select(
+          "id, title, brand, discount, type, category, image_url, status, redemption_code, created_at",
+        )
+        .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
 
       if (!active) return;
@@ -78,42 +98,48 @@ function PartnerDeals() {
     }
 
     fetchDeals();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
-  const handleDelete = useCallback(async (dealId) => {
-    if (!window.confirm("Delete this deal permanently?")) return;
+  const handleDelete = useCallback(
+    async (dealId) => {
+      if (!window.confirm("Delete this deal permanently?")) return;
 
-    setDeletingDealId(dealId);
-    setError("");
+      setDeletingDealId(dealId);
+      setError("");
 
-    const { data, error: deleteError } = await supabase
-      .from("deals")
-      .delete()
-      .eq("id", dealId)
-      .eq("partner_id", targetUserId)
-      .eq("brand", partnerBrand)
-      .select("id");
+      const { data, error: deleteError } = await supabase
+        .from("deals")
+        .delete()
+        .eq("id", dealId)
+        .eq("brand_id", partnerBrandId)
+        .select("id");
 
-    if (!isMountedRef.current) return;
+      if (!isMountedRef.current) return;
 
-    if (deleteError) {
-      setError(deleteError.message);
+      if (deleteError) {
+        setError(deleteError.message);
+        setDeletingDealId(null);
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        setError("Delete blocked. You can only delete your own brand deals.");
+        setDeletingDealId(null);
+        return;
+      }
+
+      setDeals((prev) => prev.filter((d) => d.id !== dealId));
       setDeletingDealId(null);
-      return;
-    }
-
-    if (!data || data.length === 0) {
-      setError("Delete blocked. You can only delete your own brand deals.");
-      setDeletingDealId(null);
-      return;
-    }
-
-    setDeals((prev) => prev.filter((d) => d.id !== dealId));
-    setDeletingDealId(null);
-    setMessage("Deal deleted.");
-    setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 3000);
-  }, [targetUserId, partnerBrand]);
+      setMessage("Deal deleted.");
+      setTimeout(() => {
+        if (isMountedRef.current) setMessage("");
+      }, 3000);
+    },
+    [partnerBrandId],
+  );
 
   const filteredDeals = statusFilter
     ? deals.filter((d) => d.status === statusFilter)
@@ -142,7 +168,8 @@ function PartnerDeals() {
             My Deals
           </h1>
           <p className="text-on-surface-variant text-sm">
-            {deals.length} deal{deals.length !== 1 ? "s" : ""} submitted for {partnerBrand || "your brand"}.
+            {deals.length} deal{deals.length !== 1 ? "s" : ""} submitted for{" "}
+            {partnerBrand || "your brand"}.
           </p>
         </div>
         <Link
@@ -194,15 +221,21 @@ function PartnerDeals() {
           <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3 block">
             local_offer
           </span>
-          <p className="font-headline font-bold text-lg text-on-background mb-1">No deals found</p>
+          <p className="font-headline font-bold text-lg text-on-background mb-1">
+            No deals found
+          </p>
           <p className="text-on-surface-variant text-sm mb-5">
-            {statusFilter ? "No deals with this status." : "Create your first deal to get started."}
+            {statusFilter
+              ? "No deals with this status."
+              : "Create your first deal to get started."}
           </p>
           <Link
             to="/partner/create-deal"
             className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm"
           >
-            <span className="material-symbols-outlined text-lg">add_circle</span>
+            <span className="material-symbols-outlined text-lg">
+              add_circle
+            </span>
             Create Deal
           </Link>
         </div>
@@ -225,7 +258,9 @@ function PartnerDeals() {
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                   />
                   <div className="absolute top-3 left-3">
-                    <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase backdrop-blur-sm ${badge}`}>
+                    <span
+                      className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase backdrop-blur-sm ${badge}`}
+                    >
                       {deal.status}
                     </span>
                   </div>
@@ -245,7 +280,9 @@ function PartnerDeals() {
                     {deal.title}
                   </h3>
                   <div className="inline-flex items-center gap-1.5 rounded-lg bg-primary-container/25 border border-primary/10 px-2.5 py-1 mb-4">
-                    <span className="text-primary text-xs font-headline font-bold">{deal.discount}</span>
+                    <span className="text-primary text-xs font-headline font-bold">
+                      {deal.discount}
+                    </span>
                   </div>
 
                   {/* Actions */}
@@ -254,7 +291,9 @@ function PartnerDeals() {
                       to={`/partner/edit-deal/${deal.id}`}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-headline font-bold text-primary bg-primary/8 border border-primary/15 hover:bg-primary/15 transition-colors"
                     >
-                      <span className="material-symbols-outlined text-sm">edit</span>
+                      <span className="material-symbols-outlined text-sm">
+                        edit
+                      </span>
                       Edit
                     </Link>
                     <button
@@ -265,7 +304,9 @@ function PartnerDeals() {
                       {isDeleting ? (
                         <div className="w-3.5 h-3.5 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <span className="material-symbols-outlined text-sm">delete</span>
+                        <span className="material-symbols-outlined text-sm">
+                          delete
+                        </span>
                       )}
                       Delete
                     </button>

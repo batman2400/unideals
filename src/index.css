@@ -11,7 +11,11 @@
 
 /* Material Symbols Icon Settings */
 .material-symbols-outlined {
-  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  font-variation-settings:
+    "FILL" 0,
+    "wght" 300,
+    "GRAD" 0,
+    "opsz" 24;
 }
 
 /* Soft "cloud" shadow for card hover effects */
@@ -164,8 +168,12 @@
 
 /* Auto-progress bar for hero slides */
 @keyframes hero-progress {
-  from { width: 0%; }
-  to   { width: 100%; }
+  from {
+    width: 0%;
+  }
+  to {
+    width: 100%;
+  }
 }
 .hero-progress-bar {
   animation: hero-progress linear forwards;
@@ -176,11 +184,16 @@
    =================================== */
 
 @keyframes verified-pulse {
-  0%, 100% {
-    box-shadow: 0 0 8px rgba(41, 105, 91, 0.3), 0 0 20px rgba(41, 105, 91, 0.1);
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px rgba(41, 105, 91, 0.3),
+      0 0 20px rgba(41, 105, 91, 0.1);
   }
   50% {
-    box-shadow: 0 0 16px rgba(41, 105, 91, 0.5), 0 0 36px rgba(41, 105, 91, 0.2);
+    box-shadow:
+      0 0 16px rgba(41, 105, 91, 0.5),
+      0 0 36px rgba(41, 105, 91, 0.2);
   }
 }
 .verified-glow {
@@ -188,7 +201,8 @@
 }
 
 @keyframes verified-icon-glow {
-  0%, 100% {
+  0%,
+  100% {
     filter: drop-shadow(0 0 4px rgba(41, 105, 91, 0.4));
   }
   50% {
@@ -241,8 +255,13 @@
 
 /* Unverified amber pulse */
 @keyframes amber-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 .amber-pulse {
   animation: amber-pulse 1.8s ease-in-out infinite;

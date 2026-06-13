@@ -166,7 +166,11 @@ function AuthModal({ isOpen, onClose }) {
         <div className="p-6 sm:p-8 pt-6">
           {/* Logo */}
           <div className="flex flex-col items-center gap-2 mb-6">
-            <img src="/images/logo.png" alt="Uni Deals" className="h-10 w-auto" />
+            <img
+              src="/images/logo.png"
+              alt="Uni Deals"
+              className="h-10 w-auto"
+            />
             <h2 className="font-headline font-black text-2xl tracking-tighter text-on-background">
               Uni Deals
             </h2>
@@ -176,7 +180,9 @@ function AuthModal({ isOpen, onClose }) {
           {signupSuccess ? (
             <div className="text-center animate-modal-enter">
               <div className="w-16 h-16 rounded-full bg-primary-container/40 flex items-center justify-center mx-auto mb-4">
-                <span className="material-symbols-outlined text-primary text-3xl">mark_email_read</span>
+                <span className="material-symbols-outlined text-primary text-3xl">
+                  mark_email_read
+                </span>
               </div>
               <h3 className="font-headline font-bold text-lg text-on-background mb-2">
                 Check Your Email
@@ -225,7 +231,9 @@ function AuthModal({ isOpen, onClose }) {
               {/* Supabase auth error banner */}
               {authError && (
                 <div className="flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3 mb-4 animate-modal-enter">
-                  <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">error</span>
+                  <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">
+                    error
+                  </span>
                   <p className="text-error text-sm font-bold">{authError}</p>
                 </div>
               )}
@@ -252,7 +260,9 @@ function AuthModal({ isOpen, onClose }) {
                       />
                       {errors.fullName && (
                         <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">error</span>
+                          <span className="material-symbols-outlined text-xs">
+                            error
+                          </span>
                           {errors.fullName}
                         </p>
                       )}
@@ -276,7 +286,9 @@ function AuthModal({ isOpen, onClose }) {
                       />
                       {errors.username && (
                         <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
-                          <span className="material-symbols-outlined text-xs">error</span>
+                          <span className="material-symbols-outlined text-xs">
+                            error
+                          </span>
                           {errors.username}
                         </p>
                       )}
@@ -300,17 +312,23 @@ function AuthModal({ isOpen, onClose }) {
                         : "border-outline-variant/20"
                     }`}
                   />
-                    {activeTab === "signup" && (
-                      <div className="mt-2 rounded-lg border border-primary/15 bg-primary-container/20 px-3 py-2">
-                        <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-on-surface-variant/80">
-                          <span className="material-symbols-outlined text-sm text-primary mt-0.5">mail</span>
-                          Sign up with any email — you can link your university email later in your profile for instant student verification.
-                        </p>
-                      </div>
-                    )}
+                  {activeTab === "signup" && (
+                    <div className="mt-2 rounded-lg border border-primary/15 bg-primary-container/20 px-3 py-2">
+                      <p className="flex items-start gap-1.5 text-[11px] leading-relaxed text-on-surface-variant/80">
+                        <span className="material-symbols-outlined text-sm text-primary mt-0.5">
+                          mail
+                        </span>
+                        Sign up with any email — you can link your university
+                        email later in your profile for instant student
+                        verification.
+                      </p>
+                    </div>
+                  )}
                   {errors.email && (
                     <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">error</span>
+                      <span className="material-symbols-outlined text-xs">
+                        error
+                      </span>
                       {errors.email}
                     </p>
                   )}
@@ -334,7 +352,9 @@ function AuthModal({ isOpen, onClose }) {
                   />
                   {errors.password && (
                     <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-xs">error</span>
+                      <span className="material-symbols-outlined text-xs">
+                        error
+                      </span>
                       {errors.password}
                     </p>
                   )}
@@ -348,10 +368,14 @@ function AuthModal({ isOpen, onClose }) {
                   {loading ? (
                     <>
                       <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                      {activeTab === "login" ? "Signing In..." : "Creating Account..."}
+                      {activeTab === "login"
+                        ? "Signing In..."
+                        : "Creating Account..."}
                     </>
+                  ) : activeTab === "login" ? (
+                    "Sign In"
                   ) : (
-                    activeTab === "login" ? "Sign In" : "Create Account"
+                    "Create Account"
                   )}
                 </button>
               </form>

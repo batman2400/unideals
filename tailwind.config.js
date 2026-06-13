@@ -1,16 +1,13 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,jsx}",
-  ],
+  content: ["./index.html", "./src/**/*.{js,jsx}"],
   darkMode: "class",
   theme: {
     extend: {
       colors: {
         "primary-container": "#afefdd",
         "secondary-container": "#e5e2e1",
-        "surface": "#fcf9f8",
+        surface: "#fcf9f8",
         "surface-container-highest": "#e4e2e2",
         "error-container": "#fe8983",
         "on-secondary-fixed-variant": "#5c5b5b",
@@ -20,16 +17,16 @@ export default {
         "on-tertiary-container": "#5c5c5c",
         "on-tertiary-fixed": "#494a4a",
         "tertiary-fixed": "#f5f3f3",
-        "outline": "#7b7b7a",
+        outline: "#7b7b7a",
         "on-tertiary-fixed-variant": "#666666",
-        "secondary": "#605f5f",
+        secondary: "#605f5f",
         "tertiary-dim": "#535353",
         "tertiary-fixed-dim": "#e7e5e4",
         "on-error-container": "#752121",
         "inverse-surface": "#0e0e0e",
         "secondary-fixed-dim": "#d6d4d3",
         "error-dim": "#4e0309",
-        "primary": "#29695b",
+        primary: "#29695b",
         "tertiary-container": "#f5f3f3",
         "on-secondary-fixed": "#403f3f",
         "on-background": "#323233",
@@ -43,9 +40,9 @@ export default {
         "on-primary-container": "#195c4e",
         "on-tertiary": "#faf8f8",
         "primary-fixed": "#afefdd",
-        "background": "#fcf9f8",
+        background: "#fcf9f8",
         "on-secondary": "#fbf8f8",
-        "tertiary": "#5f5f5f",
+        tertiary: "#5f5f5f",
         "surface-dim": "#dbdad9",
         "on-surface-variant": "#5f5f5f",
         "surface-container-high": "#eae8e7",
@@ -58,7 +55,7 @@ export default {
         "surface-variant": "#e4e2e2",
         "on-primary": "#defff4",
         "surface-container-lowest": "#ffffff",
-        "error": "#9f403d",
+        error: "#9f403d",
       },
       fontFamily: {
         headline: ["Manrope", "sans-serif"],
@@ -88,7 +85,5 @@ export default {
       },
     },
   },
-  plugins: [
-    require("@tailwindcss/forms"),
-  ],
+  plugins: [require("@tailwindcss/forms")],
 };

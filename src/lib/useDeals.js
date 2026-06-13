@@ -43,7 +43,8 @@ export function useDeals() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await supabase.rpc("get_public_deals");
+      const { data, error: fetchError } =
+        await supabase.rpc("get_public_deals");
 
       if (cancelled) return;
 
@@ -60,7 +61,9 @@ export function useDeals() {
     }
 
     fetchDeals();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return { deals, loading, error };
@@ -89,9 +92,12 @@ export function useDeal(id, accessKey = "") {
         return;
       }
 
-      const { data, error: fetchError } = await supabase.rpc("get_public_deal_by_id", {
-        target_deal_id: parsedId,
-      });
+      const { data, error: fetchError } = await supabase.rpc(
+        "get_public_deal_by_id",
+        {
+          target_deal_id: parsedId,
+        },
+      );
 
       if (cancelled) return;
 
@@ -109,7 +115,9 @@ export function useDeal(id, accessKey = "") {
     }
 
     if (id) fetchDeal();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [id, accessKey]);
 
   return { deal, loading, error };
@@ -120,13 +128,15 @@ export function useDeal(id, accessKey = "") {
  */
 
 export async function saveDeal(dealId) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error("Must be logged in to save a deal");
-  
+
   const { error } = await supabase
     .from("saved_deals")
     .insert([{ user_id: user.id, deal_id: dealId }]);
-    
+
   if (error) {
     console.error("[saveDeal] Error:", error.message);
     throw error;
@@ -134,15 +144,17 @@ export async function saveDeal(dealId) {
 }
 
 export async function unsaveDeal(dealId) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error("Must be logged in to unsave a deal");
-  
+
   const { error } = await supabase
     .from("saved_deals")
     .delete()
     .eq("user_id", user.id)
     .eq("deal_id", dealId);
-    
+
   if (error) {
     console.error("[unsaveDeal] Error:", error.message);
     throw error;
@@ -150,21 +162,23 @@ export async function unsaveDeal(dealId) {
 }
 
 export async function checkIfSaved(dealId) {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) return false;
-  
+
   const { data, error } = await supabase
     .from("saved_deals")
     .select("deal_id")
     .eq("user_id", user.id)
     .eq("deal_id", dealId)
     .maybeSingle(); // maybeSingle returns null if 0 rows, instead of throwing PGRST116
-    
+
   if (error) {
     console.error("[checkIfSaved] Error:", error.message);
     throw error;
   }
-  
+
   return !!data;
 }
 
@@ -184,7 +198,9 @@ export function useSavedDealIds() {
 
     async function fetchAllSaved() {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
 
       if (!user) {
         if (!cancelled) {
@@ -208,14 +224,20 @@ export function useSavedDealIds() {
     }
 
     fetchAllSaved();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const toggleSave = async (dealId) => {
     const wasSaved = savedIds.has(dealId);
     if (wasSaved) {
       await unsaveDeal(dealId);
-      setSavedIds((prev) => { const next = new Set(prev); next.delete(dealId); return next; });
+      setSavedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(dealId);
+        return next;
+      });
     } else {
       await saveDeal(dealId);
       setSavedIds((prev) => new Set(prev).add(dealId));

@@ -34,20 +34,22 @@ function Perks({ searchQuery }) {
 
   // Apply brand filter (from ?brand= param)
   const filteredByBrand = useMemo(
-    () => brandFilter
-      ? deals.filter((deal) => deal.brand.toLowerCase() === brandFilter.toLowerCase())
-      : deals,
-    [brandFilter, deals]
+    () =>
+      brandFilter
+        ? deals.filter(
+            (deal) => deal.brand.toLowerCase() === brandFilter.toLowerCase(),
+          )
+        : deals,
+    [brandFilter, deals],
   );
 
   // Apply type filter
   const filteredByType = useMemo(
-    () => (
+    () =>
       activeFilter === "all"
         ? filteredByBrand
-        : filteredByBrand.filter((deal) => deal.type === activeFilter)
-    ),
-    [activeFilter, filteredByBrand]
+        : filteredByBrand.filter((deal) => deal.type === activeFilter),
+    [activeFilter, filteredByBrand],
   );
 
   // Apply search filter on top of type filter
@@ -58,9 +60,9 @@ function Perks({ searchQuery }) {
 
     return filteredByType.filter(
       (deal) =>
-        deal.title.toLowerCase().includes(normalizedQuery)
-        || deal.brand.toLowerCase().includes(normalizedQuery)
-        || deal.category.toLowerCase().includes(normalizedQuery)
+        deal.title.toLowerCase().includes(normalizedQuery) ||
+        deal.brand.toLowerCase().includes(normalizedQuery) ||
+        deal.category.toLowerCase().includes(normalizedQuery),
     );
   }, [filteredByType, normalizedQuery]);
 
@@ -75,16 +77,21 @@ function Perks({ searchQuery }) {
           All Student <span className="text-primary italic">Perks.</span>
         </h1>
         <p className="text-on-surface-variant text-lg max-w-xl">
-          Explore every exclusive offer available to verified students. Filter by
-          type to find exactly what you need.
+          Explore every exclusive offer available to verified students. Filter
+          by type to find exactly what you need.
         </p>
 
         {/* Active brand filter banner */}
         {brandFilter && (
           <div className="mt-4 inline-flex items-center gap-2 bg-primary-container/30 text-primary border border-primary/20 px-4 py-2 rounded-full text-sm font-headline font-bold">
-            <span className="material-symbols-outlined text-base">storefront</span>
+            <span className="material-symbols-outlined text-base">
+              storefront
+            </span>
             Showing deals from: {brandFilter}
-            <button onClick={clearBrandFilter} className="ml-1 hover:text-error transition-colors">
+            <button
+              onClick={clearBrandFilter}
+              className="ml-1 hover:text-error transition-colors"
+            >
               <span className="material-symbols-outlined text-base">close</span>
             </button>
           </div>
@@ -92,7 +99,7 @@ function Perks({ searchQuery }) {
       </div>
 
       {/* Show loader / error */}
-      {(loading || error) ? (
+      {loading || error ? (
         <DealsLoader loading={loading} error={error} />
       ) : (
         <>
@@ -114,7 +121,8 @@ function Perks({ searchQuery }) {
 
             {/* Active filter count */}
             <span className="flex items-center text-sm text-on-surface-variant/60 font-body ml-2">
-              {filteredDeals.length} deal{filteredDeals.length !== 1 ? "s" : ""} found
+              {filteredDeals.length} deal{filteredDeals.length !== 1 ? "s" : ""}{" "}
+              found
             </span>
           </div>
 

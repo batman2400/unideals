@@ -17,7 +17,11 @@ function Footer() {
             to="/"
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <img src="/images/logo.png" alt="Uni Deals" className="h-7 w-auto" />
+            <img
+              src="/images/logo.png"
+              alt="Uni Deals"
+              className="h-7 w-auto"
+            />
             <span className="font-['Manrope'] font-black text-[#323233] dark:text-[#fcf9f8] text-xl">
               Uni Deals
             </span>

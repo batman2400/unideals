@@ -26,8 +26,8 @@ function DealFeed({ searchQuery }) {
 
     return deals.filter(
       (deal) =>
-        deal.title.toLowerCase().includes(normalizedQuery)
-        || deal.brand.toLowerCase().includes(normalizedQuery)
+        deal.title.toLowerCase().includes(normalizedQuery) ||
+        deal.brand.toLowerCase().includes(normalizedQuery),
     );
   }, [deals, normalizedQuery]);
 
@@ -70,4 +70,3 @@ function DealFeed({ searchQuery }) {
 }
 
 export default DealFeed;
-

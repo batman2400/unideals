@@ -2,7 +2,10 @@ import { useEffect, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrand, PARTNER_BRAND_REQUIRED_MESSAGE } from "../../lib/partnerBrand";
+import {
+  getPartnerBrand,
+  PARTNER_BRAND_REQUIRED_MESSAGE,
+} from "../../lib/partnerBrand";
 import {
   buildOfferLabel,
   getOfferValueLabel,
@@ -40,7 +43,13 @@ const INITIAL_FORM = {
 
 function EditDeal() {
   const { id } = useParams();
-  const { user, role, loading: roleLoading, error: roleError, impersonatedPartnerId } = useRoleContext();
+  const {
+    user,
+    role,
+    loading: roleLoading,
+    error: roleError,
+    impersonatedPartnerId,
+  } = useRoleContext();
   const targetUserId = impersonatedPartnerId || user?.id;
 
   const [formData, setFormData] = useState(INITIAL_FORM);
@@ -91,7 +100,9 @@ function EditDeal() {
       }
 
       if (role === "admin" && !impersonatedPartnerId) {
-        setError("Admin View: Please impersonate a brand from the sidebar to edit deals.");
+        setError(
+          "Admin View: Please impersonate a brand from the sidebar to edit deals.",
+        );
         setLoading(false);
         return;
       }
@@ -107,7 +118,7 @@ function EditDeal() {
         setLoading(false);
         return;
       }
-      
+
       setError("");
 
       const dealId = Number(id);
@@ -117,7 +128,11 @@ function EditDeal() {
         return;
       }
 
-      const { brandId, brandName, error: brandError } = await getPartnerBrand(targetUserId);
+      const {
+        brandId,
+        brandName,
+        error: brandError,
+      } = await getPartnerBrand(targetUserId);
 
       if (!active) return;
 
@@ -138,10 +153,11 @@ function EditDeal() {
 
       const { data, error: fetchError } = await supabase
         .from("deals")
-        .select("id, title, brand, discount, type, category, image_url, description, redemption_code")
+        .select(
+          "id, title, brand, discount, type, category, image_url, description, redemption_code",
+        )
         .eq("id", dealId)
-        .eq("partner_id", targetUserId)
-        .eq("brand", brandName)
+        .eq("brand_id", brandId)
         .maybeSingle();
 
       if (!active) return;
@@ -205,11 +221,22 @@ function EditDeal() {
   const offerPreview = buildOfferLabel(offerType, offerValue);
 
   const validate = () => {
-    const requiredKeys = ["title", "brand", "type", "category", "redemptionCode"];
+    const requiredKeys = [
+      "title",
+      "brand",
+      "type",
+      "category",
+      "redemptionCode",
+    ];
     const hasOffer = String(offerPreview).trim().length > 0;
-    const hasImage = !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
+    const hasImage =
+      !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
 
-    return requiredKeys.every((key) => String(formData[key]).trim().length > 0) && hasOffer && hasImage;
+    return (
+      requiredKeys.every((key) => String(formData[key]).trim().length > 0) &&
+      hasOffer &&
+      hasImage
+    );
   };
 
   const handleSubmit = async (event) => {
@@ -218,7 +245,9 @@ function EditDeal() {
     setSuccessMessage("");
 
     if (role === "admin" && !impersonatedPartnerId) {
-      setError("Admin View: Please impersonate a brand from the sidebar to edit deals.");
+      setError(
+        "Admin View: Please impersonate a brand from the sidebar to edit deals.",
+      );
       return;
     }
 
@@ -251,7 +280,9 @@ function EditDeal() {
 
     try {
       let effectiveImageUrl = formData.imageUrl.trim();
-      const normalizedRedemptionCode = formData.redemptionCode.trim().toUpperCase();
+      const normalizedRedemptionCode = formData.redemptionCode
+        .trim()
+        .toUpperCase();
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
@@ -271,7 +302,9 @@ function EditDeal() {
         type: formData.type,
         category: formData.category,
         image_url: effectiveImageUrl,
-        description: formData.description.trim() || `${formData.title.trim()} student offer.`,
+        description:
+          formData.description.trim() ||
+          `${formData.title.trim()} student offer.`,
         redemption_code: normalizedRedemptionCode,
       };
 
@@ -279,7 +312,7 @@ function EditDeal() {
         .from("deals")
         .update(payload)
         .eq("id", Number(id))
-        .eq("partner_id", targetUserId)
+        .eq("brand_id", partnerBrandId)
         .select("id")
         .maybeSingle();
 
@@ -301,9 +334,13 @@ function EditDeal() {
     } catch (submitError) {
       if (!isMountedRef.current) return;
       if (submitError?.code === "23505") {
-        setError("Promo code already exists for this brand. Please use a unique code.");
+        setError(
+          "Promo code already exists for this brand. Please use a unique code.",
+        );
       } else {
-        setError(submitError?.message || "Could not update offer. Please try again.");
+        setError(
+          submitError?.message || "Could not update offer. Please try again.",
+        );
       }
     } finally {
       if (!isMountedRef.current) return;
@@ -317,7 +354,9 @@ function EditDeal() {
         <div className="min-h-[45vh] flex items-center justify-center">
           <div className="flex items-center gap-3 text-on-surface-variant">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="text-sm font-headline font-bold">Loading offer editor...</p>
+            <p className="text-sm font-headline font-bold">
+              Loading offer editor...
+            </p>
           </div>
         </div>
       </section>
@@ -343,7 +382,9 @@ function EditDeal() {
           to="/partner"
           className="inline-flex items-center gap-1.5 text-sm font-headline font-bold text-primary hover:underline"
         >
-          <span className="material-symbols-outlined text-base">arrow_back</span>
+          <span className="material-symbols-outlined text-base">
+            arrow_back
+          </span>
           Back to Dashboard
         </Link>
       </div>
@@ -351,19 +392,26 @@ function EditDeal() {
       <div className="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8 shadow-sm">
         {error && (
           <div className="mb-5 flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3">
-            <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">error</span>
+            <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">
+              error
+            </span>
             <p className="text-error text-sm font-bold">{error}</p>
           </div>
         )}
 
         {successMessage && (
           <div className="mb-5 flex items-start gap-2 bg-primary-container/30 border border-primary/20 rounded-lg px-4 py-3">
-            <span className="material-symbols-outlined text-primary text-lg flex-shrink-0 mt-0.5">check_circle</span>
+            <span className="material-symbols-outlined text-primary text-lg flex-shrink-0 mt-0.5">
+              check_circle
+            </span>
             <p className="text-primary text-sm font-bold">{successMessage}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-5"
+        >
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
               Title
@@ -583,7 +631,9 @@ function EditDeal() {
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-lg">save</span>
+                  <span className="material-symbols-outlined text-lg">
+                    save
+                  </span>
                   Save Changes
                 </>
               )}

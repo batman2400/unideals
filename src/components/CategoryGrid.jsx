@@ -10,14 +10,14 @@ import { useNavigate } from "react-router-dom";
 
 // Official V1 taxonomy — icon (Material Symbols) + label
 const categories = [
-  { icon: "checkroom",       label: "Fashion" },
-  { icon: "restaurant",      label: "Food & Drink" },
-  { icon: "smartphone",      label: "Tech & Mobile" },
-  { icon: "spa",             label: "Beauty & Care" },
-  { icon: "school",          label: "Learning" },
-  { icon: "flight",          label: "Travel & Auto" },
-  { icon: "fitness_center",  label: "Health & Fitness" },
-  { icon: "home",            label: "Household" },
+  { icon: "checkroom", label: "Fashion" },
+  { icon: "restaurant", label: "Food & Drink" },
+  { icon: "smartphone", label: "Tech & Mobile" },
+  { icon: "spa", label: "Beauty & Care" },
+  { icon: "school", label: "Learning" },
+  { icon: "flight", label: "Travel & Auto" },
+  { icon: "fitness_center", label: "Health & Fitness" },
+  { icon: "home", label: "Household" },
   { icon: "account_balance", label: "Finance" },
   { icon: "confirmation_number", label: "Events & Tickets" },
 ];

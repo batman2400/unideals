@@ -3,7 +3,8 @@ import { useRoleContext } from "../lib/RoleContext";
 
 function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   const location = useLocation();
-  const { role, loading, error, isAuthenticated, refreshRole } = useRoleContext();
+  const { role, loading, error, isAuthenticated, refreshRole } =
+    useRoleContext();
 
   if (loading) {
     return (
@@ -51,7 +52,13 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   }
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
-    return <Navigate to={redirectTo} replace state={{ from: location, unauthorized: true }} />;
+    return (
+      <Navigate
+        to={redirectTo}
+        replace
+        state={{ from: location, unauthorized: true }}
+      />
+    );
   }
 
   return children;

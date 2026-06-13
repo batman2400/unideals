@@ -132,7 +132,9 @@ function App() {
       <div className="min-h-[100dvh] flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-on-surface-variant text-sm font-headline font-bold">Loading...</p>
+          <p className="text-on-surface-variant text-sm font-headline font-bold">
+            Loading...
+          </p>
         </div>
       </div>
     );
@@ -153,7 +155,10 @@ function App() {
       {/* Page Content */}
       <main className="pt-20 md:pt-24 pb-safe-content">
         <Suspense fallback={<RouteSkeleton />}>
-          <div key={`${location.pathname}${location.search}`} className="animate-route-fade">
+          <div
+            key={`${location.pathname}${location.search}`}
+            className="animate-route-fade"
+          >
             <Routes location={location}>
               <Route
                 path="/"

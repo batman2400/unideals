@@ -77,7 +77,9 @@ function AdminDashboard() {
 
       const { data: pendingData, error: pendingError } = await supabase
         .from("deals")
-        .select("id, brand, title, discount, type, category, image_url, created_at")
+        .select(
+          "id, brand, title, discount, type, category, image_url, created_at",
+        )
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -91,15 +93,26 @@ function AdminDashboard() {
 
       setPendingDeals(pendingData || []);
 
-      const [eventsResponse, confirmedResponse, totalScansResponse, validScansResponse, perShopResponse] = await Promise.all([
+      const [
+        eventsResponse,
+        confirmedResponse,
+        totalScansResponse,
+        validScansResponse,
+        perShopResponse,
+      ] = await Promise.all([
         supabase
           .from("redemption_events")
-          .select("id, partner_id, deal_id, brand, scanned_code, scan_method, scan_result, created_at")
+          .select(
+            "id, partner_id, deal_id, brand, scanned_code, scan_method, scan_result, created_at",
+          )
           .order("created_at", { ascending: false })
           .limit(15),
         supabase
           .from("confirmed_redemptions")
-          .select("id, partner_id, deal_id, brand, redemption_code, created_at", { count: "exact" })
+          .select(
+            "id, partner_id, deal_id, brand, redemption_code, created_at",
+            { count: "exact" },
+          )
           .order("created_at", { ascending: false })
           .limit(15),
         supabase
@@ -109,23 +122,24 @@ function AdminDashboard() {
           .from("redemption_events")
           .select("id", { count: "exact", head: true })
           .eq("scan_result", "valid"),
-        supabase
-          .rpc("get_redemption_analytics_by_shop"),
+        supabase.rpc("get_redemption_analytics_by_shop"),
       ]);
 
       if (!active) return;
 
       const analyticsError =
-        eventsResponse.error
-        || confirmedResponse.error
-        || totalScansResponse.error
-        || validScansResponse.error
-        || perShopResponse.error;
+        eventsResponse.error ||
+        confirmedResponse.error ||
+        totalScansResponse.error ||
+        validScansResponse.error ||
+        perShopResponse.error;
 
       if (analyticsError) {
-        const details = analyticsError?.message ? ` (${analyticsError.message})` : "";
+        const details = analyticsError?.message
+          ? ` (${analyticsError.message})`
+          : "";
         setAnalyticsWarning(
-          `Redemption analytics are unavailable. Run the latest SQL migration to enable scan tracking tables.${details}`
+          `Redemption analytics are unavailable. Run the latest SQL migration to enable scan tracking tables.${details}`,
         );
         setScanEvents([]);
         setConfirmedRedemptions([]);
@@ -279,7 +293,9 @@ function AdminDashboard() {
           >
             {messageType === "error" ? "error" : "check_circle"}
           </span>
-          <p className={`text-sm font-bold ${messageType === "error" ? "text-error" : "text-primary"}`}>
+          <p
+            className={`text-sm font-bold ${messageType === "error" ? "text-error" : "text-primary"}`}
+          >
             {message}
           </p>
         </div>
@@ -297,60 +313,102 @@ function AdminDashboard() {
 
         {analyticsWarning ? (
           <div className="mb-5 bg-amber-100 border border-amber-200 rounded-lg px-4 py-3">
-            <p className="text-amber-700 text-sm font-bold">{analyticsWarning}</p>
+            <p className="text-amber-700 text-sm font-bold">
+              {analyticsWarning}
+            </p>
           </div>
         ) : null}
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
-            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Total Scans</p>
-            <p className="font-headline font-black text-3xl tracking-tight text-on-background">{analyticsMetrics.totalScans}</p>
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">
+              Total Scans
+            </p>
+            <p className="font-headline font-black text-3xl tracking-tight text-on-background">
+              {analyticsMetrics.totalScans}
+            </p>
           </article>
 
           <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
-            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Valid Scans</p>
-            <p className="font-headline font-black text-3xl tracking-tight text-emerald-700">{analyticsMetrics.validScans}</p>
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">
+              Valid Scans
+            </p>
+            <p className="font-headline font-black text-3xl tracking-tight text-emerald-700">
+              {analyticsMetrics.validScans}
+            </p>
           </article>
 
           <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
-            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Failed Scans</p>
-            <p className="font-headline font-black text-3xl tracking-tight text-red-700">{analyticsMetrics.failedScans}</p>
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">
+              Failed Scans
+            </p>
+            <p className="font-headline font-black text-3xl tracking-tight text-red-700">
+              {analyticsMetrics.failedScans}
+            </p>
           </article>
 
           <article className="bg-surface-container-low rounded-xl border border-outline-variant/15 p-4">
-            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">Confirmed Redemptions</p>
-            <p className="font-headline font-black text-3xl tracking-tight text-on-background">{analyticsMetrics.confirmedRedemptions}</p>
+            <p className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant mb-2">
+              Confirmed Redemptions
+            </p>
+            <p className="font-headline font-black text-3xl tracking-tight text-on-background">
+              {analyticsMetrics.confirmedRedemptions}
+            </p>
           </article>
         </div>
 
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
           <div className="rounded-xl border border-outline-variant/15 overflow-hidden xl:col-span-2">
             <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
-              <h3 className="font-headline font-bold text-on-background">Shop-wise Breakdown</h3>
+              <h3 className="font-headline font-bold text-on-background">
+                Shop-wise Breakdown
+              </h3>
             </div>
 
             {shopAnalytics.length === 0 ? (
-              <div className="p-4 text-sm text-on-surface-variant">No shop analytics available yet.</div>
+              <div className="p-4 text-sm text-on-surface-variant">
+                No shop analytics available yet.
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[720px] text-sm">
                   <thead className="bg-surface-container-low/60">
                     <tr>
-                      <th className="text-left px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Shop</th>
-                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Total Scans</th>
-                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Valid</th>
-                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Failed</th>
-                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">Confirmed</th>
+                      <th className="text-left px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">
+                        Shop
+                      </th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">
+                        Total Scans
+                      </th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">
+                        Valid
+                      </th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">
+                        Failed
+                      </th>
+                      <th className="text-right px-4 py-3 font-bold tracking-wide uppercase text-on-surface-variant text-[11px]">
+                        Confirmed
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant/10">
                     {shopAnalytics.map((row) => (
                       <tr key={row.brand}>
-                        <td className="px-4 py-3 font-bold text-on-background">{row.brand}</td>
-                        <td className="px-4 py-3 text-right text-on-background">{row.total_scans}</td>
-                        <td className="px-4 py-3 text-right text-emerald-700 font-bold">{row.valid_scans}</td>
-                        <td className="px-4 py-3 text-right text-red-700 font-bold">{row.failed_scans}</td>
-                        <td className="px-4 py-3 text-right text-on-background font-bold">{row.confirmed_redemptions}</td>
+                        <td className="px-4 py-3 font-bold text-on-background">
+                          {row.brand}
+                        </td>
+                        <td className="px-4 py-3 text-right text-on-background">
+                          {row.total_scans}
+                        </td>
+                        <td className="px-4 py-3 text-right text-emerald-700 font-bold">
+                          {row.valid_scans}
+                        </td>
+                        <td className="px-4 py-3 text-right text-red-700 font-bold">
+                          {row.failed_scans}
+                        </td>
+                        <td className="px-4 py-3 text-right text-on-background font-bold">
+                          {row.confirmed_redemptions}
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -361,21 +419,29 @@ function AdminDashboard() {
 
           <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
             <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
-              <h3 className="font-headline font-bold text-on-background">Recent Scan Events</h3>
+              <h3 className="font-headline font-bold text-on-background">
+                Recent Scan Events
+              </h3>
             </div>
 
             {scanEvents.length === 0 ? (
-              <div className="p-4 text-sm text-on-surface-variant">No scan events yet.</div>
+              <div className="p-4 text-sm text-on-surface-variant">
+                No scan events yet.
+              </div>
             ) : (
               <ul className="divide-y divide-outline-variant/10">
                 {scanEvents.map((event) => (
                   <li key={event.id} className="px-4 py-3 text-sm">
-                    <p className="font-bold text-on-background">{event.brand} · {event.scan_result}</p>
+                    <p className="font-bold text-on-background">
+                      {event.brand} · {event.scan_result}
+                    </p>
                     <p className="text-on-surface-variant text-xs mt-1">
                       Code: {event.scanned_code} · Method: {event.scan_method}
                     </p>
                     <p className="text-on-surface-variant text-xs mt-1">
-                      Partner: {shortId(event.partner_id)} · Deal: {event.deal_id || "-"} · {formatDateTime(event.created_at)}
+                      Partner: {shortId(event.partner_id)} · Deal:{" "}
+                      {event.deal_id || "-"} ·{" "}
+                      {formatDateTime(event.created_at)}
                     </p>
                   </li>
                 ))}
@@ -385,18 +451,25 @@ function AdminDashboard() {
 
           <div className="rounded-xl border border-outline-variant/15 overflow-hidden">
             <div className="px-4 py-3 bg-surface-container-low border-b border-outline-variant/15">
-              <h3 className="font-headline font-bold text-on-background">Recent Confirmed Redemptions</h3>
+              <h3 className="font-headline font-bold text-on-background">
+                Recent Confirmed Redemptions
+              </h3>
             </div>
 
             {confirmedRedemptions.length === 0 ? (
-              <div className="p-4 text-sm text-on-surface-variant">No confirmed redemptions yet.</div>
+              <div className="p-4 text-sm text-on-surface-variant">
+                No confirmed redemptions yet.
+              </div>
             ) : (
               <ul className="divide-y divide-outline-variant/10">
                 {confirmedRedemptions.map((entry) => (
                   <li key={entry.id} className="px-4 py-3 text-sm">
-                    <p className="font-bold text-on-background">{entry.brand} · {entry.redemption_code}</p>
+                    <p className="font-bold text-on-background">
+                      {entry.brand} · {entry.redemption_code}
+                    </p>
                     <p className="text-on-surface-variant text-xs mt-1">
-                      Partner: {shortId(entry.partner_id)} · Deal: {entry.deal_id}
+                      Partner: {shortId(entry.partner_id)} · Deal:{" "}
+                      {entry.deal_id}
                     </p>
                     <p className="text-on-surface-variant text-xs mt-1">
                       {formatDateTime(entry.created_at)}
@@ -415,8 +488,12 @@ function AdminDashboard() {
         </div>
       ) : pendingDeals.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/20 p-8 text-center">
-          <p className="font-headline font-bold text-on-background text-lg mb-1">Queue is clear</p>
-          <p className="text-on-surface-variant text-sm">No pending deals need moderation right now.</p>
+          <p className="font-headline font-bold text-on-background text-lg mb-1">
+            Queue is clear
+          </p>
+          <p className="text-on-surface-variant text-sm">
+            No pending deals need moderation right now.
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -438,7 +515,9 @@ function AdminDashboard() {
 
                 <div className="p-5 md:p-6">
                   <div className="flex items-center justify-between gap-3 mb-2">
-                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">{deal.category}</p>
+                    <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">
+                      {deal.category}
+                    </p>
                     <span className="text-[11px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
                       {deal.type}
                     </span>
@@ -447,11 +526,17 @@ function AdminDashboard() {
                   <h2 className="font-headline font-extrabold text-2xl tracking-tight text-on-background mb-1">
                     {deal.title}
                   </h2>
-                  <p className="text-on-surface-variant text-sm mb-4">{deal.brand}</p>
+                  <p className="text-on-surface-variant text-sm mb-4">
+                    {deal.brand}
+                  </p>
 
                   <div className="inline-flex items-center gap-2 rounded-full bg-primary-container/35 border border-primary/15 px-3 py-1.5 mb-5">
-                    <span className="material-symbols-outlined text-primary text-base">local_offer</span>
-                    <span className="text-primary text-sm font-headline font-bold">{deal.discount}</span>
+                    <span className="material-symbols-outlined text-primary text-base">
+                      local_offer
+                    </span>
+                    <span className="text-primary text-sm font-headline font-bold">
+                      {deal.discount}
+                    </span>
                   </div>
 
                   <div className="flex flex-col sm:flex-row gap-3">
@@ -467,7 +552,9 @@ function AdminDashboard() {
                         </>
                       ) : (
                         <>
-                          <span className="material-symbols-outlined text-lg">done</span>
+                          <span className="material-symbols-outlined text-lg">
+                            done
+                          </span>
                           Approve
                         </>
                       )}
@@ -485,7 +572,9 @@ function AdminDashboard() {
                         </>
                       ) : (
                         <>
-                          <span className="material-symbols-outlined text-lg">close</span>
+                          <span className="material-symbols-outlined text-lg">
+                            close
+                          </span>
                           Reject
                         </>
                       )}

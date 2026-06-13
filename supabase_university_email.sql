@@ -7,7 +7,7 @@
 -- What this migration does:
 -- 1) Adds public.user_roles.university_email (nullable TEXT)
 -- 2) Creates verify_university_email() RPC function that:
---    - Validates domain (.ac.lk, .edu.lk, .edu)
+--    - Validates domain (.ac.lk, .edu.lk, .edu, .edu.au, .ac.uk)
 --    - Updates user_roles with university_email + is_verified = true
 -- 3) RLS allows authenticated users to call for their own row
 -- ============================================================
@@ -42,10 +42,12 @@ BEGIN
     normalized ILIKE '%.ac.lk'
     OR normalized ILIKE '%.edu.lk'
     OR normalized ILIKE '%.edu'
+    OR normalized ILIKE '%.edu.au'
+    OR normalized ILIKE '%.ac.uk'
   ) THEN
     RETURN json_build_object(
       'success', false,
-      'error', 'Email must end with .ac.lk, .edu.lk, or .edu'
+      'error', 'Email must end with .ac.lk, .edu.lk, .edu, .edu.au, or .ac.uk'
     );
   END IF;
 

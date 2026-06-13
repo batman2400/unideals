@@ -15,7 +15,13 @@
 import DealCard from "./DealCard";
 import { memo } from "react";
 
-function DealGrid({ deals, enableStagger = true, savedIds, onToggleSave, savedLoading }) {
+function DealGrid({
+  deals,
+  enableStagger = true,
+  savedIds,
+  onToggleSave,
+  savedLoading,
+}) {
   if (!deals || deals.length === 0) {
     return (
       <div className="text-center py-20">
@@ -38,7 +44,11 @@ function DealGrid({ deals, enableStagger = true, savedIds, onToggleSave, savedLo
         <div
           key={deal.id}
           className={enableStagger ? "animate-stagger-in" : ""}
-          style={enableStagger ? { animationDelay: `${Math.min(index, 12) * 45}ms` } : undefined}
+          style={
+            enableStagger
+              ? { animationDelay: `${Math.min(index, 12) * 45}ms` }
+              : undefined
+          }
         >
           <DealCard
             deal={deal}
@@ -53,4 +63,3 @@ function DealGrid({ deals, enableStagger = true, savedIds, onToggleSave, savedLo
 }
 
 export default memo(DealGrid);
-

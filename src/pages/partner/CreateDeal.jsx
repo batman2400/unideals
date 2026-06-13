@@ -41,7 +41,12 @@ const INITIAL_FORM = {
 };
 
 function CreateDeal() {
-  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const {
+    user,
+    role,
+    loading: roleLoading,
+    impersonatedPartnerId,
+  } = useRoleContext();
   const targetUserId = impersonatedPartnerId || user?.id;
 
   const [formData, setFormData] = useState(INITIAL_FORM);
@@ -92,12 +97,14 @@ function CreateDeal() {
         setBrandLoading(false);
         return;
       }
-      
+
       setError("");
 
       if (role === "admin" && !impersonatedPartnerId) {
         if (!active) return;
-        setError("Admin View: Please impersonate a brand from the sidebar to create deals.");
+        setError(
+          "Admin View: Please impersonate a brand from the sidebar to create deals.",
+        );
         setPartnerBrand("");
         setPartnerBrandId(null);
         setBrandLoading(false);
@@ -116,7 +123,11 @@ function CreateDeal() {
       if (!active) return;
       setBrandLoading(true);
 
-      const { brandId, brandName, error: brandError } = await getPartnerBrand(targetUserId);
+      const {
+        brandId,
+        brandName,
+        error: brandError,
+      } = await getPartnerBrand(targetUserId);
 
       if (!active) return;
 
@@ -172,11 +183,22 @@ function CreateDeal() {
   const offerPreview = buildOfferLabel(offerType, offerValue);
 
   const validate = () => {
-    const requiredKeys = ["title", "brand", "type", "category", "redemptionCode"];
+    const requiredKeys = [
+      "title",
+      "brand",
+      "type",
+      "category",
+      "redemptionCode",
+    ];
     const hasOffer = String(offerPreview).trim().length > 0;
-    const hasImage = !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
+    const hasImage =
+      !!selectedImageFile || String(formData.imageUrl).trim().length > 0;
 
-    return requiredKeys.every((key) => String(formData[key]).trim().length > 0) && hasOffer && hasImage;
+    return (
+      requiredKeys.every((key) => String(formData[key]).trim().length > 0) &&
+      hasOffer &&
+      hasImage
+    );
   };
 
   const handleSubmit = async (event) => {
@@ -190,7 +212,9 @@ function CreateDeal() {
     }
 
     if (role === "admin" && !impersonatedPartnerId) {
-      setError("Admin View: Please impersonate a brand from the sidebar to create deals.");
+      setError(
+        "Admin View: Please impersonate a brand from the sidebar to create deals.",
+      );
       return;
     }
 
@@ -230,7 +254,9 @@ function CreateDeal() {
       }
 
       let effectiveImageUrl = formData.imageUrl.trim();
-      const normalizedRedemptionCode = formData.redemptionCode.trim().toUpperCase();
+      const normalizedRedemptionCode = formData.redemptionCode
+        .trim()
+        .toUpperCase();
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
@@ -250,13 +276,17 @@ function CreateDeal() {
         type: formData.type,
         category: formData.category,
         image_url: effectiveImageUrl,
-        description: formData.description.trim() || `${formData.title.trim()} student offer.`,
+        description:
+          formData.description.trim() ||
+          `${formData.title.trim()} student offer.`,
         redemption_code: normalizedRedemptionCode,
         partner_id: targetUserId,
         status: "pending",
       };
 
-      const { error: insertError } = await supabase.from("deals").insert([payload]);
+      const { error: insertError } = await supabase
+        .from("deals")
+        .insert([payload]);
 
       if (!isMountedRef.current) return;
 
@@ -268,13 +298,19 @@ function CreateDeal() {
       setOfferType("percentage_off");
       setOfferValue("");
       setSelectedImageFile(null);
-      setSuccessMessage("Deal submitted successfully. It is now pending admin approval.");
+      setSuccessMessage(
+        "Deal submitted successfully. It is now pending admin approval.",
+      );
     } catch (submitError) {
       if (!isMountedRef.current) return;
       if (submitError?.code === "23505") {
-        setError("Promo code already exists for this brand. Please use a unique code.");
+        setError(
+          "Promo code already exists for this brand. Please use a unique code.",
+        );
       } else {
-        setError(submitError?.message || "Could not submit deal. Please try again.");
+        setError(
+          submitError?.message || "Could not submit deal. Please try again.",
+        );
       }
     } finally {
       if (!isMountedRef.current) return;
@@ -293,8 +329,8 @@ function CreateDeal() {
             Create a New Deal Submission
           </h1>
           <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
-            Complete all fields and submit for review. The deal will remain pending
-            until an admin approves it.
+            Complete all fields and submit for review. The deal will remain
+            pending until an admin approves it.
           </p>
         </div>
 
@@ -302,7 +338,9 @@ function CreateDeal() {
           to="/partner"
           className="inline-flex items-center gap-1.5 text-sm font-headline font-bold text-primary hover:underline"
         >
-          <span className="material-symbols-outlined text-base">arrow_back</span>
+          <span className="material-symbols-outlined text-base">
+            arrow_back
+          </span>
           Back to Dashboard
         </Link>
       </div>
@@ -310,19 +348,26 @@ function CreateDeal() {
       <div className="bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8 shadow-sm">
         {error && (
           <div className="mb-5 flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3">
-            <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">error</span>
+            <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">
+              error
+            </span>
             <p className="text-error text-sm font-bold">{error}</p>
           </div>
         )}
 
         {successMessage && (
           <div className="mb-5 flex items-start gap-2 bg-primary-container/30 border border-primary/20 rounded-lg px-4 py-3">
-            <span className="material-symbols-outlined text-primary text-lg flex-shrink-0 mt-0.5">check_circle</span>
+            <span className="material-symbols-outlined text-primary text-lg flex-shrink-0 mt-0.5">
+              check_circle
+            </span>
             <p className="text-primary text-sm font-bold">{successMessage}</p>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <form
+          onSubmit={handleSubmit}
+          className="grid grid-cols-1 md:grid-cols-2 gap-5"
+        >
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
               Title
@@ -343,7 +388,9 @@ function CreateDeal() {
               Brand
             </label>
             <div className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body text-on-surface-variant">
-              {brandLoading ? "Loading partner brand..." : (partnerBrand || "Not Assigned")}
+              {brandLoading
+                ? "Loading partner brand..."
+                : partnerBrand || "Not Assigned"}
             </div>
             <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
               Assigned by admin.
@@ -541,7 +588,9 @@ function CreateDeal() {
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-lg">send</span>
+                  <span className="material-symbols-outlined text-lg">
+                    send
+                  </span>
                   Submit for Approval
                 </>
               )}

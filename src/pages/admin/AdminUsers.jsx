@@ -6,7 +6,8 @@ import PortalLayout from "../../layouts/PortalLayout";
 const ROLE_BADGE = {
   admin: "bg-purple-50 text-purple-700 border-purple-200",
   partner: "bg-primary-container/40 text-primary border-primary/20",
-  student: "bg-surface-container text-on-surface-variant border-outline-variant/20",
+  student:
+    "bg-surface-container text-on-surface-variant border-outline-variant/20",
 };
 
 const ROLE_FILTER_TABS = [
@@ -34,19 +35,27 @@ function AdminUsers() {
   const [promoting, setPromoting] = useState(false);
   const isMountedRef = useRef(true);
 
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   const fetchUsers = useCallback(async () => {
     if (role !== "admin") return;
     setLoading(true);
     setError("");
 
-    const { data, error: fetchError } = await supabase.rpc("list_users_with_roles", {
-      search_query: searchQuery,
-      role_filter: roleFilter,
-      page_limit: 100,
-      page_offset: 0,
-    });
+    const { data, error: fetchError } = await supabase.rpc(
+      "list_users_with_roles",
+      {
+        search_query: searchQuery,
+        role_filter: roleFilter,
+        page_limit: 100,
+        page_offset: 0,
+      },
+    );
 
     if (fetchError) {
       setError(fetchError.message);
@@ -60,7 +69,10 @@ function AdminUsers() {
 
   const fetchBrands = useCallback(async () => {
     if (role !== "admin") return;
-    const { data } = await supabase.from("brands").select("id, name").order("name");
+    const { data } = await supabase
+      .from("brands")
+      .select("id, name")
+      .order("name");
     setBrands(data || []);
   }, [role]);
 
@@ -72,57 +84,76 @@ function AdminUsers() {
 
   const showMsg = useCallback((text) => {
     setMessage(text);
-    setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 4000);
+    setTimeout(() => {
+      if (isMountedRef.current) setMessage("");
+    }, 4000);
   }, []);
 
-  const handlePromote = useCallback(async (e) => {
-    e.preventDefault();
-    if (!promoteEmail.trim() || !promoteBrandId) return;
+  const handlePromote = useCallback(
+    async (e) => {
+      e.preventDefault();
+      if (!promoteEmail.trim() || !promoteBrandId) return;
 
-    setPromoting(true);
-    setError("");
+      setPromoting(true);
+      setError("");
 
-    const { error: promoteError } = await supabase.rpc("promote_user_to_partner", {
-      target_email: promoteEmail.trim(),
-      target_brand_id: promoteBrandId,
-    });
+      const { error: promoteError } = await supabase.rpc(
+        "promote_user_to_partner",
+        {
+          target_email: promoteEmail.trim(),
+          target_brand_id: promoteBrandId,
+        },
+      );
 
-    if (!isMountedRef.current) return;
+      if (!isMountedRef.current) return;
 
-    if (promoteError) {
-      setError(promoteError.message);
+      if (promoteError) {
+        setError(promoteError.message);
+        setPromoting(false);
+        return;
+      }
+
       setPromoting(false);
-      return;
-    }
+      setShowPromote(false);
+      setPromoteEmail("");
+      setPromoteBrandId("");
+      showMsg(`Promoted ${promoteEmail} to partner.`);
+      fetchUsers();
+    },
+    [promoteEmail, promoteBrandId, showMsg, fetchUsers],
+  );
 
-    setPromoting(false);
-    setShowPromote(false);
-    setPromoteEmail("");
-    setPromoteBrandId("");
-    showMsg(`Promoted ${promoteEmail} to partner.`);
-    fetchUsers();
-  }, [promoteEmail, promoteBrandId, showMsg, fetchUsers]);
+  const handleDemote = useCallback(
+    async (userId, email) => {
+      if (
+        !window.confirm(
+          `Demote ${email} back to student? Their partner profile will be removed.`,
+        )
+      )
+        return;
 
-  const handleDemote = useCallback(async (userId, email) => {
-    if (!window.confirm(`Demote ${email} back to student? Their partner profile will be removed.`)) return;
+      setActingUserId(userId);
+      const { error: demoteError } = await supabase.rpc(
+        "demote_user_to_student",
+        {
+          target_user_id: userId,
+        },
+      );
 
-    setActingUserId(userId);
-    const { error: demoteError } = await supabase.rpc("demote_user_to_student", {
-      target_user_id: userId,
-    });
+      if (!isMountedRef.current) return;
 
-    if (!isMountedRef.current) return;
+      if (demoteError) {
+        setError(demoteError.message);
+        setActingUserId(null);
+        return;
+      }
 
-    if (demoteError) {
-      setError(demoteError.message);
       setActingUserId(null);
-      return;
-    }
-
-    setActingUserId(null);
-    showMsg(`${email} demoted to student.`);
-    fetchUsers();
-  }, [showMsg, fetchUsers]);
+      showMsg(`${email} demoted to student.`);
+      fetchUsers();
+    },
+    [showMsg, fetchUsers],
+  );
 
   if (roleLoading || loading) {
     return (
@@ -171,10 +202,15 @@ function AdminUsers() {
       {showPromote && (
         <div className="mb-6 bg-surface rounded-2xl border border-primary/20 p-5 shadow-sm animate-slide-down">
           <h3 className="font-headline font-bold text-on-background mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">person_add</span>
+            <span className="material-symbols-outlined text-primary text-lg">
+              person_add
+            </span>
             Promote User to Partner
           </h3>
-          <form onSubmit={handlePromote} className="flex flex-col md:flex-row gap-3">
+          <form
+            onSubmit={handlePromote}
+            className="flex flex-col md:flex-row gap-3"
+          >
             <input
               type="email"
               value={promoteEmail}
@@ -189,9 +225,13 @@ function AdminUsers() {
               required
               className="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
             >
-              <option value="" disabled>Select Brand</option>
+              <option value="" disabled>
+                Select Brand
+              </option>
               {brands.map((b) => (
-                <option key={b.id} value={b.id}>{b.name}</option>
+                <option key={b.id} value={b.id}>
+                  {b.name}
+                </option>
               ))}
             </select>
             <button
@@ -244,7 +284,9 @@ function AdminUsers() {
       {/* Users Table */}
       {users.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
-          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">group_off</span>
+          <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
+            group_off
+          </span>
           <p className="text-on-surface-variant text-sm">No users found.</p>
         </div>
       ) : (
@@ -253,12 +295,24 @@ function AdminUsers() {
             <table className="w-full block md:table">
               <thead className="hidden md:table-header-group">
                 <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Email</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Role</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Verified</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Brand</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Joined</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Actions</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Email
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Role
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Verified
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Brand
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Joined
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
@@ -267,21 +321,37 @@ function AdminUsers() {
                   const isActing = actingUserId === u.user_id;
 
                   return (
-                    <tr key={u.user_id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors">
+                    <tr
+                      key={u.user_id}
+                      className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors"
+                    >
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Email</span>
-                        <p className="text-sm font-bold text-on-background truncate max-w-[200px] md:max-w-[240px] text-right md:text-left">{u.email}</p>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Email
+                        </span>
+                        <p className="text-sm font-bold text-on-background truncate max-w-[200px] md:max-w-[240px] text-right md:text-left">
+                          {u.email}
+                        </p>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Role</span>
-                        <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Role
+                        </span>
+                        <span
+                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}
+                        >
                           {u.role}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Verified</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Verified
+                        </span>
                         {u.is_verified ? (
-                          <span className="material-symbols-outlined text-emerald-500 text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          <span
+                            className="material-symbols-outlined text-emerald-500 text-lg"
+                            style={{ fontVariationSettings: "'FILL' 1" }}
+                          >
                             verified
                           </span>
                         ) : (
@@ -291,12 +361,23 @@ function AdminUsers() {
                         )}
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Brand</span>
-                        <span className="text-right md:text-left">{u.brand_name || "—"}</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Brand
+                        </span>
+                        <span className="text-right md:text-left">
+                          {u.brand_name || "—"}
+                        </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-xs text-on-surface-variant">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Joined</span>
-                        <span>{new Date(u.created_at).toLocaleDateString(undefined, { dateStyle: "medium" })}</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Joined
+                        </span>
+                        <span>
+                          {new Date(u.created_at).toLocaleDateString(
+                            undefined,
+                            { dateStyle: "medium" },
+                          )}
+                        </span>
                       </td>
                       <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
                         <div className="flex justify-end gap-1.5 w-full md:w-auto">
@@ -307,12 +388,16 @@ function AdminUsers() {
                               title="Demote to student"
                               className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
                             >
-                              <span className="material-symbols-outlined text-sm">arrow_downward</span>
+                              <span className="material-symbols-outlined text-sm">
+                                arrow_downward
+                              </span>
                               Demote
                             </button>
                           )}
                           {u.role === "admin" && (
-                            <span className="text-xs text-on-surface-variant/50 py-1.5 px-3">Protected</span>
+                            <span className="text-xs text-on-surface-variant/50 py-1.5 px-3">
+                              Protected
+                            </span>
                           )}
                         </div>
                       </td>

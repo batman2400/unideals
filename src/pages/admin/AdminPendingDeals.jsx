@@ -13,7 +13,12 @@ function AdminPendingDeals() {
   const [actingDealId, setActingDealId] = useState(null);
   const isMountedRef = useRef(true);
 
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   useEffect(() => {
     if (roleLoading || role !== "admin") return;
@@ -23,7 +28,9 @@ function AdminPendingDeals() {
       setLoading(true);
       const { data, error: fetchError } = await supabase
         .from("deals")
-        .select("id, brand, title, discount, type, category, image_url, description, created_at")
+        .select(
+          "id, brand, title, discount, type, category, image_url, description, created_at",
+        )
         .eq("status", "pending")
         .order("created_at", { ascending: false });
 
@@ -38,40 +45,47 @@ function AdminPendingDeals() {
     }
 
     fetchPending();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [role, roleLoading]);
 
   const showMessage = useCallback((text, type = "success") => {
     setMessage(text);
     setMessageType(type);
-    setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 4000);
+    setTimeout(() => {
+      if (isMountedRef.current) setMessage("");
+    }, 4000);
   }, []);
 
-  const handleAction = useCallback(async (id, action) => {
-    setActingDealId(id);
-    setError("");
+  const handleAction = useCallback(
+    async (id, action) => {
+      setActingDealId(id);
+      setError("");
 
-    const newStatus = action === "approve" ? "approved" : "rejected";
-    const { error: updateError } = await supabase
-      .from("deals")
-      .update({ status: newStatus })
-      .eq("id", id);
+      const newStatus = action === "approve" ? "approved" : "rejected";
+      const { error: updateError } = await supabase
+        .from("deals")
+        .update({ status: newStatus })
+        .eq("id", id);
 
-    if (!isMountedRef.current) return;
-    if (updateError) {
+      if (!isMountedRef.current) return;
+      if (updateError) {
+        setActingDealId(null);
+        setError(updateError.message);
+        return;
+      }
+
+      setDeals((prev) => prev.filter((d) => d.id !== id));
       setActingDealId(null);
-      setError(updateError.message);
-      return;
-    }
-
-    setDeals((prev) => prev.filter((d) => d.id !== id));
-    setActingDealId(null);
-    showMessage(
-      action === "approve"
-        ? "Deal approved and now live."
-        : "Deal rejected and removed from queue."
-    );
-  }, [showMessage]);
+      showMessage(
+        action === "approve"
+          ? "Deal approved and now live."
+          : "Deal rejected and removed from queue.",
+      );
+    },
+    [showMessage],
+  );
 
   if (roleLoading || loading) {
     return (
@@ -107,13 +121,21 @@ function AdminPendingDeals() {
       </div>
 
       {message && (
-        <div className={`mb-5 flex items-center gap-2 rounded-xl px-4 py-3 border ${
-          messageType === "error" ? "bg-error/10 border-error/20" : "bg-emerald-50 border-emerald-200"
-        }`}>
-          <span className={`material-symbols-outlined text-lg ${messageType === "error" ? "text-error" : "text-emerald-600"}`}>
+        <div
+          className={`mb-5 flex items-center gap-2 rounded-xl px-4 py-3 border ${
+            messageType === "error"
+              ? "bg-error/10 border-error/20"
+              : "bg-emerald-50 border-emerald-200"
+          }`}
+        >
+          <span
+            className={`material-symbols-outlined text-lg ${messageType === "error" ? "text-error" : "text-emerald-600"}`}
+          >
             {messageType === "error" ? "error" : "check_circle"}
           </span>
-          <p className={`text-sm font-bold ${messageType === "error" ? "text-error" : "text-emerald-700"}`}>
+          <p
+            className={`text-sm font-bold ${messageType === "error" ? "text-error" : "text-emerald-700"}`}
+          >
             {message}
           </p>
         </div>
@@ -171,11 +193,17 @@ function AdminPendingDeals() {
                   <h3 className="font-headline font-extrabold text-xl tracking-tight text-on-background mb-0.5">
                     {deal.title}
                   </h3>
-                  <p className="text-on-surface-variant text-sm mb-3">{deal.brand}</p>
+                  <p className="text-on-surface-variant text-sm mb-3">
+                    {deal.brand}
+                  </p>
 
                   <div className="inline-flex items-center gap-1.5 rounded-lg bg-primary-container/30 border border-primary/15 px-3 py-1.5 mb-4">
-                    <span className="material-symbols-outlined text-primary text-sm">local_offer</span>
-                    <span className="text-primary text-sm font-headline font-bold">{deal.discount}</span>
+                    <span className="material-symbols-outlined text-primary text-sm">
+                      local_offer
+                    </span>
+                    <span className="text-primary text-sm font-headline font-bold">
+                      {deal.discount}
+                    </span>
                   </div>
 
                   {deal.description && (
@@ -194,7 +222,9 @@ function AdminPendingDeals() {
                       {isActing ? (
                         <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <span className="material-symbols-outlined text-lg">done</span>
+                        <span className="material-symbols-outlined text-lg">
+                          done
+                        </span>
                       )}
                       Approve
                     </button>
@@ -206,7 +236,9 @@ function AdminPendingDeals() {
                       {isActing ? (
                         <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
                       ) : (
-                        <span className="material-symbols-outlined text-lg">close</span>
+                        <span className="material-symbols-outlined text-lg">
+                          close
+                        </span>
                       )}
                       Reject
                     </button>

@@ -24,49 +24,57 @@ const slides = [
     id: 1,
     headline: "Exclusive Student",
     headlineAccent: "Deals.",
-    subtext: "Unlock hundreds of discounts across tech, food, fashion & more — exclusively for verified students.",
+    subtext:
+      "Unlock hundreds of discounts across tech, food, fashion & more — exclusively for verified students.",
     cta: "Browse All Perks",
     link: "/perks",
     icon: "school",
     gradient: "from-[#29695b] to-[#1a5c4f]",
     accentColor: "#afefdd",
-    bgAccent: "radial-gradient(ellipse at 20% 80%, rgba(175,239,221,0.15) 0%, transparent 60%)",
+    bgAccent:
+      "radial-gradient(ellipse at 20% 80%, rgba(175,239,221,0.15) 0%, transparent 60%)",
   },
   {
     id: 2,
     headline: "Fresh Drops",
     headlineAccent: "Weekly.",
-    subtext: "New brands and deals added every week. Stay ahead of the curve with the latest offers.",
+    subtext:
+      "New brands and deals added every week. Stay ahead of the curve with the latest offers.",
     cta: "See What's New",
     link: "/perks",
     icon: "local_fire_department",
     gradient: "from-[#c7522a] to-[#e8734a]",
     accentColor: "#ffd4c4",
-    bgAccent: "radial-gradient(ellipse at 80% 20%, rgba(199,82,42,0.1) 0%, transparent 60%)",
+    bgAccent:
+      "radial-gradient(ellipse at 80% 20%, rgba(199,82,42,0.1) 0%, transparent 60%)",
   },
   {
     id: 3,
     headline: "Top Brands,",
     headlineAccent: "Zero Hassle.",
-    subtext: "From Apple to Nike — your favourite brands with verified student pricing. No catch.",
+    subtext:
+      "From Apple to Nike — your favourite brands with verified student pricing. No catch.",
     cta: "Explore Brands",
     link: "/brands",
     icon: "verified",
     gradient: "from-[#2d5aa0] to-[#4a7fd4]",
     accentColor: "#c4deff",
-    bgAccent: "radial-gradient(ellipse at 70% 70%, rgba(45,90,160,0.1) 0%, transparent 60%)",
+    bgAccent:
+      "radial-gradient(ellipse at 70% 70%, rgba(45,90,160,0.1) 0%, transparent 60%)",
   },
   {
     id: 4,
     headline: "In-Store Perks",
     headlineAccent: "Near You.",
-    subtext: "Flash your Uni Deals iD at partner stores for instant savings on coffee, fitness, fashion & more.",
+    subtext:
+      "Flash your Uni Deals iD at partner stores for instant savings on coffee, fitness, fashion & more.",
     cta: "Find In-Store Deals",
     link: "/perks",
     icon: "storefront",
     gradient: "from-[#7c4dab] to-[#a872d9]",
     accentColor: "#e4d4ff",
-    bgAccent: "radial-gradient(ellipse at 30% 30%, rgba(124,77,171,0.1) 0%, transparent 60%)",
+    bgAccent:
+      "radial-gradient(ellipse at 30% 30%, rgba(124,77,171,0.1) 0%, transparent 60%)",
   },
 ];
 
@@ -88,7 +96,7 @@ function HeroSection({ searchQuery, onSearchChange }) {
       clearTimeout(exitTimeoutRef.current);
       exitTimeoutRef.current = setTimeout(() => setExitIndex(null), 500);
     },
-    [activeIndex]
+    [activeIndex],
   );
 
   const nextSlide = useCallback(() => {
@@ -188,7 +196,8 @@ function HeroSection({ searchQuery, onSearchChange }) {
 
           {/* Slide counter */}
           <span className="text-xs font-headline font-bold text-on-surface-variant/40 tabular-nums tracking-wider">
-            {String(activeIndex + 1).padStart(2, "0")} / {String(slides.length).padStart(2, "0")}
+            {String(activeIndex + 1).padStart(2, "0")} /{" "}
+            {String(slides.length).padStart(2, "0")}
           </span>
         </div>
       </div>
@@ -213,7 +222,9 @@ function HeroSection({ searchQuery, onSearchChange }) {
             onClick={handleSearchSubmit}
             className="text-primary p-2 hover:scale-110 active:scale-95 transition-transform"
           >
-            <span className="material-symbols-outlined text-4xl">arrow_forward</span>
+            <span className="material-symbols-outlined text-4xl">
+              arrow_forward
+            </span>
           </button>
         </div>
       </div>

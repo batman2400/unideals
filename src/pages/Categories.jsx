@@ -30,40 +30,50 @@ const OFFICIAL_CATEGORIES = [
 
 // Category metadata — icon + colour accent for each section header
 const categoryMeta = {
-  "Fashion":          { icon: "checkroom",            color: "text-pink-500" },
-  "Food & Drink":     { icon: "restaurant",           color: "text-amber-600" },
-  "Tech & Mobile":    { icon: "smartphone",           color: "text-blue-500" },
-  "Beauty & Care":    { icon: "spa",                  color: "text-rose-400" },
-  "Learning":         { icon: "school",               color: "text-indigo-500" },
-  "Travel & Auto":    { icon: "flight",               color: "text-sky-500" },
-  "Health & Fitness": { icon: "fitness_center",        color: "text-orange-500" },
-  "Household":        { icon: "home",                 color: "text-teal-500" },
-  "Finance":          { icon: "account_balance",       color: "text-emerald-500" },
-  "Events & Tickets": { icon: "confirmation_number",   color: "text-purple-500" },
+  Fashion: { icon: "checkroom", color: "text-pink-500" },
+  "Food & Drink": { icon: "restaurant", color: "text-amber-600" },
+  "Tech & Mobile": { icon: "smartphone", color: "text-blue-500" },
+  "Beauty & Care": { icon: "spa", color: "text-rose-400" },
+  Learning: { icon: "school", color: "text-indigo-500" },
+  "Travel & Auto": { icon: "flight", color: "text-sky-500" },
+  "Health & Fitness": { icon: "fitness_center", color: "text-orange-500" },
+  Household: { icon: "home", color: "text-teal-500" },
+  Finance: { icon: "account_balance", color: "text-emerald-500" },
+  "Events & Tickets": { icon: "confirmation_number", color: "text-purple-500" },
 };
 
 // Migration map: old placeholder categories → new V1 names
 const OLD_TO_NEW = {
-  "Tech":     "Tech & Mobile",
-  "Coffee":   "Food & Drink",
-  "Clothing": "Fashion",
-  "Fitness":  "Health & Fitness",
-  "Home":     "Household",
-  "Creative": "Learning",
+  Tech: "Tech & Mobile",
+  Coffee: "Food & Drink",
+  Clothing: "Fashion",
+  Fitness: "Health & Fitness",
+  Home: "Household",
+  Creative: "Learning",
 };
 
 // Demo images for fallback deals
 const demoImages = {
-  "Fashion": "https://lh3.googleusercontent.com/aida-public/AB6AXuCzOvLNPgk03USFCKNu-GSzr9_dG9Cm3IPn04us2RsA5WNrpv7kXluz1pKVGDoWg25RiLBQB1fB29I5ZtSSxP-VRZO9pTj4_i7YzmJQGsB5rWtNPQYfBMSpYn8ecO1qkcOImTsFwhBvI9d_zwBCanWoMsWcoGglkPVREOwhsLl4333y_W6F-aBfjPfU0jhgJf8o-43sazueipq-nYtKuUCo56Hh3oQ1uWZJ6v_XJep8TPKq9lSRlBs9a7UD7DDWezf0kbdke4zHLvA",
-  "Food & Drink": "https://lh3.googleusercontent.com/aida-public/AB6AXuDvOrc_ZGFRba9R0_nKoRINZ5tRxNmW-4lIEr_V0GN6gXTnSu7DWgW5rQ4_n0v7d2cmf-H5R-SgaRn5RmvjhFlwbLM5UaZiogKwcUmnk3G4V6a27DcVlGWQMnbwd1mKvUY-y6DAVR9gpxHs9OYCv1EgUKpslQDiRzFMn1Ou0XmJN5NL88ScH4IYQmD-qmZzIgsGr-8rFCDl-9fqQMueV77q82InBqAHqrDWYRIdNQShFMx54sbJnELdQf2gvbkpzZ0HES91UohXj2A",
-  "Tech & Mobile": "https://lh3.googleusercontent.com/aida-public/AB6AXuCdG-2Jqc1sFEzIzRESXx8K8BItiMhQ7Fe3m2AwiW40ScLzJS5LQ56bEj7jshQCDva9eMVA3JrRls31IJeWBNFPDgcG34uqhvhI22s9ESRnEM9Sj4PrzhV6bT4iYZ_fNn89yaKc9JQ7vEujYUUEPKsmArVBU2fOiY7723xXXQqv1mafUPMNq6AEmiayO1B7SUoBrZ36-V_W_E9mrI_8zAN37_jT-EjpmU0mpdudzYqAiGr_HJIpgtCCHHK492hiHpyw442eXsFueEc",
-  "Beauty & Care": "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "Learning": "https://lh3.googleusercontent.com/aida-public/AB6AXuBzrewh7Yaxx08JPFCRJjYZ5K9cxEFPyolBeyW8OBhUSI5x-xOOAo9x0RG4oPhNqX8GgKbLiBOnF8dV7M27keE7jCT7Gb1rS3VfkKgVPcA3bj7ZWZ3XPQHy8gFkElPs9lQq95eBonjtM0EUVHkz_SZ7cLVwqn5-H3WSDGf4Eu4kuHf9SpzmdT3GSnV97tcJJYYI6u83KKtolla22Lx0IuvDu7I4gP9ja9hrdmhbGjftDHpBwa_SQX_2k7rNKhnHjcUK9QIMLab3iMs",
-  "Travel & Auto": "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "Health & Fitness": "https://lh3.googleusercontent.com/aida-public/AB6AXuBlQ36ohtoAh9iCNqXOhzdY_i9C66nAuwPjEoY7ATPU7F6ORrkJ9RNozLPw-UlMH_AQ6347sUVdnofSpsAPDPcEDTbHI8kJ-sDd4U4-FL7KtVn0Vid0AKYeDKMnI3_zrZVee7dE003pYw1DkC4gX1Zu8gPPZpyP8zuwQXr8nMXfnT_uQQ8dElkjTXuO7k0Qc_YLrFAX7Ad1UFcbhm5fe5ZOEXLXSjyn2WLYkVCVBMx6LLOVrjorS4brUS3XyKYwP0blJjuevpgSx-Q",
-  "Household": "https://lh3.googleusercontent.com/aida-public/AB6AXuAZJkcufRYEZVBJQHpPPMMFRRa666JoWSP--59sPJn-M8ZQeeSSxdKIwlVoClxOXzXBkbWLnBjnSTeu3ZbVd9bwUZrllroLwKliU1H0NZAdsUaTJRWnKE0OtKjq0C6PLsuEeBBaxYg1twgDiskLcyPcjOZjP3IRopDylKF6eRD0uLoKbXdzTR630xOd9-btXTE0Odtm79tP7Gb7goFCqRbK7VMJG-8OxL_V4-SNH5DS_OliUk6NEnRVxzgpXA350ggKALFQL5WQOkg",
-  "Finance": "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "Events & Tickets": "https://images.unsplash.com/photo-1540039155732-d674d40da4dc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  Fashion:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuCzOvLNPgk03USFCKNu-GSzr9_dG9Cm3IPn04us2RsA5WNrpv7kXluz1pKVGDoWg25RiLBQB1fB29I5ZtSSxP-VRZO9pTj4_i7YzmJQGsB5rWtNPQYfBMSpYn8ecO1qkcOImTsFwhBvI9d_zwBCanWoMsWcoGglkPVREOwhsLl4333y_W6F-aBfjPfU0jhgJf8o-43sazueipq-nYtKuUCo56Hh3oQ1uWZJ6v_XJep8TPKq9lSRlBs9a7UD7DDWezf0kbdke4zHLvA",
+  "Food & Drink":
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuDvOrc_ZGFRba9R0_nKoRINZ5tRxNmW-4lIEr_V0GN6gXTnSu7DWgW5rQ4_n0v7d2cmf-H5R-SgaRn5RmvjhFlwbLM5UaZiogKwcUmnk3G4V6a27DcVlGWQMnbwd1mKvUY-y6DAVR9gpxHs9OYCv1EgUKpslQDiRzFMn1Ou0XmJN5NL88ScH4IYQmD-qmZzIgsGr-8rFCDl-9fqQMueV77q82InBqAHqrDWYRIdNQShFMx54sbJnELdQf2gvbkpzZ0HES91UohXj2A",
+  "Tech & Mobile":
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuCdG-2Jqc1sFEzIzRESXx8K8BItiMhQ7Fe3m2AwiW40ScLzJS5LQ56bEj7jshQCDva9eMVA3JrRls31IJeWBNFPDgcG34uqhvhI22s9ESRnEM9Sj4PrzhV6bT4iYZ_fNn89yaKc9JQ7vEujYUUEPKsmArVBU2fOiY7723xXXQqv1mafUPMNq6AEmiayO1B7SUoBrZ36-V_W_E9mrI_8zAN37_jT-EjpmU0mpdudzYqAiGr_HJIpgtCCHHK492hiHpyw442eXsFueEc",
+  "Beauty & Care":
+    "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  Learning:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuBzrewh7Yaxx08JPFCRJjYZ5K9cxEFPyolBeyW8OBhUSI5x-xOOAo9x0RG4oPhNqX8GgKbLiBOnF8dV7M27keE7jCT7Gb1rS3VfkKgVPcA3bj7ZWZ3XPQHy8gFkElPs9lQq95eBonjtM0EUVHkz_SZ7cLVwqn5-H3WSDGf4Eu4kuHf9SpzmdT3GSnV97tcJJYYI6u83KKtolla22Lx0IuvDu7I4gP9ja9hrdmhbGjftDHpBwa_SQX_2k7rNKhnHjcUK9QIMLab3iMs",
+  "Travel & Auto":
+    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "Health & Fitness":
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuBlQ36ohtoAh9iCNqXOhzdY_i9C66nAuwPjEoY7ATPU7F6ORrkJ9RNozLPw-UlMH_AQ6347sUVdnofSpsAPDPcEDTbHI8kJ-sDd4U4-FL7KtVn0Vid0AKYeDKMnI3_zrZVee7dE003pYw1DkC4gX1Zu8gPPZpyP8zuwQXr8nMXfnT_uQQ8dElkjTXuO7k0Qc_YLrFAX7Ad1UFcbhm5fe5ZOEXLXSjyn2WLYkVCVBMx6LLOVrjorS4brUS3XyKYwP0blJjuevpgSx-Q",
+  Household:
+    "https://lh3.googleusercontent.com/aida-public/AB6AXuAZJkcufRYEZVBJQHpPPMMFRRa666JoWSP--59sPJn-M8ZQeeSSxdKIwlVoClxOXzXBkbWLnBjnSTeu3ZbVd9bwUZrllroLwKliU1H0NZAdsUaTJRWnKE0OtKjq0C6PLsuEeBBaxYg1twgDiskLcyPcjOZjP3IRopDylKF6eRD0uLoKbXdzTR630xOd9-btXTE0Odtm79tP7Gb7goFCqRbK7VMJG-8OxL_V4-SNH5DS_OliUk6NEnRVxzgpXA350ggKALFQL5WQOkg",
+  Finance:
+    "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+  "Events & Tickets":
+    "https://images.unsplash.com/photo-1540039155732-d674d40da4dc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
 };
 
 function Categories() {
@@ -75,7 +85,7 @@ function Categories() {
   // Group deals by category, injecting demo data for empty ones
   const grouped = useMemo(() => {
     const acc = {};
-    
+
     // Initialize all official categories to ensure they exist
     OFFICIAL_CATEGORIES.forEach((cat) => {
       acc[cat] = [];
@@ -122,7 +132,7 @@ function Categories() {
     }
 
     const matchedCategory = OFFICIAL_CATEGORIES.find(
-      (category) => category.toLowerCase() === filterParam.toLowerCase()
+      (category) => category.toLowerCase() === filterParam.toLowerCase(),
     );
 
     setActiveCategory(matchedCategory || "all");
@@ -191,12 +201,15 @@ function Categories() {
       </div>
 
       {/* Show loader / error */}
-      {(loading || error) ? (
+      {loading || error ? (
         <DealsLoader loading={loading} error={error} />
       ) : (
         /* Category Sections */
         visibleCategories.map((cat, idx) => {
-          const meta = categoryMeta[cat] || { icon: "category", color: "text-primary" };
+          const meta = categoryMeta[cat] || {
+            icon: "category",
+            color: "text-primary",
+          };
           return (
             <div key={cat} className="mb-20">
               {/* Section divider (skip for first) */}
@@ -207,7 +220,9 @@ function Categories() {
               {/* Section header */}
               <div className="flex items-center gap-4 mb-10">
                 <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
-                  <span className={`material-symbols-outlined text-2xl ${meta.color}`}>
+                  <span
+                    className={`material-symbols-outlined text-2xl ${meta.color}`}
+                  >
                     {meta.icon}
                   </span>
                 </div>
@@ -216,7 +231,8 @@ function Categories() {
                     {cat}
                   </h2>
                   <p className="text-on-surface-variant/60 text-sm">
-                    {grouped[cat].length} deal{grouped[cat].length !== 1 ? "s" : ""} available
+                    {grouped[cat].length} deal
+                    {grouped[cat].length !== 1 ? "s" : ""} available
                   </p>
                 </div>
               </div>

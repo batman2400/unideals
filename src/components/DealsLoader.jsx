@@ -10,7 +10,10 @@
  */
 function DealsLoader({ loading, error }) {
   if (loading) {
-    const skeletonItems = Array.from({ length: 6 }, (_, index) => `deal-skeleton-${index}`);
+    const skeletonItems = Array.from(
+      { length: 6 },
+      (_, index) => `deal-skeleton-${index}`,
+    );
 
     return (
       <div className="py-8 md:py-10 space-y-6 animate-fade-in">

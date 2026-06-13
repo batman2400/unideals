@@ -26,7 +26,9 @@ function AdminAnalytics() {
       if (!active) return;
 
       if (shopRes.error || dealsRes.error) {
-        setError("Analytics data unavailable. Ensure SQL migrations are applied.");
+        setError(
+          "Analytics data unavailable. Ensure SQL migrations are applied.",
+        );
         setLoading(false);
         return;
       }
@@ -37,7 +39,9 @@ function AdminAnalytics() {
     }
 
     fetchAnalytics();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [role, roleLoading]);
 
   if (roleLoading || loading) {
@@ -57,28 +61,70 @@ function AdminAnalytics() {
   }
 
   // Derive unique brands
-  const uniqueBrands = ["All Brands", ...new Set(shopStats.map(s => s.brand).filter(Boolean))];
+  const uniqueBrands = [
+    "All Brands",
+    ...new Set(shopStats.map((s) => s.brand).filter(Boolean)),
+  ];
 
   // Filter Data
   const isGlobal = selectedBrand === "All Brands";
-  const filteredDeals = isGlobal ? dealStats : dealStats.filter((d) => d.brand === selectedBrand);
-  const filteredShop = isGlobal ? shopStats : shopStats.filter((s) => s.brand === selectedBrand);
+  const filteredDeals = isGlobal
+    ? dealStats
+    : dealStats.filter((d) => d.brand === selectedBrand);
+  const filteredShop = isGlobal
+    ? shopStats
+    : shopStats.filter((s) => s.brand === selectedBrand);
 
   // Compute Totals
   const totals = {
-    reveals: filteredDeals.reduce((sum, d) => sum + Number(d.total_reveals || 0), 0),
-    tickets: filteredDeals.reduce((sum, d) => sum + Number(d.total_tickets_generated || 0), 0),
+    reveals: filteredDeals.reduce(
+      (sum, d) => sum + Number(d.total_reveals || 0),
+      0,
+    ),
+    tickets: filteredDeals.reduce(
+      (sum, d) => sum + Number(d.total_tickets_generated || 0),
+      0,
+    ),
     scans: filteredShop.reduce((sum, s) => sum + Number(s.total_scans || 0), 0),
-    validScans: filteredShop.reduce((sum, s) => sum + Number(s.valid_scans || 0), 0),
-    failedScans: filteredShop.reduce((sum, s) => sum + Number(s.failed_scans || 0), 0),
-    confirmed: filteredShop.reduce((sum, s) => sum + Number(s.confirmed_redemptions || 0), 0),
+    validScans: filteredShop.reduce(
+      (sum, s) => sum + Number(s.valid_scans || 0),
+      0,
+    ),
+    failedScans: filteredShop.reduce(
+      (sum, s) => sum + Number(s.failed_scans || 0),
+      0,
+    ),
+    confirmed: filteredShop.reduce(
+      (sum, s) => sum + Number(s.confirmed_redemptions || 0),
+      0,
+    ),
   };
 
   const summaryCards = [
-    { label: "Code Reveals", value: totals.reveals, icon: "visibility", color: "text-on-background" },
-    { label: "Tickets Generated", value: totals.tickets, icon: "confirmation_number", color: "text-primary" },
-    { label: "Total Scans", value: totals.scans, icon: "qr_code_scanner", color: "text-on-background" },
-    { label: "Confirmed Redemptions", value: totals.confirmed, icon: "task_alt", color: "text-emerald-600" },
+    {
+      label: "Code Reveals",
+      value: totals.reveals,
+      icon: "visibility",
+      color: "text-on-background",
+    },
+    {
+      label: "Tickets Generated",
+      value: totals.tickets,
+      icon: "confirmation_number",
+      color: "text-primary",
+    },
+    {
+      label: "Total Scans",
+      value: totals.scans,
+      icon: "qr_code_scanner",
+      color: "text-on-background",
+    },
+    {
+      label: "Confirmed Redemptions",
+      value: totals.confirmed,
+      icon: "task_alt",
+      color: "text-emerald-600",
+    },
   ];
 
   return (
@@ -89,7 +135,8 @@ function AdminAnalytics() {
             Analytics
           </h1>
           <p className="text-on-surface-variant text-sm">
-            Redemption metrics, conversion rates, and performance by brand or deal.
+            Redemption metrics, conversion rates, and performance by brand or
+            deal.
           </p>
         </div>
 
@@ -123,11 +170,16 @@ function AdminAnalytics() {
               <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
                 {card.label}
               </p>
-              <span className={`material-symbols-outlined text-lg ${card.color}`} style={{ fontVariationSettings: "'FILL' 1" }}>
+              <span
+                className={`material-symbols-outlined text-lg ${card.color}`}
+                style={{ fontVariationSettings: "'FILL' 1" }}
+              >
                 {card.icon}
               </span>
             </div>
-            <p className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}>
+            <p
+              className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}
+            >
               {card.value}
             </p>
           </article>
@@ -141,14 +193,53 @@ function AdminAnalytics() {
         </h2>
         <div className="space-y-3">
           {[
-            { label: "Code Reveals (Online)", value: totals.reveals, pct: 100, color: "bg-on-surface-variant/15" },
-            { label: "Tickets Generated (In-Store)", value: totals.tickets, pct: totals.reveals > 0 ? (totals.tickets / Math.max(totals.reveals, 1)) * 100 : (totals.tickets > 0 ? 100 : 0), color: "bg-primary/50" },
-            { label: "Partner Scans", value: totals.scans, pct: Math.max(totals.reveals, totals.tickets) > 0 ? (totals.scans / Math.max(totals.reveals, totals.tickets, 1)) * 100 : (totals.scans > 0 ? 100 : 0), color: "bg-primary/70" },
-            { label: "Confirmed Redemptions", value: totals.confirmed, pct: totals.scans > 0 ? (totals.confirmed / totals.scans) * 100 : (totals.confirmed > 0 ? 100 : 0), color: "emerald-gradient" },
+            {
+              label: "Code Reveals (Online)",
+              value: totals.reveals,
+              pct: 100,
+              color: "bg-on-surface-variant/15",
+            },
+            {
+              label: "Tickets Generated (In-Store)",
+              value: totals.tickets,
+              pct:
+                totals.reveals > 0
+                  ? (totals.tickets / Math.max(totals.reveals, 1)) * 100
+                  : totals.tickets > 0
+                    ? 100
+                    : 0,
+              color: "bg-primary/50",
+            },
+            {
+              label: "Partner Scans",
+              value: totals.scans,
+              pct:
+                Math.max(totals.reveals, totals.tickets) > 0
+                  ? (totals.scans /
+                      Math.max(totals.reveals, totals.tickets, 1)) *
+                    100
+                  : totals.scans > 0
+                    ? 100
+                    : 0,
+              color: "bg-primary/70",
+            },
+            {
+              label: "Confirmed Redemptions",
+              value: totals.confirmed,
+              pct:
+                totals.scans > 0
+                  ? (totals.confirmed / totals.scans) * 100
+                  : totals.confirmed > 0
+                    ? 100
+                    : 0,
+              color: "emerald-gradient",
+            },
           ].map((row) => (
             <div key={row.label}>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-headline font-bold text-on-background">{row.label}</span>
+                <span className="text-sm font-headline font-bold text-on-background">
+                  {row.label}
+                </span>
                 <span className="text-sm font-headline font-bold text-on-surface-variant tabular-nums">
                   {row.value} ({Math.min(row.pct, 100).toFixed(1)}%)
                 </span>
@@ -156,7 +247,9 @@ function AdminAnalytics() {
               <div className="w-full h-3 bg-surface-container-low rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${row.color}`}
-                  style={{ width: `${Math.max(Math.min(row.pct, 100), row.value > 0 ? 3 : 0)}%` }}
+                  style={{
+                    width: `${Math.max(Math.min(row.pct, 100), row.value > 0 ? 3 : 0)}%`,
+                  }}
                 />
               </div>
             </div>
@@ -168,57 +261,104 @@ function AdminAnalytics() {
       <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-outline-variant/10">
           <h2 className="font-headline font-bold text-lg text-on-background">
-            {isGlobal ? "Performance by Brand" : `Deal Performance: ${selectedBrand}`}
+            {isGlobal
+              ? "Performance by Brand"
+              : `Deal Performance: ${selectedBrand}`}
           </h2>
         </div>
 
         {isGlobal ? (
           /* Global View: List of Brands */
           shopStats.length === 0 ? (
-            <div className="p-8 text-center text-on-surface-variant text-sm">No brand analytics yet.</div>
+            <div className="p-8 text-center text-on-surface-variant text-sm">
+              No brand analytics yet.
+            </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full block md:table">
                 <thead className="hidden md:table-header-group">
                   <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Brand</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Total Scans</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Valid</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Failed</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Confirmed</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Conv. Rate</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                      Brand
+                    </th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                      Total Scans
+                    </th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                      Valid
+                    </th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                      Failed
+                    </th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                      Confirmed
+                    </th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                      Conv. Rate
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                   {shopStats.map((row) => {
-                    const rate = row.total_scans > 0
-                      ? ((row.confirmed_redemptions / row.total_scans) * 100).toFixed(1)
-                      : "0.0";
+                    const rate =
+                      row.total_scans > 0
+                        ? (
+                            (row.confirmed_redemptions / row.total_scans) *
+                            100
+                          ).toFixed(1)
+                        : "0.0";
                     return (
-                      <tr key={row.brand} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
+                      <tr
+                        key={row.brand}
+                        className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
+                      >
                         <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
-                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Brand</span>
-                          <span className="text-right md:text-left">{row.brand}</span>
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                            Brand
+                          </span>
+                          <span className="text-right md:text-left">
+                            {row.brand}
+                          </span>
                         </td>
                         <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background tabular-nums">
-                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Total Scans</span>
-                          <span className="text-right md:text-right">{row.total_scans}</span>
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                            Total Scans
+                          </span>
+                          <span className="text-right md:text-right">
+                            {row.total_scans}
+                          </span>
                         </td>
                         <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold tabular-nums">
-                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Valid</span>
-                          <span className="text-right md:text-right">{row.valid_scans}</span>
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                            Valid
+                          </span>
+                          <span className="text-right md:text-right">
+                            {row.valid_scans}
+                          </span>
                         </td>
                         <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-red-600 font-bold tabular-nums">
-                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Failed</span>
-                          <span className="text-right md:text-right">{row.failed_scans}</span>
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                            Failed
+                          </span>
+                          <span className="text-right md:text-right">
+                            {row.failed_scans}
+                          </span>
                         </td>
                         <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold tabular-nums">
-                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Confirmed</span>
-                          <span className="text-right md:text-right">{row.confirmed_redemptions}</span>
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                            Confirmed
+                          </span>
+                          <span className="text-right md:text-right">
+                            {row.confirmed_redemptions}
+                          </span>
                         </td>
                         <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm text-primary font-bold tabular-nums">
-                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Conv. Rate</span>
-                          <span className="text-right md:text-right">{rate}%</span>
+                          <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                            Conv. Rate
+                          </span>
+                          <span className="text-right md:text-right">
+                            {rate}%
+                          </span>
                         </td>
                       </tr>
                     );
@@ -227,57 +367,92 @@ function AdminAnalytics() {
               </table>
             </div>
           )
+        ) : /* Specific Brand View: List of Deals */
+        filteredDeals.length === 0 ? (
+          <div className="p-8 text-center text-on-surface-variant text-sm">
+            No deal analytics for this brand.
+          </div>
         ) : (
-          /* Specific Brand View: List of Deals */
-          filteredDeals.length === 0 ? (
-            <div className="p-8 text-center text-on-surface-variant text-sm">No deal analytics for this brand.</div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full block md:table">
-                <thead className="hidden md:table-header-group">
-                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
-                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Deal</th>
-                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Status</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Reveals</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Tickets</th>
-                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Redeemed</th>
+          <div className="overflow-x-auto">
+            <table className="w-full block md:table">
+              <thead className="hidden md:table-header-group">
+                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Deal
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Status
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Reveals
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Tickets
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Redeemed
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
+                {filteredDeals.map((d) => (
+                  <tr
+                    key={d.id}
+                    className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
+                  >
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                        Deal
+                      </span>
+                      <span className="text-right md:text-left truncate max-w-[200px]">
+                        {d.title}
+                      </span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                        Status
+                      </span>
+                      <span
+                        className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
+                          d.status === "approved"
+                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                            : d.status === "pending"
+                              ? "bg-amber-50 text-amber-700 border-amber-200"
+                              : "bg-red-50 text-red-600 border-red-200"
+                        }`}
+                      >
+                        {d.status}
+                      </span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                        Reveals
+                      </span>
+                      <span className="text-right md:text-right">
+                        {d.total_reveals}
+                      </span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                        Tickets
+                      </span>
+                      <span className="text-right md:text-right">
+                        {d.total_tickets_generated}
+                      </span>
+                    </td>
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
+                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                        Redeemed
+                      </span>
+                      <span className="text-right md:text-right">
+                        {d.total_tickets_redeemed}
+                      </span>
+                    </td>
                   </tr>
-                </thead>
-                <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
-                  {filteredDeals.map((d) => (
-                    <tr key={d.id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Deal</span>
-                        <span className="text-right md:text-left truncate max-w-[200px]">{d.title}</span>
-                      </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Status</span>
-                        <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-                          d.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
-                          d.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
-                          "bg-red-50 text-red-600 border-red-200"
-                        }`}>
-                          {d.status}
-                        </span>
-                      </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Reveals</span>
-                        <span className="text-right md:text-right">{d.total_reveals}</span>
-                      </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Tickets</span>
-                        <span className="text-right md:text-right">{d.total_tickets_generated}</span>
-                      </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Redeemed</span>
-                        <span className="text-right md:text-right">{d.total_tickets_redeemed}</span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
     </PortalLayout>

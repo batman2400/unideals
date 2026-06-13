@@ -5,7 +5,12 @@ import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerScanner() {
-  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const {
+    user,
+    role,
+    loading: roleLoading,
+    impersonatedPartnerId,
+  } = useRoleContext();
   const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
   const [loading, setLoading] = useState(true);
@@ -34,11 +39,13 @@ function PartnerScanner() {
   useEffect(() => {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
-    
+
     setError("");
-    
+
     if (role === "admin" && !impersonatedPartnerId) {
-      setError("Admin View: Please impersonate a brand from the sidebar to scan tickets.");
+      setError(
+        "Admin View: Please impersonate a brand from the sidebar to scan tickets.",
+      );
       setLoading(false);
       return;
     }
@@ -46,7 +53,8 @@ function PartnerScanner() {
     let active = true;
 
     async function init() {
-      const { brandName, error: brandError } = await getPartnerBrand(targetUserId);
+      const { brandName, error: brandError } =
+        await getPartnerBrand(targetUserId);
       if (!active) return;
       setPartnerBrand(brandName || "");
       if (brandError) setError(brandError);
@@ -54,7 +62,9 @@ function PartnerScanner() {
     }
 
     init();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const stopCamera = useCallback(() => {
@@ -75,7 +85,11 @@ function PartnerScanner() {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+        video: {
+          facingMode: "environment",
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+        },
       });
 
       if (!isMountedRef.current) {
@@ -102,7 +116,8 @@ function PartnerScanner() {
       }
 
       scanIntervalRef.current = setInterval(async () => {
-        if (!videoRef.current || !canvasRef.current || !isMountedRef.current) return;
+        if (!videoRef.current || !canvasRef.current || !isMountedRef.current)
+          return;
 
         const video = videoRef.current;
         const canvas = canvasRef.current;
@@ -151,10 +166,13 @@ function PartnerScanner() {
 
     try {
       // Try the new ticket-based validation first
-      const { data, error: rpcError } = await supabase.rpc("validate_instore_ticket", {
-        scanned_payload: code,
-        scan_method: method,
-      });
+      const { data, error: rpcError } = await supabase.rpc(
+        "validate_instore_ticket",
+        {
+          scanned_payload: code,
+          scan_method: method,
+        },
+      );
 
       if (!isMountedRef.current) return;
 
@@ -176,10 +194,13 @@ function PartnerScanner() {
 
       // Fallback to legacy scanner if new RPC doesn't exist
       try {
-        const { data, error: legacyError } = await supabase.rpc("record_partner_redemption_scan", {
-          scanned_payload: code,
-          scan_method: method,
-        });
+        const { data, error: legacyError } = await supabase.rpc(
+          "record_partner_redemption_scan",
+          {
+            scanned_payload: code,
+            scan_method: method,
+          },
+        );
 
         if (!isMountedRef.current) return;
 
@@ -191,20 +212,25 @@ function PartnerScanner() {
         }
       } catch (fallbackErr) {
         if (!isMountedRef.current) return;
-        setError(fallbackErr?.message || "Verification failed. Please try again.");
+        setError(
+          fallbackErr?.message || "Verification failed. Please try again.",
+        );
       }
     } finally {
       if (isMountedRef.current) setVerifying(false);
     }
   }, []);
 
-  const handleManualSubmit = useCallback((e) => {
-    e.preventDefault();
-    const code = manualCode.trim().toUpperCase();
-    if (!code) return;
-    processCode(code, "manual");
-    setManualCode("");
-  }, [manualCode, processCode]);
+  const handleManualSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      const code = manualCode.trim().toUpperCase();
+      if (!code) return;
+      processCode(code, "manual");
+      setManualCode("");
+    },
+    [manualCode, processCode],
+  );
 
   const handleScanAnother = useCallback(() => {
     setResult(null);
@@ -224,14 +250,62 @@ function PartnerScanner() {
   }
 
   const resultColors = {
-    valid: { bg: "bg-emerald-50", border: "border-emerald-200", text: "text-emerald-700", icon: "check_circle", iconColor: "text-emerald-500" },
-    already_redeemed: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "info", iconColor: "text-amber-500" },
-    expired: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "timer_off", iconColor: "text-amber-500" },
-    not_found: { bg: "bg-red-50", border: "border-red-200", text: "text-red-600", icon: "search_off", iconColor: "text-red-500" },
-    wrong_brand: { bg: "bg-red-50", border: "border-red-200", text: "text-red-600", icon: "block", iconColor: "text-red-500" },
-    not_approved: { bg: "bg-amber-50", border: "border-amber-200", text: "text-amber-700", icon: "pending", iconColor: "text-amber-500" },
-    invalid: { bg: "bg-red-50", border: "border-red-200", text: "text-red-600", icon: "error", iconColor: "text-red-500" },
-    error: { bg: "bg-red-50", border: "border-red-200", text: "text-red-600", icon: "error", iconColor: "text-red-500" },
+    valid: {
+      bg: "bg-emerald-50",
+      border: "border-emerald-200",
+      text: "text-emerald-700",
+      icon: "check_circle",
+      iconColor: "text-emerald-500",
+    },
+    already_redeemed: {
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+      text: "text-amber-700",
+      icon: "info",
+      iconColor: "text-amber-500",
+    },
+    expired: {
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+      text: "text-amber-700",
+      icon: "timer_off",
+      iconColor: "text-amber-500",
+    },
+    not_found: {
+      bg: "bg-red-50",
+      border: "border-red-200",
+      text: "text-red-600",
+      icon: "search_off",
+      iconColor: "text-red-500",
+    },
+    wrong_brand: {
+      bg: "bg-red-50",
+      border: "border-red-200",
+      text: "text-red-600",
+      icon: "block",
+      iconColor: "text-red-500",
+    },
+    not_approved: {
+      bg: "bg-amber-50",
+      border: "border-amber-200",
+      text: "text-amber-700",
+      icon: "pending",
+      iconColor: "text-amber-500",
+    },
+    invalid: {
+      bg: "bg-red-50",
+      border: "border-red-200",
+      text: "text-red-600",
+      icon: "error",
+      iconColor: "text-red-500",
+    },
+    error: {
+      bg: "bg-red-50",
+      border: "border-red-200",
+      text: "text-red-600",
+      icon: "error",
+      iconColor: "text-red-500",
+    },
   };
 
   return (
@@ -241,7 +315,8 @@ function PartnerScanner() {
           Ticket Scanner
         </h1>
         <p className="text-on-surface-variant text-sm">
-          Scan student QR tickets or enter codes manually to validate in-store redemptions.
+          Scan student QR tickets or enter codes manually to validate in-store
+          redemptions.
         </p>
       </div>
 
@@ -253,40 +328,55 @@ function PartnerScanner() {
 
       <div className="max-w-2xl mx-auto space-y-6">
         {/* Result Display */}
-        {result && (() => {
-          const style = resultColors[result.result] || resultColors.error;
-          return (
-            <div className={`rounded-2xl border-2 ${style.border} ${style.bg} p-6 text-center animate-fade-in`}>
-              <span
-                className={`material-symbols-outlined text-5xl ${style.iconColor} mb-3 block`}
-                style={{ fontVariationSettings: "'FILL' 1" }}
+        {result &&
+          (() => {
+            const style = resultColors[result.result] || resultColors.error;
+            return (
+              <div
+                className={`rounded-2xl border-2 ${style.border} ${style.bg} p-6 text-center animate-fade-in`}
               >
-                {style.icon}
-              </span>
-              <p className={`font-headline font-extrabold text-xl ${style.text} mb-2`}>
-                {result.result === "valid" ? "Valid Ticket!" : result.result?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
-              </p>
-              <p className={`text-sm ${style.text} mb-4`}>{result.message}</p>
+                <span
+                  className={`material-symbols-outlined text-5xl ${style.iconColor} mb-3 block`}
+                  style={{ fontVariationSettings: "'FILL' 1" }}
+                >
+                  {style.icon}
+                </span>
+                <p
+                  className={`font-headline font-extrabold text-xl ${style.text} mb-2`}
+                >
+                  {result.result === "valid"
+                    ? "Valid Ticket!"
+                    : result.result
+                        ?.replace(/_/g, " ")
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                </p>
+                <p className={`text-sm ${style.text} mb-4`}>{result.message}</p>
 
-              {result.deal_title && (
-                <div className="bg-white/60 rounded-xl p-4 mb-4 inline-block">
-                  <p className="text-sm font-bold text-on-background">{result.deal_title}</p>
-                  {result.deal_discount && (
-                    <p className="text-primary text-sm font-headline font-bold mt-1">{result.deal_discount}</p>
-                  )}
-                </div>
-              )}
+                {result.deal_title && (
+                  <div className="bg-white/60 rounded-xl p-4 mb-4 inline-block">
+                    <p className="text-sm font-bold text-on-background">
+                      {result.deal_title}
+                    </p>
+                    {result.deal_discount && (
+                      <p className="text-primary text-sm font-headline font-bold mt-1">
+                        {result.deal_discount}
+                      </p>
+                    )}
+                  </div>
+                )}
 
-              <button
-                onClick={handleScanAnother}
-                className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
-              >
-                <span className="material-symbols-outlined text-lg">replay</span>
-                Scan Another
-              </button>
-            </div>
-          );
-        })()}
+                <button
+                  onClick={handleScanAnother}
+                  className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
+                >
+                  <span className="material-symbols-outlined text-lg">
+                    replay
+                  </span>
+                  Scan Another
+                </button>
+              </div>
+            );
+          })()}
 
         {/* Scanner UI */}
         {!result && (
@@ -294,7 +384,9 @@ function PartnerScanner() {
             {/* Camera Scanner */}
             <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
               <h2 className="font-headline font-bold text-lg text-on-background mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">photo_camera</span>
+                <span className="material-symbols-outlined text-primary text-xl">
+                  photo_camera
+                </span>
                 QR Scanner
               </h2>
 
@@ -307,12 +399,18 @@ function PartnerScanner() {
               {cameraActive ? (
                 <div className="space-y-3">
                   <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
-                    <video ref={videoRef} playsInline muted className="w-full h-full object-cover" />
+                    <video
+                      ref={videoRef}
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover"
+                    />
                     <canvas ref={canvasRef} className="hidden" />
                     {/* Scan overlay */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-48 h-48 md:w-56 md:h-56 border-2 border-primary/50 rounded-2xl">
-                        <div className="w-full h-full border-2 border-transparent rounded-2xl"
+                        <div
+                          className="w-full h-full border-2 border-transparent rounded-2xl"
                           style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.35)" }}
                         />
                       </div>
@@ -322,7 +420,9 @@ function PartnerScanner() {
                     onClick={stopCamera}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-outline-variant/20 text-on-surface-variant font-headline font-bold text-sm hover:bg-surface-container-low transition-colors"
                   >
-                    <span className="material-symbols-outlined text-lg">stop</span>
+                    <span className="material-symbols-outlined text-lg">
+                      stop
+                    </span>
                     Stop Camera
                   </button>
                 </div>
@@ -331,7 +431,9 @@ function PartnerScanner() {
                   onClick={startCamera}
                   className="w-full inline-flex items-center justify-center gap-3 emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base shadow-sm hover:shadow-md transition-all"
                 >
-                  <span className="material-symbols-outlined text-2xl">qr_code_scanner</span>
+                  <span className="material-symbols-outlined text-2xl">
+                    qr_code_scanner
+                  </span>
                   Open Camera Scanner
                 </button>
               )}
@@ -340,14 +442,18 @@ function PartnerScanner() {
             {/* Divider */}
             <div className="flex items-center gap-4">
               <div className="flex-1 h-px bg-outline-variant/15" />
-              <span className="text-xs font-bold tracking-[0.15em] text-on-surface-variant/50 uppercase">or</span>
+              <span className="text-xs font-bold tracking-[0.15em] text-on-surface-variant/50 uppercase">
+                or
+              </span>
               <div className="flex-1 h-px bg-outline-variant/15" />
             </div>
 
             {/* Manual Entry */}
             <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
               <h2 className="font-headline font-bold text-lg text-on-background mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">keyboard</span>
+                <span className="material-symbols-outlined text-primary text-xl">
+                  keyboard
+                </span>
                 Manual Code Entry
               </h2>
 
@@ -367,7 +473,9 @@ function PartnerScanner() {
                   {verifying ? (
                     <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <span className="material-symbols-outlined text-lg">verified</span>
+                    <span className="material-symbols-outlined text-lg">
+                      verified
+                    </span>
                   )}
                   Verify
                 </button>
@@ -380,7 +488,9 @@ function PartnerScanner() {
         {verifying && (
           <div className="flex items-center justify-center gap-3 py-8">
             <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="font-headline font-bold text-on-surface-variant">Verifying ticket...</p>
+            <p className="font-headline font-bold text-on-surface-variant">
+              Verifying ticket...
+            </p>
           </div>
         )}
       </div>

@@ -47,7 +47,7 @@ function Brands() {
       </div>
 
       {/* Show loader / error */}
-      {(loading || error) ? (
+      {loading || error ? (
         <DealsLoader loading={loading} error={error} />
       ) : (
         /* Brand Cards Grid */
@@ -80,7 +80,8 @@ function Brands() {
                   {brand.name}
                 </h3>
                 <p className="text-on-surface-variant text-sm mb-4">
-                  {brand.deals.length} exclusive deal{brand.deals.length !== 1 ? "s" : ""}
+                  {brand.deals.length} exclusive deal
+                  {brand.deals.length !== 1 ? "s" : ""}
                 </p>
 
                 <Link

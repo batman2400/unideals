@@ -27,19 +27,27 @@ function AdminAllDeals() {
   const [actingDealId, setActingDealId] = useState(null);
   const isMountedRef = useRef(true);
 
-  useEffect(() => () => { isMountedRef.current = false; }, []);
+  useEffect(
+    () => () => {
+      isMountedRef.current = false;
+    },
+    [],
+  );
 
   const fetchDeals = useCallback(async () => {
     if (role !== "admin") return;
     setLoading(true);
     setError("");
 
-    const { data, error: fetchError } = await supabase.rpc("admin_list_all_deals", {
-      status_filter: statusFilter,
-      search_query: searchQuery,
-      page_limit: 100,
-      page_offset: 0,
-    });
+    const { data, error: fetchError } = await supabase.rpc(
+      "admin_list_all_deals",
+      {
+        status_filter: statusFilter,
+        search_query: searchQuery,
+        page_limit: 100,
+        page_offset: 0,
+      },
+    );
 
     if (fetchError) {
       setError(fetchError.message);
@@ -71,15 +79,20 @@ function AdminAllDeals() {
     }
 
     setDeals((prev) =>
-      prev.map((d) => (d.id === dealId ? { ...d, status: newStatus } : d))
+      prev.map((d) => (d.id === dealId ? { ...d, status: newStatus } : d)),
     );
     setActingDealId(null);
     setMessage(`Deal status changed to ${newStatus}.`);
-    setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 3000);
+    setTimeout(() => {
+      if (isMountedRef.current) setMessage("");
+    }, 3000);
   }, []);
 
   const handleDelete = useCallback(async (dealId) => {
-    if (!window.confirm("Are you sure you want to delete this deal permanently?")) return;
+    if (
+      !window.confirm("Are you sure you want to delete this deal permanently?")
+    )
+      return;
 
     setActingDealId(dealId);
     const { error: deleteError } = await supabase
@@ -97,7 +110,9 @@ function AdminAllDeals() {
     setDeals((prev) => prev.filter((d) => d.id !== dealId));
     setActingDealId(null);
     setMessage("Deal deleted permanently.");
-    setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 3000);
+    setTimeout(() => {
+      if (isMountedRef.current) setMessage("");
+    }, 3000);
   }, []);
 
   if (roleLoading || loading) {
@@ -119,7 +134,8 @@ function AdminAllDeals() {
           All Deals
         </h1>
         <p className="text-on-surface-variant text-sm">
-          Full deal catalogue with status management, search, and tracking stats.
+          Full deal catalogue with status management, search, and tracking
+          stats.
         </p>
       </div>
 
@@ -182,28 +198,54 @@ function AdminAllDeals() {
             <table className="w-full block md:table">
               <thead className="hidden md:table-header-group">
                 <tr className="border-b border-outline-variant/10 bg-surface-container-low/50 block md:table-row">
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Deal</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Brand</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Status</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Type</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Reveals</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Tickets</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Redeemed</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">Actions</th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Deal
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Brand
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Status
+                  </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Type
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Reveals
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Tickets
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Redeemed
+                  </th>
+                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Actions
+                  </th>
                 </tr>
               </thead>
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {deals.map((deal) => {
                   const isActing = actingDealId === deal.id;
-                  const badge = STATUS_BADGE[deal.status] || STATUS_BADGE.pending;
+                  const badge =
+                    STATUS_BADGE[deal.status] || STATUS_BADGE.pending;
 
                   return (
-                    <tr key={deal.id} className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none">
+                    <tr
+                      key={deal.id}
+                      className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
+                    >
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Deal</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Deal
+                        </span>
                         <div className="flex items-center gap-3 max-w-[220px] md:max-w-none text-right md:text-left">
                           <div className="hidden md:block w-10 h-10 rounded-lg overflow-hidden bg-surface-container-low flex-shrink-0">
-                            <img src={deal.image_url} alt="" className="w-full h-full object-cover" />
+                            <img
+                              src={deal.image_url}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <div className="min-w-0">
                             <p className="font-headline font-bold text-sm text-on-background truncate max-w-[150px] md:max-w-[200px]">
@@ -216,51 +258,77 @@ function AdminAllDeals() {
                         </div>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant font-bold">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Brand</span>
-                        <span className="text-right md:text-left">{deal.brand}</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Brand
+                        </span>
+                        <span className="text-right md:text-left">
+                          {deal.brand}
+                        </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Status</span>
-                        <span className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Status
+                        </span>
+                        <span
+                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}
+                        >
                           {deal.status}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Type</span>
-                        <span className="text-right md:text-left">{deal.type}</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Type
+                        </span>
+                        <span className="text-right md:text-left">
+                          {deal.type}
+                        </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-right tabular-nums">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Reveals</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Reveals
+                        </span>
                         <span>{deal.total_reveals ?? 0}</span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-right tabular-nums">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Tickets</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Tickets
+                        </span>
                         <span>{deal.total_tickets_generated ?? 0}</span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold md:text-right tabular-nums">
-                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">Redeemed</span>
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Redeemed
+                        </span>
                         <span>{deal.total_tickets_redeemed ?? 0}</span>
                       </td>
                       <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
                         <div className="flex items-center justify-end gap-1.5 w-full md:w-auto">
                           {deal.status !== "approved" && (
                             <button
-                              onClick={() => handleStatusChange(deal.id, "approved")}
+                              onClick={() =>
+                                handleStatusChange(deal.id, "approved")
+                              }
                               disabled={isActing}
                               title="Approve"
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
                             >
-                              <span className="material-symbols-outlined text-lg">check_circle</span>
+                              <span className="material-symbols-outlined text-lg">
+                                check_circle
+                              </span>
                             </button>
                           )}
                           {deal.status !== "rejected" && (
                             <button
-                              onClick={() => handleStatusChange(deal.id, "rejected")}
+                              onClick={() =>
+                                handleStatusChange(deal.id, "rejected")
+                              }
                               disabled={isActing}
                               title="Reject"
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
                             >
-                              <span className="material-symbols-outlined text-lg">block</span>
+                              <span className="material-symbols-outlined text-lg">
+                                block
+                              </span>
                             </button>
                           )}
                           <button
@@ -269,7 +337,9 @@ function AdminAllDeals() {
                             title="Delete"
                             className="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
                           >
-                            <span className="material-symbols-outlined text-lg">delete</span>
+                            <span className="material-symbols-outlined text-lg">
+                              delete
+                            </span>
                           </button>
                         </div>
                       </td>

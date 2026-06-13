@@ -23,7 +23,12 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 
-function DealCard({ deal, isSaved: batchSaved, onToggleSave: batchToggle, savedLoading: batchLoading }) {
+function DealCard({
+  deal,
+  isSaved: batchSaved,
+  onToggleSave: batchToggle,
+  savedLoading: batchLoading,
+}) {
   const { id, title, type, discount, imageUrl, description } = deal;
 
   const isInStore = type === "In-Store";
@@ -39,57 +44,81 @@ function DealCard({ deal, isSaved: batchSaved, onToggleSave: batchToggle, savedL
 
   // Standalone: fetch saved state individually (only if no batch props)
   useEffect(() => {
-    if (isBatchMode || isDemo) { setLocalLoading(false); return; }
+    if (isBatchMode || isDemo) {
+      setLocalLoading(false);
+      return;
+    }
     let active = true;
-    checkIfSaved(id).then((saved) => {
-      if (active) { setLocalSaved(saved); setLocalLoading(false); }
-    }).catch(() => {
-      if (active) { setSaveError("Could not verify saved state right now."); setLocalLoading(false); }
-    });
-    return () => { active = false; };
+    checkIfSaved(id)
+      .then((saved) => {
+        if (active) {
+          setLocalSaved(saved);
+          setLocalLoading(false);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setSaveError("Could not verify saved state right now.");
+          setLocalLoading(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
   }, [id, isDemo, isBatchMode]);
 
   // ── Resolve actual values ──
   const saved = isBatchMode ? !!batchSaved : localSaved;
   const loading = isBatchMode ? !!batchLoading : localLoading;
 
-  const handleToggleSave = useCallback(async (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setSaveError("");
+  const handleToggleSave = useCallback(
+    async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setSaveError("");
 
-    // Check login state
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) {
-      window.dispatchEvent(new Event("open-auth-modal"));
-      return;
-    }
-
-    try {
-      if (isBatchMode && batchToggle) {
-        await batchToggle(id);
-      } else {
-        setLocalLoading(true);
-        if (localSaved) {
-          await unsaveDeal(id);
-          setLocalSaved(false);
-        } else {
-          await saveDeal(id);
-          setLocalSaved(true);
-        }
-        setLocalLoading(false);
+      // Check login state
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        window.dispatchEvent(new Event("open-auth-modal"));
+        return;
       }
-    } catch (err) {
-      console.error("Error toggling save:", err);
-      setSaveError(err?.message || "Could not update saved state. Please try again.");
-      if (!isBatchMode) setLocalLoading(false);
-    }
-  }, [id, isBatchMode, batchToggle, localSaved]);
+
+      try {
+        if (isBatchMode && batchToggle) {
+          await batchToggle(id);
+        } else {
+          setLocalLoading(true);
+          if (localSaved) {
+            await unsaveDeal(id);
+            setLocalSaved(false);
+          } else {
+            await saveDeal(id);
+            setLocalSaved(true);
+          }
+          setLocalLoading(false);
+        }
+      } catch (err) {
+        console.error("Error toggling save:", err);
+        setSaveError(
+          err?.message || "Could not update saved state. Please try again.",
+        );
+        if (!isBatchMode) setLocalLoading(false);
+      }
+    },
+    [id, isBatchMode, batchToggle, localSaved],
+  );
 
   return (
     <div className="flex flex-col group cursor-pointer relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-xl">
       {/* Deal Image */}
-      <Link to={isDemo ? "#" : `/perks/${id}`} className="block relative" onClick={isDemo ? (e) => e.preventDefault() : undefined}>
+      <Link
+        to={isDemo ? "#" : `/perks/${id}`}
+        className="block relative"
+        onClick={isDemo ? (e) => e.preventDefault() : undefined}
+      >
         <div className="aspect-[16/10] overflow-hidden rounded-xl relative bg-surface-container">
           {/* Save Button */}
           {!isDemo && (
@@ -141,17 +170,21 @@ function DealCard({ deal, isSaved: batchSaved, onToggleSave: batchToggle, savedL
       {/* Deal Info */}
       <div className="pt-6">
         <div className="flex justify-between items-start mb-2">
-          <h3 className="font-headline font-extrabold text-2xl tracking-tight">{title}</h3>
-          <span className="text-primary font-headline font-black text-xl">{discount}</span>
+          <h3 className="font-headline font-extrabold text-2xl tracking-tight">
+            {title}
+          </h3>
+          <span className="text-primary font-headline font-black text-xl">
+            {discount}
+          </span>
         </div>
-        <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">{description}</p>
+        <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">
+          {description}
+        </p>
         {saveError && (
           <p className="text-error text-xs font-bold mb-3">{saveError}</p>
         )}
         {isDemo ? (
-          <span
-            className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center text-on-surface-variant/50 cursor-default"
-          >
+          <span className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center text-on-surface-variant/50 cursor-default">
             Coming Soon
           </span>
         ) : (
