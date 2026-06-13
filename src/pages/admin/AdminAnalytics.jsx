@@ -6,7 +6,8 @@ import PortalLayout from "../../layouts/PortalLayout";
 function AdminAnalytics() {
   const { role, loading: roleLoading } = useRoleContext();
   const [shopStats, setShopStats] = useState([]);
-  const [metrics, setMetrics] = useState({ totalScans: 0, validScans: 0, failedScans: 0, confirmed: 0 });
+  const [dealStats, setDealStats] = useState([]);
+  const [selectedBrand, setSelectedBrand] = useState("All Brands");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -17,31 +18,21 @@ function AdminAnalytics() {
     async function fetchAnalytics() {
       setLoading(true);
 
-      const [shopRes, totalRes, validRes, confirmedRes] = await Promise.all([
+      const [shopRes, dealsRes] = await Promise.all([
         supabase.rpc("get_redemption_analytics_by_shop"),
-        supabase.from("redemption_events").select("id", { count: "exact", head: true }),
-        supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("scan_result", "valid"),
-        supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }),
+        supabase.rpc("admin_list_all_deals", { page_limit: 1000 }),
       ]);
 
       if (!active) return;
 
-      if (shopRes.error || totalRes.error) {
+      if (shopRes.error || dealsRes.error) {
         setError("Analytics data unavailable. Ensure SQL migrations are applied.");
         setLoading(false);
         return;
       }
 
-      const total = totalRes.count ?? 0;
-      const valid = validRes.count ?? 0;
-
       setShopStats(shopRes.data || []);
-      setMetrics({
-        totalScans: total,
-        validScans: valid,
-        failedScans: Math.max(total - valid, 0),
-        confirmed: confirmedRes.count ?? 0,
-      });
+      setDealStats(dealsRes.data || []);
       setLoading(false);
     }
 
@@ -65,30 +56,54 @@ function AdminAnalytics() {
     );
   }
 
-  const conversionRate = metrics.totalScans > 0
-    ? ((metrics.confirmed / metrics.totalScans) * 100).toFixed(1)
-    : "0.0";
+  // Derive unique brands
+  const uniqueBrands = ["All Brands", ...new Set(shopStats.map(s => s.brand).filter(Boolean))];
 
-  const validRate = metrics.totalScans > 0
-    ? ((metrics.validScans / metrics.totalScans) * 100).toFixed(1)
-    : "0.0";
+  // Filter Data
+  const isGlobal = selectedBrand === "All Brands";
+  const filteredDeals = isGlobal ? dealStats : dealStats.filter((d) => d.brand === selectedBrand);
+  const filteredShop = isGlobal ? shopStats : shopStats.filter((s) => s.brand === selectedBrand);
+
+  // Compute Totals
+  const totals = {
+    reveals: filteredDeals.reduce((sum, d) => sum + Number(d.total_reveals || 0), 0),
+    tickets: filteredDeals.reduce((sum, d) => sum + Number(d.total_tickets_generated || 0), 0),
+    scans: filteredShop.reduce((sum, s) => sum + Number(s.total_scans || 0), 0),
+    validScans: filteredShop.reduce((sum, s) => sum + Number(s.valid_scans || 0), 0),
+    failedScans: filteredShop.reduce((sum, s) => sum + Number(s.failed_scans || 0), 0),
+    confirmed: filteredShop.reduce((sum, s) => sum + Number(s.confirmed_redemptions || 0), 0),
+  };
 
   const summaryCards = [
-    { label: "Total Scans", value: metrics.totalScans, icon: "qr_code_scanner", color: "text-on-background" },
-    { label: "Valid Scans", value: metrics.validScans, sub: `${validRate}%`, icon: "check_circle", color: "text-emerald-600" },
-    { label: "Failed Scans", value: metrics.failedScans, icon: "error", color: "text-red-600" },
-    { label: "Confirmed", value: metrics.confirmed, sub: `${conversionRate}% conv.`, icon: "task_alt", color: "text-primary" },
+    { label: "Code Reveals", value: totals.reveals, icon: "visibility", color: "text-on-background" },
+    { label: "Tickets Generated", value: totals.tickets, icon: "confirmation_number", color: "text-primary" },
+    { label: "Total Scans", value: totals.scans, icon: "qr_code_scanner", color: "text-on-background" },
+    { label: "Confirmed Redemptions", value: totals.confirmed, icon: "task_alt", color: "text-emerald-600" },
   ];
 
   return (
     <PortalLayout portalType="admin">
-      <div className="mb-6">
-        <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
-          Analytics
-        </h1>
-        <p className="text-on-surface-variant text-sm">
-          Redemption metrics, conversion rates, and per-brand performance.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+        <div>
+          <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
+            Analytics
+          </h1>
+          <p className="text-on-surface-variant text-sm">
+            Redemption metrics, conversion rates, and performance by brand or deal.
+          </p>
+        </div>
+
+        <select
+          value={selectedBrand}
+          onChange={(e) => setSelectedBrand(e.target.value)}
+          className="bg-surface border border-outline-variant/30 text-on-background text-sm font-headline font-bold rounded-lg px-4 py-2.5 focus:ring-2 focus:ring-primary/30 outline-none cursor-pointer min-w-[200px]"
+        >
+          {uniqueBrands.map((brand) => (
+            <option key={brand} value={brand}>
+              {brand}
+            </option>
+          ))}
+        </select>
       </div>
 
       {error && (
@@ -115,9 +130,6 @@ function AdminAnalytics() {
             <p className={`font-headline font-black text-2xl md:text-3xl tracking-tight ${card.color}`}>
               {card.value}
             </p>
-            {card.sub && (
-              <p className="text-[11px] font-bold text-on-surface-variant/60 mt-1">{card.sub}</p>
-            )}
           </article>
         ))}
       </div>
@@ -125,25 +137,26 @@ function AdminAnalytics() {
       {/* Conversion Funnel Visual */}
       <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 md:p-6 shadow-sm mb-8">
         <h2 className="font-headline font-bold text-lg text-on-background mb-5">
-          Scan-to-Redemption Funnel
+          Engagement Funnel {isGlobal ? "(All Brands)" : `(${selectedBrand})`}
         </h2>
         <div className="space-y-3">
           {[
-            { label: "Total Scans", value: metrics.totalScans, pct: 100, color: "bg-on-surface-variant/20" },
-            { label: "Valid Scans", value: metrics.validScans, pct: metrics.totalScans > 0 ? (metrics.validScans / metrics.totalScans) * 100 : 0, color: "bg-primary/60" },
-            { label: "Confirmed Redemptions", value: metrics.confirmed, pct: metrics.totalScans > 0 ? (metrics.confirmed / metrics.totalScans) * 100 : 0, color: "emerald-gradient" },
+            { label: "Code Reveals (Online)", value: totals.reveals, pct: 100, color: "bg-on-surface-variant/15" },
+            { label: "Tickets Generated (In-Store)", value: totals.tickets, pct: totals.reveals > 0 ? (totals.tickets / Math.max(totals.reveals, 1)) * 100 : (totals.tickets > 0 ? 100 : 0), color: "bg-primary/50" },
+            { label: "Partner Scans", value: totals.scans, pct: Math.max(totals.reveals, totals.tickets) > 0 ? (totals.scans / Math.max(totals.reveals, totals.tickets, 1)) * 100 : (totals.scans > 0 ? 100 : 0), color: "bg-primary/70" },
+            { label: "Confirmed Redemptions", value: totals.confirmed, pct: totals.scans > 0 ? (totals.confirmed / totals.scans) * 100 : (totals.confirmed > 0 ? 100 : 0), color: "emerald-gradient" },
           ].map((row) => (
             <div key={row.label}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="text-sm font-headline font-bold text-on-background">{row.label}</span>
                 <span className="text-sm font-headline font-bold text-on-surface-variant tabular-nums">
-                  {row.value} ({row.pct.toFixed(1)}%)
+                  {row.value} ({Math.min(row.pct, 100).toFixed(1)}%)
                 </span>
               </div>
               <div className="w-full h-3 bg-surface-container-low rounded-full overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-all duration-700 ${row.color}`}
-                  style={{ width: `${Math.max(row.pct, 1)}%` }}
+                  style={{ width: `${Math.max(Math.min(row.pct, 100), row.value > 0 ? 3 : 0)}%` }}
                 />
               </div>
             </div>
@@ -151,50 +164,89 @@ function AdminAnalytics() {
         </div>
       </div>
 
-      {/* Per-Brand Table */}
-      <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
+      {/* Tables based on selection */}
+      <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden mb-8">
         <div className="px-5 py-4 border-b border-outline-variant/10">
           <h2 className="font-headline font-bold text-lg text-on-background">
-            Performance by Brand
+            {isGlobal ? "Performance by Brand" : `Deal Performance: ${selectedBrand}`}
           </h2>
         </div>
 
-        {shopStats.length === 0 ? (
-          <div className="p-8 text-center">
-            <p className="text-on-surface-variant text-sm">No brand analytics yet.</p>
-          </div>
+        {isGlobal ? (
+          /* Global View: List of Brands */
+          shopStats.length === 0 ? (
+            <div className="p-8 text-center text-on-surface-variant text-sm">No brand analytics yet.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[600px]">
+                <thead>
+                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Brand</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Total Scans</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Valid</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Failed</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Confirmed</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Conv. Rate</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/8">
+                  {shopStats.map((row) => {
+                    const rate = row.total_scans > 0
+                      ? ((row.confirmed_redemptions / row.total_scans) * 100).toFixed(1)
+                      : "0.0";
+                    return (
+                      <tr key={row.brand} className="hover:bg-surface-container-low/30 transition-colors">
+                        <td className="px-4 py-3 font-headline font-bold text-sm text-on-background">{row.brand}</td>
+                        <td className="px-4 py-3 text-sm text-right text-on-background tabular-nums">{row.total_scans}</td>
+                        <td className="px-4 py-3 text-sm text-right text-emerald-600 font-bold tabular-nums">{row.valid_scans}</td>
+                        <td className="px-4 py-3 text-sm text-right text-red-600 font-bold tabular-nums">{row.failed_scans}</td>
+                        <td className="px-4 py-3 text-sm text-right text-on-background font-bold tabular-nums">{row.confirmed_redemptions}</td>
+                        <td className="px-4 py-3 text-sm text-right text-primary font-bold tabular-nums">{rate}%</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
-                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Brand</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Total Scans</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Valid</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Failed</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Confirmed</th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Conv. Rate</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-outline-variant/8">
-                {shopStats.map((row) => {
-                  const rate = row.total_scans > 0
-                    ? ((row.confirmed_redemptions / row.total_scans) * 100).toFixed(1)
-                    : "0.0";
-                  return (
-                    <tr key={row.brand} className="hover:bg-surface-container-low/30 transition-colors">
-                      <td className="px-4 py-3 font-headline font-bold text-sm text-on-background">{row.brand}</td>
-                      <td className="px-4 py-3 text-sm text-right text-on-background tabular-nums">{row.total_scans}</td>
-                      <td className="px-4 py-3 text-sm text-right text-emerald-600 font-bold tabular-nums">{row.valid_scans}</td>
-                      <td className="px-4 py-3 text-sm text-right text-red-600 font-bold tabular-nums">{row.failed_scans}</td>
-                      <td className="px-4 py-3 text-sm text-right text-on-background font-bold tabular-nums">{row.confirmed_redemptions}</td>
-                      <td className="px-4 py-3 text-sm text-right text-primary font-bold tabular-nums">{rate}%</td>
+          /* Specific Brand View: List of Deals */
+          filteredDeals.length === 0 ? (
+            <div className="p-8 text-center text-on-surface-variant text-sm">No deal analytics for this brand.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[700px]">
+                <thead>
+                  <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Deal</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Status</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Reveals</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Tickets</th>
+                    <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">Redeemed</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-outline-variant/8">
+                  {filteredDeals.map((d) => (
+                    <tr key={d.id} className="hover:bg-surface-container-low/30 transition-colors">
+                      <td className="px-4 py-3 font-headline font-bold text-sm text-on-background">{d.title}</td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
+                          d.status === "approved" ? "bg-emerald-50 text-emerald-700 border-emerald-200" :
+                          d.status === "pending" ? "bg-amber-50 text-amber-700 border-amber-200" :
+                          "bg-red-50 text-red-600 border-red-200"
+                        }`}>
+                          {d.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_reveals}</td>
+                      <td className="px-4 py-3 text-sm text-right tabular-nums">{d.total_tickets_generated}</td>
+                      <td className="px-4 py-3 text-sm text-right font-bold text-emerald-600 tabular-nums">{d.total_tickets_redeemed}</td>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
         )}
       </div>
     </PortalLayout>
