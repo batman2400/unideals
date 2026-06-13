@@ -13,15 +13,17 @@
  *   // In any component:
  *   const { role, isVerified, ... } = useRoleContext();
  */
-import { createContext, useContext } from "react";
+import { createContext, useContext, useState } from "react";
 import { useRole } from "./useRole";
 
 const RoleContext = createContext(null);
 
 export function RoleProvider({ children }) {
   const roleState = useRole();
+  const [impersonatedPartnerId, setImpersonatedPartnerId] = useState(null);
+
   return (
-    <RoleContext.Provider value={roleState}>
+    <RoleContext.Provider value={{ ...roleState, impersonatedPartnerId, setImpersonatedPartnerId }}>
       {children}
     </RoleContext.Provider>
   );

@@ -40,7 +40,8 @@ const INITIAL_FORM = {
 
 function EditDeal() {
   const { id } = useParams();
-  const { user, role, loading: roleLoading, error: roleError } = useRoleContext();
+  const { user, role, loading: roleLoading, error: roleError, impersonatedPartnerId } = useRoleContext();
+  const targetUserId = impersonatedPartnerId || user?.id;
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [offerType, setOfferType] = useState("percentage_off");
@@ -88,8 +89,14 @@ function EditDeal() {
         return;
       }
 
-      if (role !== "partner") {
-        setError("Only partners can edit offers from this page.");
+      if (role === "admin" && !impersonatedPartnerId) {
+        setError("Admin View: Please impersonate a brand from the sidebar to edit deals.");
+        setLoading(false);
+        return;
+      }
+
+      if (role !== "partner" && role !== "admin") {
+        setError("Only partners or admins can edit offers from this page.");
         setLoading(false);
         return;
       }
@@ -107,7 +114,7 @@ function EditDeal() {
         return;
       }
 
-      const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
 
       if (!active) return;
 
@@ -129,7 +136,7 @@ function EditDeal() {
         .from("deals")
         .select("id, title, brand, discount, type, category, image_url, description, redemption_code")
         .eq("id", dealId)
-        .eq("partner_id", user.id)
+        .eq("partner_id", targetUserId)
         .eq("brand", brandName)
         .maybeSingle();
 
@@ -169,7 +176,7 @@ function EditDeal() {
     return () => {
       active = false;
     };
-  }, [id, role, roleError, roleLoading, user?.id]);
+  }, [id, role, roleError, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -206,7 +213,12 @@ function EditDeal() {
     setError("");
     setSuccessMessage("");
 
-    if (role !== "partner" || !user?.id) {
+    if (role === "admin" && !impersonatedPartnerId) {
+      setError("Admin View: Please impersonate a brand from the sidebar to edit deals.");
+      return;
+    }
+
+    if ((role !== "partner" && role !== "admin") || !targetUserId) {
       setError("Access denied. Partner role required.");
       return;
     }
@@ -240,7 +252,7 @@ function EditDeal() {
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
           file: selectedImageFile,
-          userId: user.id,
+          userId: targetUserId,
           brandName: partnerBrand,
         });
 
@@ -262,7 +274,7 @@ function EditDeal() {
         .from("deals")
         .update(payload)
         .eq("id", Number(id))
-        .eq("partner_id", user.id)
+        .eq("partner_id", targetUserId)
         .eq("brand", partnerBrand)
         .select("id")
         .maybeSingle();

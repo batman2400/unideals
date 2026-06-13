@@ -41,7 +41,8 @@ const INITIAL_FORM = {
 };
 
 function CreateDeal() {
-  const { user, role, loading: roleLoading } = useRoleContext();
+  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const targetUserId = impersonatedPartnerId || user?.id;
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [offerType, setOfferType] = useState("percentage_off");
@@ -92,6 +93,15 @@ function CreateDeal() {
         return;
       }
 
+      if (role === "admin" && !impersonatedPartnerId) {
+        if (!active) return;
+        setError("Admin View: Please impersonate a brand from the sidebar to create deals.");
+        setPartnerBrand("");
+        setBrandSetupRequired(false);
+        setBrandLoading(false);
+        return;
+      }
+
       if (role !== "partner" && role !== "admin") {
         if (!active) return;
         setError("Access denied. Partner role required.");
@@ -104,7 +114,7 @@ function CreateDeal() {
       if (!active) return;
       setBrandLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
 
       if (!active) return;
 
@@ -139,7 +149,7 @@ function CreateDeal() {
     return () => {
       active = false;
     };
-  }, [role, roleLoading, user?.id]);
+  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -178,6 +188,11 @@ function CreateDeal() {
 
     if (!user) {
       setError("You must be logged in to submit a deal.");
+      return;
+    }
+
+    if (role === "admin" && !impersonatedPartnerId) {
+      setError("Admin View: Please impersonate a brand from the sidebar to create deals.");
       return;
     }
 
@@ -220,7 +235,7 @@ function CreateDeal() {
         }
 
         const { brandName: savedBrand, error: brandSaveError } = await upsertPartnerBrandName(
-          user.id,
+          targetUserId,
           requestedBrand
         );
 
@@ -239,7 +254,7 @@ function CreateDeal() {
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
           file: selectedImageFile,
-          userId: user.id,
+          userId: targetUserId,
           brandName: effectiveBrand,
         });
 
@@ -255,7 +270,7 @@ function CreateDeal() {
         image_url: effectiveImageUrl,
         description: formData.description.trim() || `${formData.title.trim()} student offer.`,
         redemption_code: normalizedRedemptionCode,
-        partner_id: user.id,
+        partner_id: targetUserId,
         status: "pending",
       };
 

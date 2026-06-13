@@ -1,9 +1,23 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { useRoleContext } from "../lib/RoleContext";
+import { supabase } from "../lib/supabaseClient";
 
 function PortalLayout({ children, portalType = "partner", brandName = "" }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { role, impersonatedPartnerId, setImpersonatedPartnerId } = useRoleContext();
+  const [partners, setPartners] = useState([]);
+
+  useEffect(() => {
+    if (role === "admin" && portalType === "partner") {
+      supabase.from("partner_profiles").select("user_id, brand_name").then(({ data }) => {
+        if (data) {
+          setPartners(data.sort((a, b) => a.brand_name.localeCompare(b.brand_name)));
+        }
+      });
+    }
+  }, [role, portalType]);
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -172,11 +186,31 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                 <p className="text-[10px] font-bold tracking-[0.15em] text-on-surface-variant/60 uppercase mb-1">
                   {portalType === "admin" ? "Admin Access" : "Partner Access"}
                 </p>
-                <p className="text-xs text-on-surface-variant leading-relaxed">
+                <p className="text-xs text-on-surface-variant leading-relaxed mb-4">
                   {portalType === "admin"
                     ? "Full platform control including user management and moderation."
                     : "Manage your deals, track redemptions, and scan tickets."}
                 </p>
+
+                {role === "admin" && portalType === "partner" && (
+                  <div className="pt-3 border-t border-outline-variant/20">
+                    <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">
+                      Impersonate Brand
+                    </label>
+                    <select
+                      value={impersonatedPartnerId || ""}
+                      onChange={(e) => setImpersonatedPartnerId(e.target.value || null)}
+                      className="w-full bg-surface border border-outline-variant/30 text-xs font-bold rounded-lg px-2 py-2 text-on-background focus:ring-2 focus:ring-primary/30 outline-none"
+                    >
+                      <option value="">-- None (Admin View) --</option>
+                      {partners.map((p) => (
+                        <option key={p.user_id} value={p.user_id}>
+                          {p.brand_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
           </div>

@@ -5,7 +5,8 @@ import { getPartnerBrandName } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerAnalytics() {
-  const { user, role, loading: roleLoading } = useRoleContext();
+  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
   const [dealStats, setDealStats] = useState([]);
   const [totals, setTotals] = useState({
@@ -21,8 +22,8 @@ function PartnerAnalytics() {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
     
-    if (role === "admin") {
-      setError("Admin View: Viewing partner portal without a specific brand profile.");
+    if (role === "admin" && !impersonatedPartnerId) {
+      setError("Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.");
       setLoading(false);
       return;
     }
@@ -32,14 +33,14 @@ function PartnerAnalytics() {
     async function fetchAnalytics() {
       setLoading(true);
 
-      const { brandName } = await getPartnerBrandName(user.id);
+      const { brandName } = await getPartnerBrandName(targetUserId);
       if (!active) return;
       setPartnerBrand(brandName || "");
 
       // Try to use the new partner_deal_stats RPC
       const { data: statsData, error: statsError } = await supabase.rpc(
         "get_partner_deal_stats",
-        { target_partner_id: user.id }
+        { target_partner_id: targetUserId }
       );
 
       if (!active) return;
@@ -47,8 +48,8 @@ function PartnerAnalytics() {
       if (statsError) {
         // Fallback: basic counts
         const [scansRes, confirmedRes] = await Promise.all([
-          supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("partner_id", user.id),
-          supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }).eq("partner_id", user.id),
+          supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("partner_id", targetUserId),
+          supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }).eq("partner_id", targetUserId),
         ]);
 
         if (!active) return;
@@ -83,7 +84,7 @@ function PartnerAnalytics() {
 
     fetchAnalytics();
     return () => { active = false; };
-  }, [role, roleLoading, user?.id]);
+  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   if (roleLoading || loading) {
     return (

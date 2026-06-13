@@ -19,7 +19,8 @@ const STATUS_TABS = [
 ];
 
 function PartnerDeals() {
-  const { user, role, loading: roleLoading } = useRoleContext();
+  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -35,8 +36,8 @@ function PartnerDeals() {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
     
-    if (role === "admin") {
-      setError("Admin View: Viewing partner portal without a specific brand profile.");
+    if (role === "admin" && !impersonatedPartnerId) {
+      setError("Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.");
       setLoading(false);
       return;
     }
@@ -46,7 +47,7 @@ function PartnerDeals() {
     async function fetchDeals() {
       setLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
       if (!active) return;
       if (brandError || !brandName) {
         setError(brandError || "No brand profile found.");
@@ -60,7 +61,7 @@ function PartnerDeals() {
       const { data, error: fetchError } = await supabase
         .from("deals")
         .select("id, title, brand, discount, type, category, image_url, status, redemption_code, created_at")
-        .eq("partner_id", user.id)
+        .eq("partner_id", targetUserId)
         .eq("brand", brandName)
         .order("created_at", { ascending: false });
 
@@ -76,7 +77,7 @@ function PartnerDeals() {
 
     fetchDeals();
     return () => { active = false; };
-  }, [role, roleLoading, user?.id]);
+  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const handleDelete = useCallback(async (dealId) => {
     if (!window.confirm("Delete this deal permanently?")) return;
@@ -88,7 +89,7 @@ function PartnerDeals() {
       .from("deals")
       .delete()
       .eq("id", dealId)
-      .eq("partner_id", user.id)
+      .eq("partner_id", targetUserId)
       .eq("brand", partnerBrand)
       .select("id");
 
@@ -110,7 +111,7 @@ function PartnerDeals() {
     setDeletingDealId(null);
     setMessage("Deal deleted.");
     setTimeout(() => { if (isMountedRef.current) setMessage(""); }, 3000);
-  }, [user?.id, partnerBrand]);
+  }, [targetUserId, partnerBrand]);
 
   const filteredDeals = statusFilter
     ? deals.filter((d) => d.status === statusFilter)

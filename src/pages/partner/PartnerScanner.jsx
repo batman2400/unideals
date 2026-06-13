@@ -5,7 +5,8 @@ import { getPartnerBrandName } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerScanner() {
-  const { user, role, loading: roleLoading } = useRoleContext();
+  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -34,8 +35,8 @@ function PartnerScanner() {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
     
-    if (role === "admin") {
-      setError("Admin View: Viewing partner portal without a specific brand profile.");
+    if (role === "admin" && !impersonatedPartnerId) {
+      setError("Admin View: Please impersonate a brand from the sidebar to scan tickets.");
       setLoading(false);
       return;
     }
@@ -43,7 +44,7 @@ function PartnerScanner() {
     let active = true;
 
     async function init() {
-      const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
       if (!active) return;
       setPartnerBrand(brandName || "");
       if (brandError) setError(brandError);
@@ -52,7 +53,7 @@ function PartnerScanner() {
 
     init();
     return () => { active = false; };
-  }, [role, roleLoading, user?.id]);
+  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) {

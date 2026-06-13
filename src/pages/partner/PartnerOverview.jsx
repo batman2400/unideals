@@ -6,7 +6,8 @@ import { getPartnerBrandName } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 
 function PartnerOverview() {
-  const { user, role, loading: roleLoading } = useRoleContext();
+  const { user, role, loading: roleLoading, impersonatedPartnerId } = useRoleContext();
+  const targetUserId = impersonatedPartnerId || user?.id;
   const [partnerBrand, setPartnerBrand] = useState("");
   const [deals, setDeals] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
@@ -18,8 +19,8 @@ function PartnerOverview() {
     if (roleLoading || !user?.id) return;
     if (role !== "partner" && role !== "admin") return;
     
-    if (role === "admin") {
-      setError("Admin View: Viewing partner portal without a specific brand profile.");
+    if (role === "admin" && !impersonatedPartnerId) {
+      setError("Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.");
       setLoading(false);
       return;
     }
@@ -29,7 +30,7 @@ function PartnerOverview() {
     async function fetchData() {
       setLoading(true);
 
-      const { brandName, error: brandError } = await getPartnerBrandName(user.id);
+      const { brandName, error: brandError } = await getPartnerBrandName(targetUserId);
       if (!active) return;
       if (brandError || !brandName) {
         setError(brandError || "No brand profile found. Create your first deal to set up your brand.");
@@ -43,14 +44,14 @@ function PartnerOverview() {
         supabase
           .from("deals")
           .select("id, title, discount, type, category, status, created_at")
-          .eq("partner_id", user.id)
+          .eq("partner_id", targetUserId)
           .eq("brand", brandName)
           .order("created_at", { ascending: false }),
-        supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("partner_id", user.id),
-        supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }).eq("partner_id", user.id),
+        supabase.from("redemption_events").select("id", { count: "exact", head: true }).eq("partner_id", targetUserId),
+        supabase.from("confirmed_redemptions").select("id", { count: "exact", head: true }).eq("partner_id", targetUserId),
         supabase.from("redemption_events")
           .select("id, scanned_code, scan_result, scan_method, created_at")
-          .eq("partner_id", user.id)
+          .eq("partner_id", targetUserId)
           .order("created_at", { ascending: false })
           .limit(6),
       ]);
@@ -68,7 +69,7 @@ function PartnerOverview() {
 
     fetchData();
     return () => { active = false; };
-  }, [role, roleLoading, user?.id]);
+  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const metrics = useMemo(() => {
     const total = deals.length;
