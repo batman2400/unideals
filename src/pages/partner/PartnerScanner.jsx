@@ -150,6 +150,14 @@ function PartnerScanner() {
     processCodeRef.current = processCode;
   }, [processCode]);
 
+  // Connect stream to video element when camera becomes active
+  useEffect(() => {
+    if (cameraActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+      videoRef.current.play().catch((err) => console.error("Error playing video:", err));
+    }
+  }, [cameraActive]);
+
   const startCamera = useCallback(async () => {
     setCameraError("");
     setResult(null);
@@ -170,11 +178,6 @@ function PartnerScanner() {
 
       streamRef.current = stream;
       setCameraActive(true);
-
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        await videoRef.current.play();
-      }
 
       // Attempt BarcodeDetector API first, fallback to jsQR
       let detector = null;
@@ -413,6 +416,7 @@ function PartnerScanner() {
                   <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
                     <video
                       ref={videoRef}
+                      autoPlay
                       playsInline
                       muted
                       className="w-full h-full object-cover"
