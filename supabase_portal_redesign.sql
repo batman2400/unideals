@@ -633,7 +633,7 @@ BEGIN
     SELECT
       au.id AS user_id,
       au.email::TEXT AS email,
-      COALESCE(ur.role, 'student')::TEXT AS role,
+      COALESCE(ur.role::text, 'student') AS role,
       COALESCE(ur.is_verified, FALSE) AS is_verified,
       pp.brand_name::TEXT AS brand_name,
       au.created_at AS created_at,
@@ -648,7 +648,7 @@ BEGIN
     )
     AND (
       role_filter IS NULL
-      OR COALESCE(ur.role, 'student') = role_filter
+      OR COALESCE(ur.role::text, 'student') = role_filter
     )
     ORDER BY au.created_at DESC
     LIMIT page_limit
@@ -658,7 +658,7 @@ BEGIN
     SELECT
       au.id AS user_id,
       au.email::TEXT AS email,
-      COALESCE(ur.role, 'student')::TEXT AS role,
+      COALESCE(ur.role::text, 'student') AS role,
       FALSE AS is_verified,
       pp.brand_name::TEXT AS brand_name,
       au.created_at AS created_at,
@@ -673,7 +673,7 @@ BEGIN
     )
     AND (
       role_filter IS NULL
-      OR COALESCE(ur.role, 'student') = role_filter
+      OR COALESCE(ur.role::text, 'student') = role_filter
     )
     ORDER BY au.created_at DESC
     LIMIT page_limit
@@ -770,7 +770,7 @@ BEGIN
     d.type,
     d.category,
     d.image_url,
-    d.status,
+    d.status::text,
     d.redemption_code,
     d.store_url,
     d.partner_id,
@@ -786,7 +786,7 @@ BEGIN
   FROM public.deals d
   WHERE (
     status_filter IS NULL
-    OR d.status = status_filter
+    OR d.status::text = status_filter
   )
   AND (
     search_query = ''
@@ -836,7 +836,7 @@ BEGIN
     d.id AS deal_id,
     d.title AS deal_title,
     d.type AS deal_type,
-    d.status AS deal_status,
+    d.status::text AS deal_status,
     COALESCE((SELECT COUNT(*) FROM public.online_code_events oce WHERE oce.deal_id = d.id AND oce.event_type = 'reveal'), 0)::BIGINT,
     COALESCE((SELECT COUNT(*) FROM public.online_code_events oce WHERE oce.deal_id = d.id AND oce.event_type = 'copy'), 0)::BIGINT,
     COALESCE((SELECT COUNT(*) FROM public.online_code_events oce WHERE oce.deal_id = d.id AND oce.event_type = 'click_through'), 0)::BIGINT,
