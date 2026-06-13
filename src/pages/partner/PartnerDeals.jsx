@@ -32,7 +32,15 @@ function PartnerDeals() {
   useEffect(() => () => { isMountedRef.current = false; }, []);
 
   useEffect(() => {
-    if (roleLoading || role !== "partner" || !user?.id) return;
+    if (roleLoading || !user?.id) return;
+    if (role !== "partner" && role !== "admin") return;
+    
+    if (role === "admin") {
+      setError("Admin View: Viewing partner portal without a specific brand profile.");
+      setLoading(false);
+      return;
+    }
+
     let active = true;
 
     async function fetchDeals() {
