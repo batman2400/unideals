@@ -11,11 +11,22 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
 
   useEffect(() => {
     if (role === "admin" && portalType === "partner") {
-      supabase.from("brands").select("id, name").then(({ data }) => {
-        if (data) {
-          setPartners(data.sort((a, b) => a.name.localeCompare(b.name)));
-        }
-      });
+      supabase
+        .from("partner_profiles")
+        .select(`
+          user_id,
+          brand_name,
+          brands ( name )
+        `)
+        .then(({ data }) => {
+          if (data) {
+            const partnerList = data.map((p) => {
+              const brand = p.brands?.name || p.brand_name || "Unknown Brand";
+              return { id: p.user_id, name: brand };
+            });
+            setPartners(partnerList.sort((a, b) => a.name.localeCompare(b.name)));
+          }
+        });
     }
   }, [role, portalType]);
 
