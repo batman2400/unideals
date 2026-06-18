@@ -142,6 +142,13 @@ function CreateEvent() {
   return (
     <div className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 animate-fade-in">
       <div className="mb-8">
+        <button
+          onClick={() => navigate(-1)}
+          className="text-on-surface-variant/70 hover:text-on-background transition-colors cursor-pointer inline-flex items-center gap-1 mb-4 text-sm font-bold tracking-wider"
+        >
+          <span className="material-symbols-outlined text-[18px]">chevron_left</span>
+          Back to Events
+        </button>
         <h1 className="font-headline font-extrabold text-3xl tracking-tighter text-on-background">
           Create New Event
         </h1>
