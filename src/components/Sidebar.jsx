@@ -28,26 +28,17 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
     { path: "/support", label: "Help / Support", icon: "help" },
   ];
 
-  const partnerLinks = [
-    { path: "/partner", label: "Dashboard", icon: "dashboard", exact: true },
-    { path: "/partner/deals", label: "Active Deals", icon: "local_offer" },
-    { path: "/partner/create-deal", label: "Create a Deal", icon: "add_circle" },
-    { path: "/events/new", label: "Create Event", icon: "event_available" },
-    { path: "/partner/analytics", label: "Performance Analytics", icon: "monitoring" },
-  ];
-
-  const adminLinks = [
-    { path: "/admin", label: "Platform Overview", icon: "dashboard", exact: true },
-    { path: "/admin/verifications", label: "Pending Verifications", icon: "how_to_reg" },
-    { path: "/admin/brands", label: "Manage Brands", icon: "storefront" },
-    { path: "/events/new", label: "Create Event", icon: "event_available" },
-    { path: "/admin/tickets", label: "Support Tickets", icon: "support_agent" },
-  ];
-
   const getLinks = () => {
-    if (role === "admin") return { main: adminLinks, footer: [] };
-    if (role === "partner") return { main: partnerLinks, footer: [] };
-    return { main: studentLinks, footer: studentFooterLinks };
+    const mainLinks = [...studentLinks];
+    
+    // Add entry link to portal for privileged users
+    if (role === "admin") {
+      mainLinks.push({ path: "/admin", label: "Admin Portal", icon: "admin_panel_settings" });
+    } else if (role === "partner") {
+      mainLinks.push({ path: "/partner", label: "Partner Portal", icon: "handshake" });
+    }
+
+    return { main: mainLinks, footer: studentFooterLinks };
   };
 
   const { main: navLinks, footer: footerLinks } = getLinks();
