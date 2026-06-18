@@ -378,7 +378,7 @@ function Profile({ isLoggedIn, user }) {
             {isVerified || role === "admin" || role === "partner" ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                 <span className="material-symbols-outlined text-[14px]">verified</span>
-                Verified Account
+                {role === "admin" ? "Verified Admin" : role === "partner" ? "Verified Brand" : "Verified Student"}
               </span>
             ) : hasPendingVerification ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-[#d4a017] bg-[#d4a017]/10 px-2.5 py-1 rounded-full">
