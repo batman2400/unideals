@@ -79,19 +79,19 @@ export default function Sidebar({ onLogout }) {
   return (
     <>
       {/* Mobile Header Toggle */}
-      <div className="md:hidden fixed top-0 left-0 w-full bg-surface/90 backdrop-blur-md border-b border-outline-variant/10 z-40 flex items-center justify-between px-4 h-16">
+      <div className="md:hidden fixed top-0 left-0 w-full bg-surface/90 backdrop-blur-md border-b border-outline-variant/10 z-40 flex items-center gap-3 px-4 h-16">
+        <button
+          onClick={() => setIsOpen(true)}
+          className="p-2 -ml-2 text-on-surface-variant hover:text-on-background min-h-[44px] min-w-[44px] flex items-center justify-center"
+        >
+          <span className="material-symbols-outlined text-2xl">menu</span>
+        </button>
         <Link to="/" className="flex items-center gap-2">
           <img src="/images/logo.png" alt="Uni Deals" className="h-6 w-auto" />
           <span className="font-headline font-black text-lg tracking-tight text-on-background">
             Uni<span className="text-primary">Deals</span>
           </span>
         </Link>
-        <button
-          onClick={() => setIsOpen(true)}
-          className="p-2 -mr-2 text-on-surface-variant hover:text-on-background min-h-[44px] min-w-[44px] flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-2xl">menu</span>
-        </button>
       </div>
 
       {/* Mobile Overlay */}
