@@ -148,8 +148,8 @@ function App() {
 
   return (
     <div className="min-h-[100dvh] bg-background flex flex-col">
-      <Navbar onLogout={handleLogout} />
-      <Sidebar onLogout={handleLogout} />
+      <Navbar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
+      <Sidebar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
 
       {/* Page Content */}
       <main className="flex-1 pt-16 md:pt-0 pb-safe-content min-w-0 flex flex-col min-h-[100dvh]">

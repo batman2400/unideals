@@ -1,9 +1,13 @@
 import { Link, useLocation } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 
-export default function Navbar({ onLogout }) {
+export default function Navbar({ onLogout, isLoggedIn }) {
   const location = useLocation();
   const { role } = useRoleContext();
+
+  const handleOpenAuth = () => {
+    window.dispatchEvent(new Event("open-auth-modal"));
+  };
 
   const studentLinks = [
     { path: "/", label: "Explore" },
@@ -64,27 +68,47 @@ export default function Navbar({ onLogout }) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-4">
-        <Link
-          to="/profile"
-          className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/20 hover:bg-surface-container transition-colors"
-        >
-          <span className="material-symbols-outlined text-lg">person</span>
-          <span className="font-headline font-bold text-sm">My Profile</span>
-        </Link>
-        <Link
-          to="/support"
-          title="Help / Support"
-          className="p-2 text-on-surface-variant hover:text-on-background hover:bg-surface-container rounded-full transition-colors flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-[22px]">help</span>
-        </Link>
-        <button
-          onClick={onLogout}
-          title="Log Out"
-          className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-full transition-colors flex items-center justify-center"
-        >
-          <span className="material-symbols-outlined text-[22px]">logout</span>
-        </button>
+        {isLoggedIn ? (
+          <>
+            <Link
+              to="/profile"
+              className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/20 hover:bg-surface-container transition-colors"
+            >
+              <span className="material-symbols-outlined text-lg">person</span>
+              <span className="font-headline font-bold text-sm">My Profile</span>
+            </Link>
+            <Link
+              to="/support"
+              title="Help / Support"
+              className="p-2 text-on-surface-variant hover:text-on-background hover:bg-surface-container rounded-full transition-colors flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[22px]">help</span>
+            </Link>
+            <button
+              onClick={onLogout}
+              title="Log Out"
+              className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-full transition-colors flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[22px]">logout</span>
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              to="/support"
+              title="Help / Support"
+              className="p-2 text-on-surface-variant hover:text-on-background hover:bg-surface-container rounded-full transition-colors flex items-center justify-center mr-2"
+            >
+              <span className="material-symbols-outlined text-[22px]">help</span>
+            </Link>
+            <button
+              onClick={handleOpenAuth}
+              className="font-headline font-bold text-sm px-5 py-2.5 rounded-full bg-primary text-on-primary hover:bg-primary/90 transition-all shadow-sm"
+            >
+              Log In
+            </button>
+          </>
+        )}
       </div>
     </nav>
   );

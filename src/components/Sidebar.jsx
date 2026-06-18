@@ -2,10 +2,15 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 
-export default function Sidebar({ onLogout }) {
+export default function Sidebar({ onLogout, isLoggedIn }) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { role } = useRoleContext();
+
+  const handleOpenAuth = () => {
+    setIsOpen(false);
+    window.dispatchEvent(new Event("open-auth-modal"));
+  };
 
   // Close sidebar on route change (mobile)
   useEffect(() => {
@@ -133,19 +138,30 @@ export default function Sidebar({ onLogout }) {
 
         {/* Footer Area */}
         <div className="mt-auto p-4 border-t border-outline-variant/10 bg-surface-container-lowest/50 space-y-1 flex-shrink-0">
-          {footerLinks.map((link) => (
-            <NavItem key={link.path} link={link} />
-          ))}
+          {footerLinks.map((link) => {
+            // Hide profile link if not logged in
+            if (link.path === "/profile" && !isLoggedIn) return null;
+            return <NavItem key={link.path} link={link} />;
+          })}
 
-          <button
-            onClick={() => {
-              if (onLogout) onLogout();
-            }}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all min-h-[44px] text-error hover:bg-error/10 font-medium mt-2"
-          >
-            <span className="material-symbols-outlined text-[22px]">logout</span>
-            <span className="text-sm tracking-tight">Log Out</span>
-          </button>
+          {isLoggedIn ? (
+            <button
+              onClick={() => {
+                if (onLogout) onLogout();
+              }}
+              className="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all min-h-[44px] text-error hover:bg-error/10 font-medium mt-2"
+            >
+              <span className="material-symbols-outlined text-[22px]">logout</span>
+              <span className="text-sm tracking-tight">Log Out</span>
+            </button>
+          ) : (
+            <button
+              onClick={handleOpenAuth}
+              className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl transition-all min-h-[44px] bg-primary text-on-primary font-bold mt-2 hover:bg-primary/90"
+            >
+              <span className="text-sm tracking-tight">Log In or Sign Up</span>
+            </button>
+          )}
         </div>
       </aside>
     </>
