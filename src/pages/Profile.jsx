@@ -549,7 +549,7 @@ function Profile({ isLoggedIn, user }) {
         {/* Preferences / Account Security Card */}
         <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5 md:p-6 shadow-sm">
           <h3 className="font-headline font-bold text-base text-on-background mb-4">Account Security</h3>
-          <form onSubmit={handleSaveSettings} className="space-y-4">
+          <form onSubmit={handleSettingsSave} className="space-y-4">
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Change Password</label>
               <input type="password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
