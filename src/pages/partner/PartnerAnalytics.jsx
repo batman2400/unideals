@@ -338,71 +338,82 @@ function PartnerAnalytics() {
                     key={d.deal_id}
                     className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
                   >
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Deal
-                      </span>
-                      <span className="text-right md:text-left truncate max-w-[200px]">
-                        {d.deal_title}
-                      </span>
+                    {/* Desktop View */}
+                    <td className="hidden md:table-cell px-4 py-3 font-headline font-bold text-sm text-on-background max-w-[200px] truncate">
+                      {d.deal_title}
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Type
-                      </span>
-                      <span className="text-right md:text-left">
-                        {d.deal_type}
-                      </span>
+                    <td className="hidden md:table-cell px-4 py-3 text-sm text-on-surface-variant">
+                      {d.deal_type}
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Status
-                      </span>
-                      <span
-                        className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${pillClass}`}
-                      >
+                    <td className="hidden md:table-cell px-4 py-3">
+                      <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${pillClass}`}>
                         {displayStatus}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Reveals
-                      </span>
-                      <span className="text-right md:text-right">
-                        {isOnline ? d.total_reveals : "-"}
-                      </span>
+                    <td className="hidden md:table-cell text-right px-4 py-3 text-sm tabular-nums text-on-surface-variant">
+                      {isOnline ? d.total_reveals : "-"}
                     </td>
-                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Copies
-                      </span>
-                      <span className="text-right md:text-right">
-                        {isOnline ? d.total_copies : "-"}
-                      </span>
+                    <td className="hidden md:table-cell text-right px-4 py-3 text-sm tabular-nums text-on-surface-variant">
+                      {isOnline ? d.total_copies : "-"}
                     </td>
-                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Clicks
-                      </span>
-                      <span className="text-right md:text-right">
-                        {isOnline ? d.total_click_throughs : "-"}
-                      </span>
+                    <td className="hidden md:table-cell text-right px-4 py-3 text-sm tabular-nums text-on-surface-variant">
+                      {isOnline ? d.total_click_throughs : "-"}
                     </td>
-                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Tickets
-                      </span>
-                      <span className="text-right md:text-right">
-                        {isInStore ? d.total_tickets_generated : "-"}
-                      </span>
+                    <td className="hidden md:table-cell text-right px-4 py-3 text-sm tabular-nums text-on-surface-variant">
+                      {isInStore ? d.total_tickets_generated : "-"}
                     </td>
-                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
-                      <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
-                        Redeemed
-                      </span>
-                      <span className="text-right md:text-right">
-                        {isInStore ? d.confirmed_redemptions : "-"}
-                      </span>
+                    <td className="hidden md:table-cell text-right px-4 py-3 text-sm font-bold text-emerald-600 tabular-nums">
+                      {isInStore ? d.confirmed_redemptions : "-"}
+                    </td>
+
+                    {/* Mobile View Card */}
+                    <td className="md:hidden block w-full">
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-start gap-3">
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-headline font-bold text-base text-on-background truncate">
+                              {d.deal_title}
+                            </h3>
+                            <p className="text-xs font-bold text-on-surface-variant mt-0.5">
+                              {d.deal_type}
+                            </p>
+                          </div>
+                          <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase whitespace-nowrap ${pillClass}`}>
+                            {displayStatus}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-3 mt-1 bg-surface-container-low/50 rounded-xl p-3 border border-outline-variant/10">
+                          {isOnline && (
+                            <>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold tracking-[0.12em] text-on-surface-variant/80 uppercase mb-1">Reveals</span>
+                                <span className="text-sm font-headline font-bold text-on-background tabular-nums">{d.total_reveals}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold tracking-[0.12em] text-on-surface-variant/80 uppercase mb-1">Copies</span>
+                                <span className="text-sm font-headline font-bold text-on-background tabular-nums">{d.total_copies}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold tracking-[0.12em] text-on-surface-variant/80 uppercase mb-1">Clicks</span>
+                                <span className="text-sm font-headline font-bold text-on-background tabular-nums">{d.total_click_throughs}</span>
+                              </div>
+                            </>
+                          )}
+                          {isInStore && (
+                            <>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold tracking-[0.12em] text-on-surface-variant/80 uppercase mb-1">Tickets</span>
+                                <span className="text-sm font-headline font-bold text-on-background tabular-nums">{d.total_tickets_generated}</span>
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="text-[10px] font-bold tracking-[0.12em] text-on-surface-variant/80 uppercase mb-1">Redeemed</span>
+                                <span className="text-sm font-headline font-bold text-emerald-600 tabular-nums">{d.confirmed_redemptions}</span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
                     </td>
                   </tr>
                   );
