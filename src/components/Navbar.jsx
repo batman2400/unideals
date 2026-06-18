@@ -9,27 +9,11 @@ export default function Navbar({ onLogout, isLoggedIn }) {
     window.dispatchEvent(new Event("open-auth-modal"));
   };
 
-  const studentLinks = [
+  const navLinks = [
     { path: "/", label: "Explore" },
     { path: "/events", label: "Events" },
     { path: "/saved", label: "Saved Deals" },
   ];
-
-  const partnerLinks = [
-    { path: "/partner", label: "Dashboard" },
-    { path: "/partner/deals", label: "Active Deals" },
-    { path: "/partner/create-deal", label: "Create a Deal" },
-    { path: "/partner/analytics", label: "Analytics" },
-  ];
-
-  const adminLinks = [
-    { path: "/admin", label: "Overview" },
-    { path: "/admin/verifications", label: "Verifications" },
-    { path: "/admin/brands", label: "Brands" },
-    { path: "/admin/tickets", label: "Support Tickets" },
-  ];
-
-  const navLinks = role === "admin" ? adminLinks : role === "partner" ? partnerLinks : studentLinks;
 
   const isActive = (path) => {
     if (path === "/" || path === "/admin" || path === "/partner") {

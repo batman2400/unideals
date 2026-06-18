@@ -172,13 +172,6 @@ function PartnerOverview() {
               : "Set up your brand by creating your first deal."}
           </p>
         </div>
-        <Link
-          to="/partner/create-deal"
-          className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
-        >
-          <span className="material-symbols-outlined text-lg">add_circle</span>
-          Create Deal
-        </Link>
       </div>
 
       {error && (
@@ -226,10 +219,10 @@ function PartnerOverview() {
           <div className="grid grid-cols-2 gap-3">
             {[
               {
-                to: "/partner/deals",
-                icon: "local_offer",
-                label: "My Deals",
-                desc: "View all deals",
+                to: "/profile",
+                icon: "manage_accounts",
+                label: "Manage Profile",
+                desc: "Update settings",
               },
               {
                 to: "/partner/create-deal",
@@ -244,10 +237,10 @@ function PartnerOverview() {
                 desc: "Scan tickets",
               },
               {
-                to: "/partner/analytics",
-                icon: "monitoring",
-                label: "Analytics",
-                desc: "View stats",
+                to: "/partner/deals",
+                icon: "pending_actions",
+                label: "Pending Approvals",
+                desc: "Check deal status",
               },
             ].map((link) => (
               <Link
