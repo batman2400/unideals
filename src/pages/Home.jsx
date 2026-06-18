@@ -32,12 +32,12 @@ function Home({ searchQuery, onSearchChange }) {
                 const params = new URLSearchParams({ filter: cat.label });
                 navigate(`/categories?${params.toString()}`);
               }}
-              className="flex-shrink-0 flex items-center gap-2 bg-surface-container-low border border-outline-variant/20 px-5 py-2.5 rounded-full hover:bg-surface-container hover:border-outline-variant/40 transition-colors snap-start active:scale-[0.98] min-h-[44px]"
+              className="flex-shrink-0 flex items-center gap-2.5 bg-surface-container-low border border-outline-variant/15 px-5 py-3 rounded-2xl hover:bg-surface-container hover:border-outline-variant/30 hover:shadow-sm transition-all snap-start active:scale-[0.98] min-h-[48px]"
             >
-              <span className="material-symbols-outlined text-primary text-[18px]">
+              <span className="material-symbols-outlined text-primary text-2xl drop-shadow-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
                 {cat.icon}
               </span>
-              <span className="font-headline font-bold text-sm text-on-surface-variant whitespace-nowrap">
+              <span className="font-headline font-bold text-sm md:text-base text-on-surface whitespace-nowrap tracking-tight">
                 {cat.label}
               </span>
             </button>

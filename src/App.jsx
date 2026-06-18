@@ -153,7 +153,7 @@ function App() {
         <Suspense fallback={<RouteSkeleton />}>
           <div
             key={`${location.pathname}${location.search}`}
-            className="animate-route-fade"
+            className="animate-route-fade flex flex-col flex-1"
           >
             <Routes location={location}>
               <Route

@@ -28,6 +28,7 @@ function DealCard({
   isSaved: batchSaved,
   onToggleSave: batchToggle,
   savedLoading: batchLoading,
+  compactImage = false,
 }) {
   const { id, title, type, discount, imageUrl, description } = deal;
 
@@ -119,7 +120,11 @@ function DealCard({
         className="block relative"
         onClick={isDemo ? (e) => e.preventDefault() : undefined}
       >
-        <div className="aspect-[16/10] overflow-hidden rounded-xl relative bg-surface-container">
+        <div 
+          className={`overflow-hidden rounded-xl relative bg-surface-container ${
+            compactImage ? "h-32 md:h-40 w-full" : "aspect-[16/10]"
+          }`}
+        >
           {/* Save Button */}
           {!isDemo && (
             <button
@@ -168,29 +173,29 @@ function DealCard({
       </Link>
 
       {/* Deal Info */}
-      <div className="pt-6">
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="font-headline font-extrabold text-2xl tracking-tight">
+      <div className="pt-4 md:pt-5 flex-1 flex flex-col">
+        <div className="flex justify-between items-start mb-1.5 gap-2">
+          <h3 className="font-headline font-extrabold text-lg md:text-xl tracking-tight line-clamp-2 leading-tight">
             {title}
           </h3>
-          <span className="text-primary font-headline font-black text-xl">
+          <span className="text-primary font-headline font-black text-base md:text-lg flex-shrink-0">
             {discount}
           </span>
         </div>
-        <p className="text-on-surface-variant text-sm mb-4 leading-relaxed">
+        <p className="text-on-surface-variant text-xs md:text-sm mb-3 md:mb-4 leading-relaxed line-clamp-2 flex-1">
           {description}
         </p>
         {saveError && (
           <p className="text-error text-xs font-bold mb-3">{saveError}</p>
         )}
         {isDemo ? (
-          <span className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center text-on-surface-variant/50 cursor-default">
+          <span className="block w-full py-2.5 rounded-lg border border-outline-variant/20 font-headline font-bold text-xs md:text-sm text-center text-on-surface-variant/50 cursor-default">
             Coming Soon
           </span>
         ) : (
           <Link
             to={`/perks/${id}`}
-            className="block w-full py-3 rounded-md border border-outline-variant/20 font-headline font-bold text-sm text-center group-hover:bg-primary group-hover:text-on-primary transition-all active:scale-[0.98]"
+            className="block w-full py-2.5 rounded-lg border border-outline-variant/20 font-headline font-bold text-xs md:text-sm text-center hover:bg-primary hover:text-on-primary hover:border-primary transition-all active:scale-[0.98]"
           >
             {isInStore ? "Show at Register" : "Claim Code"}
           </Link>

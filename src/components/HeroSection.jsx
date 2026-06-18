@@ -142,14 +142,14 @@ function HeroSection({ searchQuery, onSearchChange }) {
     >
       {/* ── Slide Carousel ──────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-3xl min-h-[340px] md:min-h-[420px] lg:min-h-[460px] mt-4 md:mt-8"
+        className="relative overflow-hidden rounded-2xl min-h-[220px] md:min-h-[200px] lg:min-h-[240px] mt-4 md:mt-6"
         style={{ background: currentSlide.bgAccent }}
       >
         {/* Exit slide (fading out) */}
         {exitSlide && (
           <div
             key={`exit-${exitSlide.id}`}
-            className="hero-slide-exit flex flex-col justify-center px-8 md:px-16 lg:px-20 py-12 md:py-16"
+            className="hero-slide-exit flex flex-col justify-center px-6 md:px-12 py-6 h-full"
             style={{ background: exitSlide.bgAccent }}
           >
             <SlideContent slide={exitSlide} navigate={navigate} />
@@ -159,13 +159,13 @@ function HeroSection({ searchQuery, onSearchChange }) {
         {/* Active slide (fading in) */}
         <div
           key={`active-${currentSlide.id}`}
-          className="hero-slide-active flex flex-col justify-center px-8 md:px-16 lg:px-20 py-12 md:py-16"
+          className="hero-slide-active flex flex-col justify-center px-6 md:px-12 py-6 h-full"
         >
           <SlideContent slide={currentSlide} navigate={navigate} />
         </div>
 
         {/* ── Bottom Bar: Dots + Progress ───────────────── */}
-        <div className="absolute bottom-0 left-0 right-0 px-8 md:px-16 lg:px-20 pb-6 flex items-center gap-6">
+        <div className="absolute bottom-0 left-0 right-0 px-6 md:px-12 pb-4 flex items-center gap-4">
           {/* Dot navigation */}
           <div className="flex gap-2">
             {slides.map((s, i) => (
@@ -235,46 +235,44 @@ function HeroSection({ searchQuery, onSearchChange }) {
 /* ── Individual Slide Content ──────────────────────────── */
 function SlideContent({ slide, navigate }) {
   return (
-    <>
-      {/* Category icon pill */}
-      <div className="flex items-center gap-2 mb-5">
-        <span
-          className="material-symbols-outlined text-lg"
-          style={{
-            color: slide.accentColor,
-            fontVariationSettings: "'FILL' 1",
-          }}
-        >
-          {slide.icon}
-        </span>
-        <span
-          className="text-xs font-headline font-bold uppercase tracking-[0.15em]"
-          style={{ color: slide.accentColor }}
-        >
-          {slide.cta}
-        </span>
+    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full pb-6 md:pb-8">
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-1.5 md:mb-2">
+          <span
+            className="material-symbols-outlined text-base md:text-lg"
+            style={{
+              color: slide.accentColor,
+              fontVariationSettings: "'FILL' 1",
+            }}
+          >
+            {slide.icon}
+          </span>
+          <span
+            className="text-[10px] md:text-xs font-headline font-bold uppercase tracking-[0.15em]"
+            style={{ color: slide.accentColor }}
+          >
+            {slide.cta}
+          </span>
+        </div>
+
+        <h2 className="font-headline font-extrabold text-2xl md:text-3xl lg:text-4xl tracking-tight text-on-background mb-1 md:mb-2 max-w-xl leading-tight">
+          {slide.headline}{" "}
+          <span className="italic text-primary">{slide.headlineAccent}</span>
+        </h2>
+
+        <p className="text-on-surface-variant text-xs md:text-sm max-w-lg leading-snug line-clamp-2 md:line-clamp-none">
+          {slide.subtext}
+        </p>
       </div>
 
-      {/* Headline */}
-      <h1 className="font-headline font-extrabold text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tighter text-on-background mb-4 max-w-3xl leading-[0.95]">
-        {slide.headline}{" "}
-        <span className="italic text-primary">{slide.headlineAccent}</span>
-      </h1>
-
-      {/* Subtext */}
-      <p className="text-on-surface-variant text-base md:text-lg max-w-xl leading-relaxed mb-6">
-        {slide.subtext}
-      </p>
-
-      {/* CTA button */}
       <button
         onClick={() => navigate(slide.link)}
-        className="inline-flex items-center gap-2 w-fit emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.97] transition-all"
+        className="inline-flex items-center justify-center gap-2 w-full md:w-auto emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-xs md:text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.97] transition-all whitespace-nowrap mt-2 md:mt-0"
       >
         {slide.cta}
-        <span className="material-symbols-outlined text-lg">arrow_forward</span>
+        <span className="material-symbols-outlined text-sm md:text-base">arrow_forward</span>
       </button>
-    </>
+    </div>
   );
 }
 
