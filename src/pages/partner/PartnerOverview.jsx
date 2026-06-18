@@ -286,7 +286,7 @@ function PartnerOverview() {
               {recentEvents.map((event) => (
                 <li
                   key={event.id}
-                  className="px-5 py-3 flex items-center gap-3"
+                  className="px-4 md:px-5 py-3 md:py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
                 >
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-bold text-on-background truncate">
@@ -300,11 +300,13 @@ function PartnerOverview() {
                       })}
                     </p>
                   </div>
-                  <span
-                    className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}
-                  >
-                    {event.scan_result}
-                  </span>
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                    <span
+                      className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}
+                    >
+                      {event.scan_result}
+                    </span>
+                  </div>
                 </li>
               ))}
             </ul>

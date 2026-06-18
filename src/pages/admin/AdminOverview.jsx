@@ -220,7 +220,7 @@ function AdminOverview() {
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
         {metricCards.map((card) => (
           <article
             key={card.label}
@@ -268,7 +268,7 @@ function AdminOverview() {
             {recentActivity.map((event) => (
               <li
                 key={event.id}
-                className="px-5 py-3.5 flex items-center gap-4 hover:bg-surface-container-low/40 transition-colors"
+                className="px-4 md:px-5 py-3 md:py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 hover:bg-surface-container-low/40 transition-colors"
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-headline font-bold text-sm text-on-background truncate">
@@ -278,17 +278,19 @@ function AdminOverview() {
                     Code: {event.scanned_code || "—"} · {event.scan_method}
                   </p>
                 </div>
-                <span
-                  className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}
-                >
-                  {event.scan_result}
-                </span>
-                <p className="text-xs text-on-surface-variant/60 hidden md:block whitespace-nowrap">
-                  {new Date(event.created_at).toLocaleString(undefined, {
-                    dateStyle: "short",
-                    timeStyle: "short",
-                  })}
-                </p>
+                <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                  <span
+                    className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${scanResultColor[event.scan_result] || scanResultColor.invalid}`}
+                  >
+                    {event.scan_result}
+                  </span>
+                  <p className="text-xs text-on-surface-variant/60 whitespace-nowrap">
+                    {new Date(event.created_at).toLocaleString(undefined, {
+                      dateStyle: "short",
+                      timeStyle: "short",
+                    })}
+                  </p>
+                </div>
               </li>
             ))}
           </ul>
