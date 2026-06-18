@@ -92,12 +92,16 @@ function PartnerAnalytics() {
           totalReveals: acc.totalReveals + Number(d.total_reveals || 0),
           totalTickets:
             acc.totalTickets + Number(d.total_tickets_generated || 0),
+          totalCopies: acc.totalCopies + Number(d.total_copies || 0),
+          totalClicks: acc.totalClicks + Number(d.total_click_throughs || 0),
         }),
         {
           totalScans: 0,
           confirmedRedemptions: 0,
           totalReveals: 0,
           totalTickets: 0,
+          totalCopies: 0,
+          totalClicks: 0,
         },
       );
 
@@ -209,50 +213,41 @@ function PartnerAnalytics() {
             {
               label: "Code Reveals (Online)",
               value: totals.totalReveals,
+              conversion: "",
               pct: 100,
               color: "bg-on-surface-variant/15",
             },
             {
-              label: "Tickets Generated (In-Store)",
-              value: totals.totalTickets,
-              pct:
-                totals.totalReveals > 0
-                  ? (totals.totalTickets / Math.max(totals.totalReveals, 1)) *
-                    100
-                  : totals.totalTickets > 0
-                    ? 100
-                    : 0,
+              label: "Code Copies (Online)",
+              value: totals.totalCopies || 0,
+              conversion: totals.totalReveals > 0 ? `${((totals.totalCopies / totals.totalReveals) * 100).toFixed(1)}% Conv.` : "",
+              pct: totals.totalReveals > 0 ? (totals.totalCopies / totals.totalReveals) * 100 : 0,
               color: "bg-primary/50",
             },
             {
-              label: "Partner Scans",
-              value: totals.totalScans,
-              pct:
-                Math.max(totals.totalReveals, totals.totalTickets) > 0
-                  ? (totals.totalScans /
-                      Math.max(totals.totalReveals, totals.totalTickets, 1)) *
-                    100
-                  : totals.totalScans > 0
-                    ? 100
-                    : 0,
-              color: "bg-primary/70",
+              label: "Tickets Generated (In-Store)",
+              value: totals.totalTickets,
+              conversion: "",
+              pct: 100,
+              color: "bg-on-surface-variant/15",
             },
             {
-              label: "Confirmed Redemptions",
+              label: "Confirmed Redemptions (In-Store)",
               value: totals.confirmedRedemptions,
-              pct:
-                totals.totalScans > 0
-                  ? (totals.confirmedRedemptions / totals.totalScans) * 100
-                  : totals.confirmedRedemptions > 0
-                    ? 100
-                    : 0,
+              conversion: totals.totalTickets > 0 ? `${((totals.confirmedRedemptions / totals.totalTickets) * 100).toFixed(1)}% Conv.` : "",
+              pct: totals.totalTickets > 0 ? (totals.confirmedRedemptions / totals.totalTickets) * 100 : 0,
               color: "emerald-gradient",
             },
           ].map((row) => (
             <div key={row.label}>
               <div className="flex items-center justify-between mb-1.5">
-                <span className="text-sm font-headline font-bold text-on-background">
+                <span className="text-sm font-headline font-bold text-on-background flex items-center gap-2">
                   {row.label}
+                  {row.conversion && (
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-primary bg-primary/10 px-2 py-0.5 rounded-md">
+                      {row.conversion}
+                    </span>
+                  )}
                 </span>
                 <span className="text-sm font-headline font-bold text-on-surface-variant tabular-nums">
                   {row.value}
@@ -317,7 +312,28 @@ function PartnerAnalytics() {
                 </tr>
               </thead>
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
-                {dealStats.map((d) => (
+                {dealStats.map((d) => {
+                  const start = d.start_time ? new Date(d.start_time) : new Date(0);
+                  const end = d.end_time ? new Date(d.end_time) : null;
+                  const now = new Date();
+                  let displayStatus = d.deal_status;
+                  if (d.deal_status === "active" || d.deal_status === "approved") {
+                    if (start > now) displayStatus = "scheduled";
+                    else if (end && end < now) displayStatus = "expired";
+                    else displayStatus = "active";
+                  } else if (end && end < now) {
+                    displayStatus = "expired";
+                  }
+                  
+                  let pillClass = "bg-surface-container-high text-on-surface border-outline-variant/30";
+                  if (displayStatus === "active") pillClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
+                  else if (displayStatus === "scheduled") pillClass = "bg-blue-50 text-blue-700 border-blue-200";
+                  else if (displayStatus === "paused") pillClass = "bg-red-50 text-red-600 border-red-200";
+
+                  const isOnline = d.deal_type === "Online";
+                  const isInStore = d.deal_type === "In-Store";
+
+                  return (
                   <tr
                     key={d.deal_id}
                     className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
@@ -343,47 +359,41 @@ function PartnerAnalytics() {
                         Status
                       </span>
                       <span
-                        className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${
-                          d.deal_status === "approved"
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : d.deal_status === "pending"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-red-50 text-red-600 border-red-200"
-                        }`}
+                        className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${pillClass}`}
                       >
-                        {d.deal_status}
+                        {displayStatus}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Reveals
                       </span>
                       <span className="text-right md:text-right">
-                        {d.total_reveals}
+                        {isOnline ? d.total_reveals : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Copies
                       </span>
                       <span className="text-right md:text-right">
-                        {d.total_copies}
+                        {isOnline ? d.total_copies : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Clicks
                       </span>
                       <span className="text-right md:text-right">
-                        {d.total_click_throughs}
+                        {isOnline ? d.total_click_throughs : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Tickets
                       </span>
                       <span className="text-right md:text-right">
-                        {d.total_tickets_generated}
+                        {isInStore ? d.total_tickets_generated : "-"}
                       </span>
                     </td>
                     <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
@@ -391,11 +401,12 @@ function PartnerAnalytics() {
                         Redeemed
                       </span>
                       <span className="text-right md:text-right">
-                        {d.total_tickets_redeemed}
+                        {isInStore ? d.total_tickets_redeemed : "-"}
                       </span>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
