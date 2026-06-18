@@ -131,6 +131,13 @@ function CreateEvent() {
       setSelectedImageFile(null);
       setSelectedImagePreviewUrl("");
 
+      // Redirect back to the corresponding portal after a short delay
+      setTimeout(() => {
+        if (isMountedRef.current) {
+          navigate(role === 'admin' ? '/admin' : '/partner');
+        }
+      }, 1500);
+
     } catch (err) {
       console.error("Error creating event:", err);
       setError(err.message || "Failed to create event. Please try again.");
