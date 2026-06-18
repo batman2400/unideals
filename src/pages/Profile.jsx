@@ -348,9 +348,12 @@ function Profile({ isLoggedIn, user }) {
   if (!isLoggedIn) return <Navigate to="/" replace />;
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 md:px-8 md:py-10 animate-fade-in space-y-8">
-      {/* Header section */}
-      <div className="flex flex-col items-center text-center space-y-4">
+    <div className="max-w-5xl mx-auto px-4 py-8 md:py-12 animate-fade-in">
+      <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+        {/* Left Column (Identity & ID Card) */}
+        <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-start">
+          {/* Header section */}
+          <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-4">
         <div className="relative avatar-upload-container group">
           <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-lg border-4 border-surface bg-surface-container">
             {avatarUrl ? (
@@ -374,7 +377,7 @@ function Profile({ isLoggedIn, user }) {
           <h1 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
             {user?.user_metadata?.full_name?.split(' ')[0] || "Student"}
           </h1>
-          <div className="mt-1 flex items-center justify-center">
+          <div className="mt-1 flex items-center justify-center lg:justify-start">
             {isVerified || role === "admin" || role === "partner" ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                 <span className="material-symbols-outlined text-[14px]">verified</span>
@@ -396,7 +399,7 @@ function Profile({ isLoggedIn, user }) {
       </div>
 
       {/* Student ID Card */}
-      <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row items-center gap-5 w-full max-w-sm mx-auto md:max-w-md shadow-xl">
+      <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center lg:items-start xl:items-center gap-5 w-full max-w-sm mx-auto lg:mx-0 shadow-xl">
         <div className="flex items-center gap-4 flex-1 w-full">
           <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
             {avatarUrl ? (
@@ -427,8 +430,10 @@ function Profile({ isLoggedIn, user }) {
         </div>
       </div>
 
-      {/* Settings Blocks */}
-      <div className="space-y-6" ref={settingsRef}>
+        </div>
+
+        {/* Right Column (Settings & Security) */}
+        <div className="w-full lg:w-2/3 flex flex-col gap-6" ref={settingsRef}>
         
         {/* University Email Verification Card */}
         {role === "student" && !isVerified && (
@@ -567,6 +572,7 @@ function Profile({ isLoggedIn, user }) {
           </form>
         </div>
         
+        </div>
       </div>
       
       {/* Hidden file input for avatar */}
