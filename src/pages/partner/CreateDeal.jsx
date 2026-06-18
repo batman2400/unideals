@@ -166,8 +166,7 @@ function CreateDeal() {
 
   const onChange = (event) => {
     const { name, value } = event.target;
-    const nextValue = name === "redemptionCode" ? value.toUpperCase() : value;
-    setFormData((prev) => ({ ...prev, [name]: nextValue }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const onOfferTypeChange = (event) => {
@@ -211,7 +210,6 @@ function CreateDeal() {
       "brand",
       "type",
       "category",
-      "redemptionCode",
     ];
     const hasOffer = String(offerPreview).trim().length > 0;
     const hasImage = !!selectedImageFile;
@@ -659,7 +657,6 @@ function CreateDeal() {
                   brandLoading ||
                   !formData.title.trim() ||
                   !formData.brand.trim() ||
-                  !formData.redemptionCode.trim() ||
                   !offerPreview ||
                   !selectedImageFile
                 }
