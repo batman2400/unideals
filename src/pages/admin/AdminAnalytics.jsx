@@ -312,7 +312,7 @@ function AdminAnalytics() {
                         key={row.brand}
                         className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
                       >
-                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
+                        <td className="flex justify-between items-center md:table-cell md:text-left px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
                           <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                             Brand
                           </span>
@@ -320,7 +320,7 @@ function AdminAnalytics() {
                             {row.brand}
                           </span>
                         </td>
-                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background tabular-nums">
+                        <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background tabular-nums">
                           <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                             Total Scans
                           </span>
@@ -328,7 +328,7 @@ function AdminAnalytics() {
                             {row.total_scans}
                           </span>
                         </td>
-                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold tabular-nums">
+                        <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold tabular-nums">
                           <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                             Valid
                           </span>
@@ -336,7 +336,7 @@ function AdminAnalytics() {
                             {row.valid_scans}
                           </span>
                         </td>
-                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-red-600 font-bold tabular-nums">
+                        <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-red-600 font-bold tabular-nums">
                           <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                             Failed
                           </span>
@@ -344,7 +344,7 @@ function AdminAnalytics() {
                             {row.failed_scans}
                           </span>
                         </td>
-                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold tabular-nums">
+                        <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold tabular-nums">
                           <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                             Confirmed
                           </span>
@@ -352,7 +352,7 @@ function AdminAnalytics() {
                             {row.confirmed_redemptions}
                           </span>
                         </td>
-                        <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm text-primary font-bold tabular-nums">
+                        <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 md:border-none text-sm text-primary font-bold tabular-nums">
                           <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                             Conv. Rate
                           </span>
@@ -400,7 +400,7 @@ function AdminAnalytics() {
                     key={d.id}
                     className="block md:table-row p-4 md:p-0 hover:bg-surface-container-low/30 transition-colors border-b border-outline-variant/8 md:border-none last:border-none"
                   >
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
+                    <td className="flex justify-between items-center md:table-cell md:text-left px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none font-headline font-bold text-sm text-on-background">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Deal
                       </span>
@@ -408,7 +408,7 @@ function AdminAnalytics() {
                         {d.title}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
+                    <td className="flex justify-between items-center md:table-cell md:text-left px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Status
                       </span>
@@ -424,7 +424,7 @@ function AdminAnalytics() {
                         {d.status}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Reveals
                       </span>
@@ -432,7 +432,7 @@ function AdminAnalytics() {
                         {d.total_reveals}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Tickets
                       </span>
@@ -440,7 +440,7 @@ function AdminAnalytics() {
                         {d.total_tickets_generated}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Redeemed
                       </span>
