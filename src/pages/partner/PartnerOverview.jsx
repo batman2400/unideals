@@ -210,13 +210,13 @@ function PartnerOverview() {
       </div>
 
       {/* Quick Links + Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Quick Links */}
-        <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
+        <div className="xl:col-span-1 bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
           <h2 className="font-headline font-bold text-lg text-on-background mb-4">
             Quick Actions
           </h2>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             {[
               {
                 to: "/profile",
@@ -265,7 +265,7 @@ function PartnerOverview() {
         </div>
 
         {/* Recent Activity */}
-        <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
+        <div className="xl:col-span-2 bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-outline-variant/10">
             <h2 className="font-headline font-bold text-lg text-on-background">
               Recent Scans
