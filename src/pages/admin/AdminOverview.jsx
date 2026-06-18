@@ -220,7 +220,7 @@ function AdminOverview() {
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {metricCards.map((card) => (
           <article
             key={card.label}
@@ -247,7 +247,7 @@ function AdminOverview() {
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
+      <div className="w-full bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
         <div className="px-5 py-4 border-b border-outline-variant/10">
           <h2 className="font-headline font-bold text-lg text-on-background">
             Recent Scan Activity
