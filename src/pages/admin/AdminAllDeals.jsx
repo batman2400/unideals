@@ -252,16 +252,16 @@ function AdminAllDeals() {
                   <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Type
                   </th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                  <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Reveals
                   </th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                  <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Tickets
                   </th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                  <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Redeemed
                   </th>
-                  <th className="text-right px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                  <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Actions
                   </th>
                 </tr>
@@ -339,34 +339,44 @@ function AdminAllDeals() {
                           {deal.type}
                         </span>
                       </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-right tabular-nums">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-center tabular-nums">
                         <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                           Reveals
                         </span>
-                        <span>{deal.total_reveals ?? 0}</span>
+                        {deal.type === 'In-Store' ? (
+                          <span className="text-on-surface-variant/50">-</span>
+                        ) : (
+                          <span>{deal.total_reveals ?? 0}</span>
+                        )}
                       </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-right tabular-nums">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-center tabular-nums">
                         <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                           Tickets
                         </span>
-                        <span>{deal.total_tickets_generated ?? 0}</span>
+                        {deal.type === 'Online' ? (
+                          <span className="text-on-surface-variant/50">-</span>
+                        ) : (
+                          <span>{deal.total_tickets_generated ?? 0}</span>
+                        )}
                       </td>
-                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold md:text-right tabular-nums">
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-emerald-600 font-bold md:text-center tabular-nums">
                         <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                           Redeemed
                         </span>
-                        <span>{deal.total_tickets_redeemed ?? 0}</span>
+                        {deal.type === 'Online' ? (
+                          <span className="text-on-surface-variant/50">-</span>
+                        ) : (
+                          <span>{deal.total_tickets_redeemed ?? 0}</span>
+                        )}
                       </td>
                       <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
-                        <div className="flex items-center justify-end gap-1.5 w-full md:w-auto">
+                        <div className="flex items-center justify-end md:justify-center gap-1.5 w-full md:w-auto">
                           {(displayStatus === "active" || displayStatus === "scheduled") && (
                             <button
-                              onClick={() =>
-                                handleStatusChange(deal.id, "paused")
-                              }
+                              onClick={() => handleStatusChange(deal.id, "paused")}
                               disabled={isActing}
                               title="Pause Deal"
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-lg">
                                 pause_circle
@@ -375,23 +385,22 @@ function AdminAllDeals() {
                           )}
                           {displayStatus === "paused" && (
                             <button
-                              onClick={() =>
-                                handleStatusChange(deal.id, "active")
-                              }
+                              onClick={() => handleStatusChange(deal.id, "active")}
                               disabled={isActing}
                               title="Activate Deal"
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-lg">
                                 play_circle
                               </span>
                             </button>
                           )}
+                          <div className="w-px h-5 bg-outline-variant/30 mx-1"></div>
                           <button
                             onClick={() => handleDelete(deal.id)}
                             disabled={isActing}
                             title="Delete"
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-red-500 hover:bg-red-50 transition-colors disabled:opacity-50"
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-red-400 hover:bg-red-50 hover:text-red-600 transition-colors disabled:opacity-50"
                           >
                             <span className="material-symbols-outlined text-lg">
                               delete
