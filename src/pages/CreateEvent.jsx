@@ -16,6 +16,8 @@ function CreateEvent() {
     location_name: "",
     category: "social",
     cover_image_url: "",
+    target_audience: "all_students",
+    external_registration_url: "",
   });
   
   const [submitting, setSubmitting] = useState(false);
@@ -123,6 +125,8 @@ function CreateEvent() {
         location_name: "",
         category: "social",
         cover_image_url: "",
+        target_audience: "all_students",
+        external_registration_url: "",
       });
       setSelectedImageFile(null);
       setSelectedImagePreviewUrl("");
@@ -218,7 +222,7 @@ function CreateEvent() {
             </div>
           </div>
 
-          {/* Location & Image */}
+          {/* Location & Audience */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Location</label>
@@ -232,8 +236,36 @@ function CreateEvent() {
               />
             </div>
             <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Target Audience</label>
+              <select
+                name="target_audience"
+                value={formData.target_audience}
+                onChange={handleChange}
+                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all appearance-none cursor-pointer"
+              >
+                <option value="all_students">All Students</option>
+                <option value="university_only">University Only</option>
+                <option value="high_school_only">High School Only</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Ext Link & Image */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">External Registration Link (Optional)</label>
+              <input
+                type="url"
+                name="external_registration_url"
+                value={formData.external_registration_url}
+                onChange={handleChange}
+                placeholder="https://example.com/register"
+                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Upload Cover Image</label>
-              <div className="flex flex-col md:flex-row items-start gap-4">
+              <div className="relative border-2 border-dashed border-outline-variant/30 rounded-xl p-4 bg-surface-container/30 hover:bg-surface-container/50 transition-colors flex items-center justify-center min-h-[100px]">
                 <input
                   type="file"
                   accept="image/png, image/jpeg, image/webp"
@@ -244,17 +276,30 @@ function CreateEvent() {
                       setFormData((prev) => ({ ...prev, cover_image_url: "" }));
                     }
                   }}
-                  className="w-full md:w-auto text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                 />
-                {(selectedImagePreviewUrl || formData.cover_image_url) && (
-                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-outline-variant/30 bg-surface-container flex-shrink-0">
-                    <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Preview" className="w-full h-full object-cover" />
+                {!selectedImagePreviewUrl && !formData.cover_image_url ? (
+                  <div className="flex flex-col items-center justify-center text-center">
+                    <span className="material-symbols-outlined text-on-surface-variant/50 text-3xl mb-1">cloud_upload</span>
+                    <p className="text-sm font-bold text-on-surface-variant">Click or drag image to upload</p>
+                    <p className="text-[10px] text-on-surface-variant/70 uppercase tracking-wide mt-1">JPG, PNG, WEBP (Max 5MB)</p>
+                  </div>
+                ) : (
+                  <div className="w-full flex items-center justify-between gap-4">
+                     <div className="flex items-center gap-4 flex-1 min-w-0">
+                       <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-outline-variant/30 bg-surface flex-shrink-0">
+                         <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Preview" className="w-full h-full object-cover" />
+                       </div>
+                       <div className="flex-1 min-w-0">
+                         <p className="text-sm font-bold text-on-background truncate">
+                           {selectedImageFile ? selectedImageFile.name : "Cover Image"}
+                         </p>
+                         <p className="text-[10px] text-on-surface-variant uppercase tracking-wide mt-0.5">Click to replace</p>
+                       </div>
+                     </div>
                   </div>
                 )}
               </div>
-              <p className="text-[10px] text-on-surface-variant/70 mt-2 uppercase tracking-wide">
-                Optional: Upload JPG, PNG, or WEBP (Max 5MB).
-              </p>
             </div>
           </div>
 
@@ -271,11 +316,18 @@ function CreateEvent() {
             ></textarea>
           </div>
 
-          <div className="pt-4 flex justify-end">
+          <div className="pt-4 flex items-center justify-end gap-4">
+            <button
+              type="button"
+              onClick={() => navigate(-1)}
+              className="px-6 py-3 bg-transparent hover:bg-surface-container text-on-surface-variant font-bold text-sm rounded-xl transition-all active:scale-[0.98]"
+            >
+              Cancel
+            </button>
             <button
               type="submit"
               disabled={submitting}
-              className="px-8 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-8 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 shadow-sm"
             >
               {submitting ? (
                 <>
