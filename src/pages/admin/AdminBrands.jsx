@@ -19,6 +19,15 @@ function AdminBrands() {
   const [logoPreview, setLogoPreview] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // Edit Drawer State
+  const [editingBrand, setEditingBrand] = useState(null);
+  const [editName, setEditName] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editWebsiteUrl, setEditWebsiteUrl] = useState("");
+  const [editLogoFile, setEditLogoFile] = useState(null);
+  const [editLogoPreview, setEditLogoPreview] = useState("");
+  const [updating, setUpdating] = useState(false);
+
   const isMountedRef = useRef(true);
 
   useEffect(
@@ -33,6 +42,7 @@ function AdminBrands() {
     setLoading(true);
     setError("");
 
+    // Use a custom RPC if we had one for stats, else fetch from brands table
     const { data, error: fetchError } = await supabase
       .from("brands")
       .select("*")
@@ -58,16 +68,26 @@ function AdminBrands() {
     }, 4000);
   }, []);
 
-  const handleLogoChange = (e) => {
+  const handleLogoChange = (e, isEdit = false) => {
     const file = e.target.files?.[0];
     if (!file) {
-      setLogoFile(null);
-      setLogoPreview("");
+      if (isEdit) {
+        setEditLogoFile(null);
+        setEditLogoPreview(editingBrand?.logo_url || "");
+      } else {
+        setLogoFile(null);
+        setLogoPreview("");
+      }
       return;
     }
-    setLogoFile(file);
     const url = URL.createObjectURL(file);
-    setLogoPreview(url);
+    if (isEdit) {
+      setEditLogoFile(file);
+      setEditLogoPreview(url);
+    } else {
+      setLogoFile(file);
+      setLogoPreview(url);
+    }
   };
 
   const handleCreate = async (e) => {
@@ -122,6 +142,105 @@ function AdminBrands() {
     }
   };
 
+  const openEditDrawer = (brand) => {
+    setEditingBrand(brand);
+    setEditName(brand.name);
+    setEditDescription(brand.description || "");
+    setEditWebsiteUrl(brand.website_url || "");
+    setEditLogoPreview(brand.logo_url || "");
+    setEditLogoFile(null);
+    setError("");
+  };
+
+  const closeEditDrawer = () => {
+    setEditingBrand(null);
+    setEditName("");
+    setEditDescription("");
+    setEditWebsiteUrl("");
+    setEditLogoPreview("");
+    setEditLogoFile(null);
+    setError("");
+  };
+
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    if (!editName.trim()) {
+      setError("Brand name is required");
+      return;
+    }
+
+    setUpdating(true);
+    setError("");
+
+    try {
+      let uploadedLogoUrl = editingBrand.logo_url;
+      if (editLogoFile) {
+        const { publicUrl } = await uploadBrandLogo({
+          file: editLogoFile,
+          brandName: editName,
+        });
+        uploadedLogoUrl = publicUrl;
+      }
+
+      const { error: updateError } = await supabase
+        .from("brands")
+        .update({
+          name: editName.trim(),
+          description: editDescription.trim() || null,
+          website_url: editWebsiteUrl.trim() || null,
+          logo_url: uploadedLogoUrl,
+        })
+        .eq("id", editingBrand.id);
+
+      if (updateError) throw updateError;
+
+      if (isMountedRef.current) {
+        showMsg(`Brand "${editName}" updated successfully.`);
+        closeEditDrawer();
+        fetchBrands();
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError(err.message || "Failed to update brand");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setUpdating(false);
+      }
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!window.confirm(`Are you sure you want to delete ${editingBrand.name}? This action cannot be undone and will fail if deals are attached.`)) {
+      return;
+    }
+    setUpdating(true);
+    setError("");
+
+    try {
+      const { error: deleteError } = await supabase
+        .from("brands")
+        .delete()
+        .eq("id", editingBrand.id);
+
+      if (deleteError) throw deleteError;
+
+      if (isMountedRef.current) {
+        showMsg(`Brand "${editingBrand.name}" deleted successfully.`);
+        closeEditDrawer();
+        fetchBrands();
+      }
+    } catch (err) {
+      if (isMountedRef.current) {
+        setError(err.message || "Failed to delete brand");
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setUpdating(false);
+      }
+    }
+  };
+
   if (roleLoading || loading) {
     return (
       <PortalLayout portalType="admin">
@@ -161,7 +280,7 @@ function AdminBrands() {
           <p className="text-emerald-700 text-sm font-bold">{message}</p>
         </div>
       )}
-      {error && (
+      {error && !editingBrand && (
         <div className="mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
           <p className="text-error text-sm font-bold">{error}</p>
         </div>
@@ -225,13 +344,13 @@ function AdminBrands() {
                   <img
                     src={logoPreview}
                     alt="Preview"
-                    className="w-16 h-16 rounded-xl object-cover border border-outline-variant/20"
+                    className="w-16 h-16 rounded-xl object-contain bg-gray-50 border border-outline-variant/20"
                   />
                 )}
                 <input
                   type="file"
                   accept="image/*"
-                  onChange={handleLogoChange}
+                  onChange={(e) => handleLogoChange(e, false)}
                   className="text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary-container/80 transition-all cursor-pointer"
                 />
               </div>
@@ -267,56 +386,185 @@ function AdminBrands() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {brands.map((b) => (
-            <div
-              key={b.id}
-              className="bg-surface border border-outline-variant/20 rounded-2xl p-5 hover:border-primary/30 transition-colors shadow-sm flex flex-col"
-            >
-              <div className="flex items-start gap-4 mb-3">
-                {b.logo_url ? (
-                  <img
-                    src={b.logo_url}
-                    alt={b.name}
-                    className="w-14 h-14 rounded-xl object-cover border border-outline-variant/10 shadow-sm"
-                  />
-                ) : (
-                  <div className="w-14 h-14 rounded-xl bg-surface-container-low border border-outline-variant/20 flex items-center justify-center">
-                    <span className="material-symbols-outlined text-on-surface-variant/50 text-2xl">
-                      image
-                    </span>
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-headline font-bold text-on-background text-lg truncate">
-                    {b.name}
-                  </h3>
-                  {b.website_url && (
-                    <a
-                      href={b.website_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5"
-                    >
-                      <span className="material-symbols-outlined text-[14px]">
-                        link
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {brands.map((b) => {
+            const initials = b.name ? b.name.substring(0, 2).toUpperCase() : "??";
+            return (
+              <div
+                key={b.id}
+                onClick={() => openEditDrawer(b)}
+                className="bg-surface border border-outline-variant/20 rounded-2xl p-5 hover:shadow-lg hover:border-emerald-500 cursor-pointer transition-all duration-200 flex flex-col group relative"
+              >
+                <div className="flex items-start gap-4 mb-3">
+                  {b.logo_url ? (
+                    <img
+                      src={b.logo_url}
+                      alt={b.name}
+                      className="w-14 h-14 rounded-xl object-contain bg-gray-50 border border-outline-variant/10 shadow-sm"
+                    />
+                  ) : (
+                    <div className="w-14 h-14 rounded-xl bg-gray-100 border border-outline-variant/20 flex items-center justify-center">
+                      <span className="font-headline font-extrabold text-xl text-gray-400">
+                        {initials}
                       </span>
-                      Website
-                    </a>
+                    </div>
                   )}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-headline font-bold text-on-background text-lg truncate group-hover:text-emerald-700 transition-colors">
+                      {b.name}
+                    </h3>
+                    {b.website_url && (
+                      <a
+                        href={b.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5"
+                      >
+                        <span className="material-symbols-outlined text-[14px]">
+                          link
+                        </span>
+                        Website
+                      </a>
+                    )}
+                  </div>
+                </div>
+                {b.description ? (
+                  <p className="text-sm text-on-surface-variant line-clamp-2 mt-2 mb-4">
+                    {b.description}
+                  </p>
+                ) : (
+                  <p className="text-sm text-on-surface-variant/50 italic mt-2 mb-4">
+                    No description provided.
+                  </p>
+                )}
+
+                {/* Footer Platform Stats (Placeholder / Aggregated mock) */}
+                <div className="mt-auto pt-3 border-t border-outline-variant/10 flex items-center justify-between text-xs text-on-surface-variant/70 font-bold uppercase tracking-wider">
+                  <div className="flex items-center gap-1">
+                    <span className="material-symbols-outlined text-[14px] text-emerald-500">local_activity</span>
+                    Active Deals
+                  </div>
+                  <span>Click to Edit →</span>
                 </div>
               </div>
-              {b.description ? (
-                <p className="text-sm text-on-surface-variant line-clamp-2 mt-auto">
-                  {b.description}
-                </p>
-              ) : (
-                <p className="text-sm text-on-surface-variant/50 italic mt-auto">
-                  No description provided.
-                </p>
-              )}
+            );
+          })}
+        </div>
+      )}
+
+      {/* Edit Drawer Slide-over */}
+      {editingBrand && (
+        <div className="fixed inset-0 z-[100] flex justify-end">
+          <div 
+            className="fixed inset-0 bg-background/50 backdrop-blur-sm transition-opacity" 
+            onClick={closeEditDrawer} 
+          />
+          <div className="relative w-full max-w-md bg-surface h-full shadow-2xl flex flex-col border-l border-outline-variant/10 animate-slide-left">
+            <div className="px-6 py-5 border-b border-outline-variant/10 flex items-center justify-between bg-surface-container-low/30">
+              <h2 className="font-headline font-extrabold text-xl text-on-background">Edit Brand</h2>
+              <button 
+                onClick={closeEditDrawer}
+                className="w-8 h-8 flex items-center justify-center rounded-full hover:bg-outline-variant/10 transition-colors"
+              >
+                <span className="material-symbols-outlined text-on-surface-variant">close</span>
+              </button>
             </div>
-          ))}
+            
+            <div className="flex-1 overflow-y-auto px-6 py-6">
+              {error && (
+                <div className="mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+                  <p className="text-error text-sm font-bold">{error}</p>
+                </div>
+              )}
+              <form id="edit-brand-form" onSubmit={handleUpdate} className="space-y-5">
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Brand Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    required
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Website URL
+                  </label>
+                  <input
+                    type="url"
+                    value={editWebsiteUrl}
+                    onChange={(e) => setEditWebsiteUrl(e.target.value)}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Description
+                  </label>
+                  <textarea
+                    value={editDescription}
+                    onChange={(e) => setEditDescription(e.target.value)}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none min-h-[100px]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                    Update Logo
+                  </label>
+                  <div className="flex items-center gap-4">
+                    {editLogoPreview ? (
+                      <img
+                        src={editLogoPreview}
+                        alt="Preview"
+                        className="w-16 h-16 rounded-xl object-contain bg-gray-50 border border-outline-variant/20"
+                      />
+                    ) : (
+                      <div className="w-16 h-16 rounded-xl bg-gray-100 border border-outline-variant/20 flex items-center justify-center">
+                        <span className="font-headline font-extrabold text-xl text-gray-400">
+                          {editName.substring(0,2).toUpperCase()}
+                        </span>
+                      </div>
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleLogoChange(e, true)}
+                      className="text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-variant transition-all cursor-pointer"
+                    />
+                  </div>
+                </div>
+              </form>
+            </div>
+            
+            <div className="p-6 border-t border-outline-variant/10 bg-surface-container-low flex justify-between items-center gap-4">
+              <button 
+                type="button"
+                onClick={handleDelete}
+                disabled={updating}
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-red-600 font-bold text-sm hover:bg-red-50 transition-colors disabled:opacity-50"
+              >
+                <span className="material-symbols-outlined text-lg">delete</span>
+                Delete
+              </button>
+              <button
+                type="submit"
+                form="edit-brand-form"
+                disabled={updating}
+                className="inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm disabled:opacity-60 flex-1"
+              >
+                {updating ? (
+                  <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <span className="material-symbols-outlined text-lg">save</span>
+                )}
+                Save Changes
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </PortalLayout>
