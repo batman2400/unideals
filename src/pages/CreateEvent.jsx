@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 import { supabase } from "../lib/supabaseClient";
+import { uploadEventImage } from "../lib/eventImageUpload";
 
 function CreateEvent() {
   const { role, user, loading: roleLoading } = useRoleContext();
@@ -20,6 +21,30 @@ function CreateEvent() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
+
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
+  const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!selectedImageFile) {
+      setSelectedImagePreviewUrl("");
+      return;
+    }
+
+    const objectUrl = URL.createObjectURL(selectedImageFile);
+    setSelectedImagePreviewUrl(objectUrl);
+
+    return () => {
+      URL.revokeObjectURL(objectUrl);
+    };
+  }, [selectedImageFile]);
 
   // Show a loading state briefly while checking roles
   if (roleLoading) {
@@ -63,8 +88,19 @@ function CreateEvent() {
     try {
       if (!user) throw new Error("You must be logged in to create an event.");
 
+      let finalImageUrl = formData.cover_image_url;
+
+      if (selectedImageFile) {
+        const { publicUrl } = await uploadEventImage({
+          file: selectedImageFile,
+          userId: user.id,
+        });
+        finalImageUrl = publicUrl;
+      }
+
       const eventData = {
         ...formData,
+        cover_image_url: finalImageUrl,
         organizer_id: user.id,
       };
 
@@ -88,6 +124,8 @@ function CreateEvent() {
         category: "social",
         cover_image_url: "",
       });
+      setSelectedImageFile(null);
+      setSelectedImagePreviewUrl("");
 
     } catch (err) {
       console.error("Error creating event:", err);
@@ -194,15 +232,29 @@ function CreateEvent() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Cover Image URL (Optional)</label>
-              <input
-                type="url"
-                name="cover_image_url"
-                value={formData.cover_image_url}
-                onChange={handleChange}
-                placeholder="https://example.com/image.jpg"
-                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              />
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Upload Cover Image</label>
+              <div className="flex flex-col md:flex-row items-start gap-4">
+                <input
+                  type="file"
+                  accept="image/png, image/jpeg, image/webp"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      setSelectedImageFile(file);
+                      setFormData((prev) => ({ ...prev, cover_image_url: "" }));
+                    }
+                  }}
+                  className="w-full md:w-auto text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20 transition-all cursor-pointer"
+                />
+                {(selectedImagePreviewUrl || formData.cover_image_url) && (
+                  <div className="relative w-16 h-16 rounded-xl overflow-hidden border border-outline-variant/30 bg-surface-container flex-shrink-0">
+                    <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Preview" className="w-full h-full object-cover" />
+                  </div>
+                )}
+              </div>
+              <p className="text-[10px] text-on-surface-variant/70 mt-2 uppercase tracking-wide">
+                Optional: Upload JPG, PNG, or WEBP (Max 5MB).
+              </p>
             </div>
           </div>
 
