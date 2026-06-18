@@ -32,6 +32,7 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
     { path: "/partner", label: "Dashboard", icon: "dashboard", exact: true },
     { path: "/partner/deals", label: "Active Deals", icon: "local_offer" },
     { path: "/partner/create-deal", label: "Create a Deal", icon: "add_circle" },
+    { path: "/events/new", label: "Create Event", icon: "event_available" },
     { path: "/partner/analytics", label: "Performance Analytics", icon: "monitoring" },
   ];
 
@@ -39,6 +40,7 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
     { path: "/admin", label: "Platform Overview", icon: "dashboard", exact: true },
     { path: "/admin/verifications", label: "Pending Verifications", icon: "how_to_reg" },
     { path: "/admin/brands", label: "Manage Brands", icon: "storefront" },
+    { path: "/events/new", label: "Create Event", icon: "event_available" },
     { path: "/admin/tickets", label: "Support Tickets", icon: "support_agent" },
   ];
 
