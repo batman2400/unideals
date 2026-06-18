@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import {
@@ -9,15 +9,17 @@ import {
 import PortalLayout from "../../layouts/PortalLayout";
 
 const STATUS_BADGE = {
+  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
   approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  expired: "bg-surface-container-high text-on-surface border-outline-variant/30",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   rejected: "bg-red-50 text-red-600 border-red-200",
 };
 
 const STATUS_TABS = [
   { value: null, label: "All" },
-  { value: "approved", label: "Active" },
-  { value: "pending", label: "Pending" },
+  { value: "active", label: "Active" },
+  { value: "expired", label: "Expired" },
   { value: "rejected", label: "Rejected" },
 ];
 
@@ -35,9 +37,14 @@ function PartnerDeals() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
-  const [statusFilter, setStatusFilter] = useState(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || null);
   const [deletingDealId, setDeletingDealId] = useState(null);
   const isMountedRef = useRef(true);
+
+  useEffect(() => {
+    setStatusFilter(searchParams.get("filter") || null);
+  }, [searchParams]);
 
   useEffect(
     () => () => {
@@ -142,7 +149,11 @@ function PartnerDeals() {
   );
 
   const filteredDeals = statusFilter
-    ? deals.filter((d) => d.status === statusFilter)
+    ? deals.filter((d) => 
+        statusFilter === "active" 
+          ? (d.status === "active" || d.status === "approved") 
+          : d.status === statusFilter
+      )
     : deals;
 
   if (roleLoading || loading) {
@@ -196,12 +207,22 @@ function PartnerDeals() {
       <div className="flex bg-surface-container-low rounded-xl border border-outline-variant/15 p-1 gap-0.5 mb-6 w-fit">
         {STATUS_TABS.map((tab) => {
           const count = tab.value
-            ? deals.filter((d) => d.status === tab.value).length
+            ? deals.filter((d) => 
+                tab.value === "active" 
+                  ? (d.status === "active" || d.status === "approved") 
+                  : d.status === tab.value
+              ).length
             : deals.length;
           return (
             <button
               key={tab.label}
-              onClick={() => setStatusFilter(tab.value)}
+              onClick={() => {
+                if (tab.value) {
+                  setSearchParams({ filter: tab.value });
+                } else {
+                  setSearchParams({});
+                }
+              }}
               className={`px-4 py-2 rounded-lg text-xs font-headline font-bold tracking-wide transition-all flex items-center gap-1.5 ${
                 statusFilter === tab.value
                   ? "bg-surface text-on-background shadow-sm"

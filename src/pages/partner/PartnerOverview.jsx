@@ -124,24 +124,28 @@ function PartnerOverview() {
       value: metrics.total,
       icon: "inventory_2",
       color: "text-on-background",
+      to: "/partner/deals",
     },
     {
       label: "Active Deals",
       value: metrics.active,
       icon: "check_circle",
       color: "text-emerald-600",
+      to: "/partner/deals?filter=active",
     },
     {
       label: "Expired Deals",
       value: metrics.expired,
       icon: "history",
       color: "text-on-surface-variant",
+      to: "/partner/deals?filter=expired",
     },
     {
       label: "Redemptions",
       value: stats.confirmedRedemptions,
       icon: "task_alt",
       color: "text-primary",
+      to: "/partner/analytics",
     },
   ];
 
@@ -177,12 +181,13 @@ function PartnerOverview() {
       {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {metricCards.map((card) => (
-          <article
+          <Link
+            to={card.to}
             key={card.label}
-            className="bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow"
+            className="block bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md hover:border-primary/40 transition-all duration-200 cursor-pointer group"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
+              <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase group-hover:text-primary transition-colors">
                 {card.label}
               </p>
               <span
@@ -197,7 +202,7 @@ function PartnerOverview() {
             >
               {card.value}
             </p>
-          </article>
+          </Link>
         ))}
       </div>
 
