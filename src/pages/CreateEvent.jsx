@@ -147,7 +147,7 @@ function CreateEvent() {
           className="text-on-surface-variant/70 hover:text-on-background transition-colors cursor-pointer inline-flex items-center gap-1 mb-4 text-sm font-bold tracking-wider"
         >
           <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-          Back to Events
+          {role === 'admin' ? 'Back to Admin Portal' : 'Back to Partner Portal'}
         </button>
         <h1 className="font-headline font-extrabold text-3xl tracking-tighter text-on-background">
           Create New Event
