@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import {
@@ -42,6 +42,7 @@ const INITIAL_FORM = {
 };
 
 function CreateDeal() {
+  const navigate = useNavigate();
   const {
     user,
     role,
@@ -368,15 +369,15 @@ function CreateDeal() {
           </p>
         </div>
 
-        <Link
-          to="/partner"
+        <button
+          onClick={() => navigate(-1)}
           className="inline-flex items-center gap-1.5 text-sm font-headline font-bold text-primary hover:underline"
         >
           <span className="material-symbols-outlined text-base">
             arrow_back
           </span>
-          Back to Dashboard
-        </Link>
+          {role === 'admin' ? 'Back to Admin Portal' : 'Back to Partner Portal'}
+        </button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
