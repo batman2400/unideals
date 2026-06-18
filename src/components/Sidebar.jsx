@@ -14,7 +14,7 @@ export default function Sidebar({ onLogout }) {
 
   const studentLinks = [
     { path: "/", label: "Explore", icon: "explore", exact: true },
-    { path: "/events", label: "University Events", icon: "event" },
+    { path: "/events", label: "Events", icon: "event" },
     { path: "/saved", label: "Saved Deals", icon: "bookmark" },
   ];
 

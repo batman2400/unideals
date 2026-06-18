@@ -3,7 +3,7 @@ export default function UniversityEvents() {
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 animate-fade-in">
       <div className="mb-8">
         <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background">
-          University Events
+          Events
         </h1>
         <p className="text-on-surface-variant text-base mt-2">
           Discover what's happening around campus. (Coming soon)
