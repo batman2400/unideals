@@ -4,10 +4,9 @@ import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
 
 const ROLE_BADGE = {
-  admin: "bg-purple-50 text-purple-700 border-purple-200",
-  partner: "bg-primary-container/40 text-primary border-primary/20",
-  student:
-    "bg-surface-container text-on-surface-variant border-outline-variant/20",
+  admin: "bg-purple-100 text-purple-700 border-purple-200",
+  partner: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  student: "bg-blue-100 text-blue-700 border-blue-200",
 };
 
 const ROLE_FILTER_TABS = [
@@ -186,13 +185,6 @@ function AdminUsers() {
             View all users, promote to partner, or demote back to student.
           </p>
         </div>
-        <button
-          onClick={() => setShowPromote(!showPromote)}
-          className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
-        >
-          <span className="material-symbols-outlined text-lg">person_add</span>
-          Promote to Partner
-        </button>
       </div>
 
       {message && (
@@ -339,9 +331,21 @@ function AdminUsers() {
                         <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                           Email
                         </span>
-                        <p className="text-sm font-bold text-on-background truncate max-w-[200px] md:max-w-[240px] text-right md:text-left">
-                          {u.email}
-                        </p>
+                        <div className="flex items-center justify-end md:justify-start gap-2 overflow-hidden w-full max-w-[200px] md:max-w-[240px]">
+                          <p 
+                            className="text-sm font-bold text-on-background truncate"
+                            title={u.email}
+                          >
+                            {u.email}
+                          </p>
+                          <button 
+                            onClick={() => navigator.clipboard.writeText(u.email)}
+                            title="Copy Email"
+                            className="text-on-surface-variant/40 hover:text-on-surface-variant transition-colors flex-shrink-0 flex"
+                          >
+                            <span className="material-symbols-outlined text-[14px]">content_copy</span>
+                          </button>
+                        </div>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none">
                         <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
@@ -396,7 +400,7 @@ function AdminUsers() {
                               onClick={() => handleDemote(u.user_id, u.email)}
                               disabled={isActing}
                               title="Demote to student"
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-sm">
                                 arrow_downward
@@ -404,8 +408,25 @@ function AdminUsers() {
                               Demote
                             </button>
                           )}
+                          {u.role === "student" && (
+                            <button
+                              onClick={() => {
+                                setPromoteEmail(u.email);
+                                setShowPromote(true);
+                                window.scrollTo({ top: 0, behavior: "smooth" });
+                              }}
+                              disabled={isActing}
+                              title="Promote to Partner"
+                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                            >
+                              <span className="material-symbols-outlined text-sm">
+                                person_add
+                              </span>
+                              Promote
+                            </button>
+                          )}
                           {u.role === "admin" && (
-                            <span className="text-xs text-on-surface-variant/50 py-1.5 px-3">
+                            <span className="text-xs font-bold text-on-surface-variant/50 py-1.5 px-3 uppercase tracking-wider">
                               Protected
                             </span>
                           )}
