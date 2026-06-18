@@ -38,6 +38,8 @@ const INITIAL_FORM = {
   category: "Fashion",
   description: "",
   redemptionCode: "",
+  start_time: "",
+  end_time: "",
 };
 
 function CreateDeal() {
@@ -302,6 +304,8 @@ function CreateDeal() {
         redemption_code: normalizedRedemptionCode,
         partner_id: targetUserId,
         status: "active",
+        start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
+        end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       };
 
       const { error: insertError } = await supabase
@@ -534,6 +538,38 @@ function CreateDeal() {
                       </option>
                     ))}
                   </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+                <div>
+                  <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                    Start Date & Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="start_time"
+                    value={formData.start_time}
+                    onChange={onChange}
+                    disabled={submitting}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                  />
+                  <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+                    Leave blank to activate immediately
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                    End Date & Time (Optional)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    name="end_time"
+                    value={formData.end_time}
+                    onChange={onChange}
+                    disabled={submitting}
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                  />
                 </div>
               </div>
             </div>

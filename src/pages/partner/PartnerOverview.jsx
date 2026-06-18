@@ -59,7 +59,7 @@ function PartnerOverview() {
       const [dealsRes, scansRes, confirmedRes, eventsRes] = await Promise.all([
         supabase
           .from("deals")
-          .select("id, title, discount, type, category, status, created_at")
+          .select("id, title, discount, type, category, status, created_at, start_time, end_time")
           .eq("brand_id", brandId)
           .order("created_at", { ascending: false }),
         supabase
@@ -96,9 +96,18 @@ function PartnerOverview() {
   }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const metrics = useMemo(() => {
+    const now = new Date();
     const total = deals.length;
-    const active = deals.filter((d) => d.status === "active" || d.status === "approved").length;
-    const expired = deals.filter((d) => d.status === "expired").length;
+    const active = deals.filter((d) => {
+      if (d.status !== "active" && d.status !== "approved") return false;
+      const start = d.start_time ? new Date(d.start_time) : new Date(0);
+      const end = d.end_time ? new Date(d.end_time) : null;
+      return start <= now && (!end || end >= now);
+    }).length;
+    const expired = deals.filter((d) => {
+      const end = d.end_time ? new Date(d.end_time) : null;
+      return d.status === "expired" || (end && end < now);
+    }).length;
     return { total, active, expired };
   }, [deals]);
 

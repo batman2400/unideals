@@ -89,7 +89,7 @@ function PartnerDeals() {
       const { data, error: fetchError } = await supabase
         .from("deals")
         .select(
-          "id, title, brand, discount, type, category, image_url, status, redemption_code, created_at",
+          "id, title, brand, discount, type, category, image_url, status, redemption_code, created_at, start_time, end_time",
         )
         .eq("brand_id", brandId)
         .order("created_at", { ascending: false });
@@ -148,12 +148,21 @@ function PartnerDeals() {
     [partnerBrandId],
   );
 
+  const now = new Date();
   const filteredDeals = statusFilter
-    ? deals.filter((d) => 
-        statusFilter === "active" 
-          ? (d.status === "active" || d.status === "approved") 
-          : d.status === statusFilter
-      )
+    ? deals.filter((d) => {
+        const start = d.start_time ? new Date(d.start_time) : new Date(0);
+        const end = d.end_time ? new Date(d.end_time) : null;
+        
+        if (statusFilter === "active") {
+          return (d.status === "active" || d.status === "approved") && 
+                 start <= now && (!end || end >= now);
+        }
+        if (statusFilter === "expired") {
+          return d.status === "expired" || (end && end < now);
+        }
+        return d.status === statusFilter;
+      })
     : deals;
 
   if (roleLoading || loading) {
@@ -207,11 +216,19 @@ function PartnerDeals() {
       <div className="flex bg-surface-container-low rounded-xl border border-outline-variant/15 p-1 gap-0.5 mb-6 w-fit">
         {STATUS_TABS.map((tab) => {
           const count = tab.value
-            ? deals.filter((d) => 
-                tab.value === "active" 
-                  ? (d.status === "active" || d.status === "approved") 
-                  : d.status === tab.value
-              ).length
+            ? deals.filter((d) => {
+                const start = d.start_time ? new Date(d.start_time) : new Date(0);
+                const end = d.end_time ? new Date(d.end_time) : null;
+                
+                if (tab.value === "active") {
+                  return (d.status === "active" || d.status === "approved") && 
+                         start <= now && (!end || end >= now);
+                }
+                if (tab.value === "expired") {
+                  return d.status === "expired" || (end && end < now);
+                }
+                return d.status === tab.value;
+              }).length
             : deals.length;
           return (
             <button
