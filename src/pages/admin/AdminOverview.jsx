@@ -2,6 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
+import { Link } from "react-router-dom";
 
 function AdminOverview() {
   const { role, loading: roleLoading } = useRoleContext();
@@ -154,48 +155,56 @@ function AdminOverview() {
       value: metrics.totalDeals,
       icon: "inventory_2",
       color: "text-on-background",
+      path: "/admin/deals",
     },
     {
       label: "Active Deals",
       value: metrics.activeDeals,
       icon: "check_circle",
       color: "text-emerald-600",
+      path: "/admin/deals?filter=active",
     },
     {
       label: "Scheduled Deals",
       value: metrics.scheduledDeals,
       icon: "schedule",
       color: "text-blue-600",
+      path: "/admin/deals?filter=scheduled",
     },
     {
       label: "Expired Deals",
       value: metrics.expiredDeals,
       icon: "history",
       color: "text-on-surface-variant",
+      path: "/admin/deals?filter=expired",
     },
     {
       label: "Total Users",
       value: metrics.totalUsers,
       icon: "group",
       color: "text-on-background",
+      path: "/admin/users",
     },
     {
       label: "Partners",
       value: metrics.totalPartners,
       icon: "handshake",
       color: "text-primary",
+      path: "/admin/brands",
     },
     {
       label: "Pending Verifications",
       value: metrics.pendingVerifications,
       icon: "admin_panel_settings",
       color: "text-amber-600",
+      path: "/admin/verifications",
     },
     {
       label: "Redemptions",
       value: metrics.confirmedRedemptions,
       icon: "task_alt",
       color: "text-emerald-600",
+      path: "/admin/analytics",
     },
   ];
 
@@ -228,9 +237,10 @@ function AdminOverview() {
       {/* Metric Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-8">
         {metricCards.map((card) => (
-          <article
+          <Link
+            to={card.path}
             key={card.label}
-            className="bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow"
+            className="block bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md hover:border-primary/50 hover:-translate-y-1 transition-all duration-200 cursor-pointer"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
@@ -248,7 +258,7 @@ function AdminOverview() {
             >
               {card.value}
             </p>
-          </article>
+          </Link>
         ))}
       </div>
 

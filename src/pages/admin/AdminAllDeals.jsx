@@ -2,26 +2,33 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
+import { useSearchParams } from "react-router-dom";
 
 const STATUS_TABS = [
-  { value: null, label: "All" },
-  { value: "approved", label: "Approved" },
-  { value: "pending", label: "Pending" },
-  { value: "rejected", label: "Rejected" },
+  { value: "all", label: "All" },
+  { value: "active", label: "Active" },
+  { value: "scheduled", label: "Scheduled" },
+  { value: "expired", label: "Expired" },
+  { value: "paused", label: "Paused" },
 ];
 
 const STATUS_BADGE = {
-  approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  active: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  expired: "bg-surface-container-high text-on-surface-variant border-outline-variant/50",
+  paused: "bg-red-50 text-red-600 border-red-200",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
-  rejected: "bg-red-50 text-red-600 border-red-200",
 };
 
 function AdminAllDeals() {
   const { role, loading: roleLoading } = useRoleContext();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const initialFilter = searchParams.get("filter") || "all";
+  
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState(null);
+  const [statusFilter, setStatusFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState("");
   const [message, setMessage] = useState("");
   const [actingDealId, setActingDealId] = useState(null);
@@ -39,12 +46,13 @@ function AdminAllDeals() {
     setLoading(true);
     setError("");
 
+    // Fetch all deals, bypass RPC status filtering for time-based states
     const { data, error: fetchError } = await supabase.rpc(
       "admin_list_all_deals",
       {
-        status_filter: statusFilter,
+        status_filter: null,
         search_query: searchQuery,
-        page_limit: 100,
+        page_limit: 500,
         page_offset: 0,
       },
     );
@@ -55,7 +63,38 @@ function AdminAllDeals() {
       return;
     }
 
-    setDeals(data || []);
+    // Parallel fetch for timing data to support dynamic time states
+    const { data: timingData } = await supabase.from('deals').select('id, start_time, end_time');
+    const timingMap = new Map((timingData || []).map(t => [t.id, t]));
+
+    let processedDeals = (data || []).map(d => {
+       const t = timingMap.get(d.id);
+       return { ...d, start_time: t?.start_time, end_time: t?.end_time, db_status: t?.status || d.status };
+    });
+
+    const now = new Date();
+    
+    // Apply time-based filter locally
+    if (statusFilter && statusFilter !== "all") {
+      processedDeals = processedDeals.filter(d => {
+         const start = d.start_time ? new Date(d.start_time) : new Date(0);
+         const end = d.end_time ? new Date(d.end_time) : null;
+         const st = d.db_status;
+         
+         let computedStatus = st;
+         if (st === "active" || st === "approved") {
+           if (start > now) computedStatus = "scheduled";
+           else if (end && end < now) computedStatus = "expired";
+           else computedStatus = "active";
+         } else if (end && end < now) {
+           computedStatus = "expired";
+         }
+         
+         return computedStatus === statusFilter;
+      });
+    }
+
+    setDeals(processedDeals || []);
     setLoading(false);
   }, [role, statusFilter, searchQuery]);
 
@@ -171,7 +210,10 @@ function AdminAllDeals() {
           {STATUS_TABS.map((tab) => (
             <button
               key={tab.label}
-              onClick={() => setStatusFilter(tab.value)}
+              onClick={() => {
+                setStatusFilter(tab.value);
+                setSearchParams(tab.value === "all" ? {} : { filter: tab.value });
+              }}
               className={`px-4 py-2 rounded-lg text-xs font-headline font-bold tracking-wide transition-all ${
                 statusFilter === tab.value
                   ? "bg-surface text-on-background shadow-sm"
@@ -227,8 +269,22 @@ function AdminAllDeals() {
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {deals.map((deal) => {
                   const isActing = actingDealId === deal.id;
+                  
+                  const start = deal.start_time ? new Date(deal.start_time) : new Date(0);
+                  const end = deal.end_time ? new Date(deal.end_time) : null;
+                  const now = new Date();
+                  
+                  let displayStatus = deal.db_status || deal.status;
+                  if (displayStatus === "active" || displayStatus === "approved") {
+                    if (start > now) displayStatus = "scheduled";
+                    else if (end && end < now) displayStatus = "expired";
+                    else displayStatus = "active";
+                  } else if (end && end < now) {
+                    displayStatus = "expired";
+                  }
+                  
                   const badge =
-                    STATUS_BADGE[deal.status] || STATUS_BADGE.pending;
+                    STATUS_BADGE[displayStatus] || STATUS_BADGE.pending;
 
                   return (
                     <tr
@@ -272,7 +328,7 @@ function AdminAllDeals() {
                         <span
                           className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}
                         >
-                          {deal.status}
+                          {displayStatus}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
@@ -303,31 +359,31 @@ function AdminAllDeals() {
                       </td>
                       <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
                         <div className="flex items-center justify-end gap-1.5 w-full md:w-auto">
-                          {deal.status !== "approved" && (
+                          {(displayStatus === "active" || displayStatus === "scheduled") && (
                             <button
                               onClick={() =>
-                                handleStatusChange(deal.id, "approved")
+                                handleStatusChange(deal.id, "paused")
                               }
                               disabled={isActing}
-                              title="Approve"
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-lg">
-                                check_circle
-                              </span>
-                            </button>
-                          )}
-                          {deal.status !== "rejected" && (
-                            <button
-                              onClick={() =>
-                                handleStatusChange(deal.id, "rejected")
-                              }
-                              disabled={isActing}
-                              title="Reject"
+                              title="Pause Deal"
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
                             >
                               <span className="material-symbols-outlined text-lg">
-                                block
+                                pause_circle
+                              </span>
+                            </button>
+                          )}
+                          {displayStatus === "paused" && (
+                            <button
+                              onClick={() =>
+                                handleStatusChange(deal.id, "active")
+                              }
+                              disabled={isActing}
+                              title="Activate Deal"
+                              className="w-8 h-8 flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
+                            >
+                              <span className="material-symbols-outlined text-lg">
+                                play_circle
                               </span>
                             </button>
                           )}
