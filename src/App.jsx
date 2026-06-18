@@ -20,6 +20,7 @@ import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
 import Sidebar from "./components/Sidebar";
+import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -145,11 +146,12 @@ function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col md:block">
+    <div className="min-h-[100dvh] bg-background flex flex-col">
+      <Navbar onLogout={handleLogout} />
       <Sidebar onLogout={handleLogout} />
 
       {/* Page Content */}
-      <main className="flex-1 md:ml-72 pt-16 md:pt-0 pb-safe-content min-w-0 flex flex-col min-h-[100dvh]">
+      <main className="flex-1 pt-16 md:pt-0 pb-safe-content min-w-0 flex flex-col min-h-[100dvh]">
         <Suspense fallback={<RouteSkeleton />}>
           <div
             key={`${location.pathname}${location.search}`}

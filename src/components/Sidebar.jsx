@@ -104,9 +104,9 @@ export default function Sidebar({ onLogout }) {
 
       {/* Sidebar Drawer */}
       <aside
-        className={`fixed top-0 left-0 h-[100dvh] w-72 bg-surface border-r border-outline-variant/10 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
+        className={`md:hidden fixed top-0 left-0 h-[100dvh] w-72 bg-surface border-r border-outline-variant/10 z-50 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] ${
           isOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-        } md:translate-x-0`}
+        }`}
       >
         {/* Brand / Logo Area */}
         <div className="flex items-center justify-between px-6 h-20 flex-shrink-0">
