@@ -45,7 +45,6 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
 
   const adminLinks = [
     { path: "/admin", label: "Overview", icon: "dashboard", exact: true },
-    { path: "/admin/pending", label: "Pending Queue", icon: "pending_actions" },
     { path: "/admin/verifications", label: "Verifications", icon: "how_to_reg" },
     { path: "/admin/deals", label: "All Deals", icon: "storefront" },
     { path: "/admin/users", label: "Users", icon: "group" },

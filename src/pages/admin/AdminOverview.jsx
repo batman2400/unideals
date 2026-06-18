@@ -7,12 +7,12 @@ function AdminOverview() {
   const { role, loading: roleLoading } = useRoleContext();
   const [metrics, setMetrics] = useState({
     totalDeals: 0,
-    pendingDeals: 0,
-    approvedDeals: 0,
-    rejectedDeals: 0,
+    activeDeals: 0,
+    scheduledDeals: 0,
+    expiredDeals: 0,
     totalUsers: 0,
     totalPartners: 0,
-    totalScans: 0,
+    pendingVerifications: 0,
     confirmedRedemptions: 0,
   });
   const [recentActivity, setRecentActivity] = useState([]);
@@ -30,27 +30,16 @@ function AdminOverview() {
 
       try {
         const [
-          pendingRes,
-          approvedRes,
-          rejectedRes,
+          dealsRes,
           usersRes,
           partnersRes,
-          scansRes,
+          verificationsRes,
           confirmedRes,
           recentEventsRes,
         ] = await Promise.all([
           supabase
             .from("deals")
-            .select("id", { count: "exact", head: true })
-            .eq("status", "pending"),
-          supabase
-            .from("deals")
-            .select("id", { count: "exact", head: true })
-            .eq("status", "approved"),
-          supabase
-            .from("deals")
-            .select("id", { count: "exact", head: true })
-            .eq("status", "rejected"),
+            .select("id, status, start_time, end_time"),
           supabase.rpc("list_users_with_roles", {
             search_query: "",
             role_filter: null,
@@ -64,36 +53,53 @@ function AdminOverview() {
             page_offset: 0,
           }),
           supabase
-            .from("redemption_events")
-            .select("id", { count: "exact", head: true }),
+            .from("manual_verifications")
+            .select("id", { count: "exact", head: true })
+            .eq("status", "pending"),
           supabase
             .from("confirmed_redemptions")
             .select("id", { count: "exact", head: true }),
           supabase
             .from("redemption_events")
             .select(
-              "id, brand, scanned_code, scan_result, scan_method, created_at",
+              "id, brand, scanned_code, scan_result, scan_method, created_at, deals(title)"
             )
+            .eq("scan_result", "valid")
             .order("created_at", { ascending: false })
             .limit(8),
         ]);
 
         if (!active) return;
 
+        let activeDeals = 0;
+        let scheduledDeals = 0;
+        let expiredDeals = 0;
+        const now = new Date();
+
+        (dealsRes.data || []).forEach(d => {
+           const start = d.start_time ? new Date(d.start_time) : new Date(0);
+           const end = d.end_time ? new Date(d.end_time) : null;
+           let st = d.status;
+           if (st === "active" || st === "approved") {
+             if (start > now) scheduledDeals++;
+             else if (end && end < now) expiredDeals++;
+             else activeDeals++;
+           } else if (end && end < now) {
+             expiredDeals++;
+           }
+        });
+
         const totalUsers = usersRes.data?.[0]?.total_count ?? 0;
         const totalPartners = partnersRes.data?.[0]?.total_count ?? 0;
 
         setMetrics({
-          totalDeals:
-            (pendingRes.count ?? 0) +
-            (approvedRes.count ?? 0) +
-            (rejectedRes.count ?? 0),
-          pendingDeals: pendingRes.count ?? 0,
-          approvedDeals: approvedRes.count ?? 0,
-          rejectedDeals: rejectedRes.count ?? 0,
+          totalDeals: (dealsRes.data || []).length,
+          activeDeals,
+          scheduledDeals,
+          expiredDeals,
           totalUsers: Number(totalUsers),
           totalPartners: Number(totalPartners),
-          totalScans: scansRes.count ?? 0,
+          pendingVerifications: verificationsRes.count ?? 0,
           confirmedRedemptions: confirmedRes.count ?? 0,
         });
         setRecentActivity(recentEventsRes.data || []);
@@ -150,22 +156,22 @@ function AdminOverview() {
       color: "text-on-background",
     },
     {
-      label: "Pending Review",
-      value: metrics.pendingDeals,
-      icon: "pending_actions",
-      color: "text-amber-600",
-    },
-    {
-      label: "Approved",
-      value: metrics.approvedDeals,
+      label: "Active Deals",
+      value: metrics.activeDeals,
       icon: "check_circle",
       color: "text-emerald-600",
     },
     {
-      label: "Rejected",
-      value: metrics.rejectedDeals,
-      icon: "cancel",
-      color: "text-red-600",
+      label: "Scheduled Deals",
+      value: metrics.scheduledDeals,
+      icon: "schedule",
+      color: "text-blue-600",
+    },
+    {
+      label: "Expired Deals",
+      value: metrics.expiredDeals,
+      icon: "history",
+      color: "text-on-surface-variant",
     },
     {
       label: "Total Users",
@@ -180,10 +186,10 @@ function AdminOverview() {
       color: "text-primary",
     },
     {
-      label: "Total Scans",
-      value: metrics.totalScans,
-      icon: "qr_code_scanner",
-      color: "text-on-background",
+      label: "Pending Verifications",
+      value: metrics.pendingVerifications,
+      icon: "admin_panel_settings",
+      color: "text-amber-600",
     },
     {
       label: "Redemptions",
@@ -272,10 +278,10 @@ function AdminOverview() {
               >
                 <div className="flex-1 min-w-0">
                   <p className="font-headline font-bold text-sm text-on-background truncate">
-                    {event.brand}
+                    {event.deals?.title || event.brand}
                   </p>
                   <p className="text-xs text-on-surface-variant mt-0.5">
-                    Code: {event.scanned_code || "—"} · {event.scan_method}
+                    {event.brand} · Code: {event.scanned_code || "—"} · {event.scan_method}
                   </p>
                 </div>
                 <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
