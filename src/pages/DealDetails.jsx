@@ -3,7 +3,7 @@
  *
  * Displays a full detailed view of a single deal with dual-redemption UX:
  *
- *   • In-Store  → QR code ticket with live 15-minute countdown timer
+ *   • In-Store  → QR code ticket with live 10-minute countdown timer
  *   • Online    → Copyable promo code + "Go to Store" affiliate button
  *
  * Uses useParams to grab the deal ID from the URL,
@@ -32,7 +32,7 @@ function InStoreRedemption({ dealId, brand }) {
         "generate_instore_ticket",
         {
           target_deal_id: dealId,
-          ticket_duration_minutes: 15,
+          ticket_duration_minutes: 10,
         },
       );
 

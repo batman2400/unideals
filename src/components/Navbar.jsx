@@ -174,9 +174,9 @@ function Navbar({
                         className="flex items-center gap-3 px-4 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface transition-colors"
                       >
                         <span className="material-symbols-outlined text-lg">
-                          dashboard
+                          person
                         </span>
-                        My Dashboard
+                        My Profile
                       </Link>
 
                       {canAccessPartnerPortal && (
@@ -332,9 +332,9 @@ function Navbar({
                   className="flex items-center gap-3 py-2.5 text-sm font-headline font-bold text-on-surface-variant hover:text-primary transition-colors"
                 >
                   <span className="material-symbols-outlined text-lg">
-                    dashboard
+                    person
                   </span>
-                  My Dashboard
+                  My Profile
                 </Link>
 
                 {canAccessPartnerPortal && (
