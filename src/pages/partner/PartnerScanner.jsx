@@ -346,7 +346,7 @@ function PartnerScanner() {
 
   return (
     <PortalLayout portalType="partner" brandName={partnerBrand}>
-      <div className="mb-6">
+      <div className="mb-6 pt-6 md:pt-0">
         <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
           Ticket Scanner
         </h1>
@@ -362,13 +362,13 @@ function PartnerScanner() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 animate-fade-in">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 lg:gap-12 animate-fade-in">
         
         {/* Left Column - Scanner Console */}
         <div className="lg:col-span-8 flex flex-col">
           {/* Result Display Overlaying Scanner */}
           {result ? (
-            <div className="h-full min-h-[400px] flex items-center justify-center bg-surface border border-outline-variant/15 rounded-3xl shadow-sm p-8">
+            <div className="h-full min-h-[300px] md:min-h-[400px] flex items-center justify-center bg-surface border border-outline-variant/15 rounded-3xl shadow-sm p-4 md:p-8">
               {(() => {
                 const style = resultColors[result.result] || resultColors.error;
                 return (
@@ -408,7 +408,7 @@ function PartnerScanner() {
               })()}
             </div>
           ) : (
-            <div className="bg-surface rounded-3xl border border-outline-variant/15 p-6 md:p-10 shadow-sm flex-1 flex flex-col items-center justify-center min-h-[500px] relative">
+            <div className="bg-surface rounded-3xl border border-outline-variant/15 p-4 md:p-10 shadow-sm flex-1 flex flex-col items-center justify-center min-h-0 md:min-h-[500px] relative">
               
               {cameraError && (
                 <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center z-10 shadow-sm">
@@ -471,7 +471,7 @@ function PartnerScanner() {
         </div>
 
         {/* Right Column - Contextual Tools */}
-        <div className="lg:col-span-4 flex flex-col gap-6">
+        <div className="lg:col-span-4 flex flex-col gap-4 md:gap-6">
           
           {/* Manual Entry Card */}
           <div className="bg-surface rounded-3xl border border-outline-variant/15 p-6 shadow-sm">
