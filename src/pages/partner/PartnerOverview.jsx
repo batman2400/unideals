@@ -181,7 +181,7 @@ function PartnerOverview() {
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
         {metricCards.map((card, idx) => (
           <article
             key={card.label}
@@ -265,7 +265,7 @@ function PartnerOverview() {
         </div>
 
         {/* Recent Activity */}
-        <div className="xl:col-span-2 bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
+        <div className="xl:col-span-2 w-full bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
           <div className="px-5 py-4 border-b border-outline-variant/10">
             <h2 className="font-headline font-bold text-lg text-on-background">
               Recent Scans

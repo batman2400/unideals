@@ -173,7 +173,7 @@ function PartnerAnalytics() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-8">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         {summaryCards.map((card) => (
           <article
             key={card.label}
