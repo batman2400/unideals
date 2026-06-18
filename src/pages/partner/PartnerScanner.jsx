@@ -20,6 +20,7 @@ function PartnerScanner() {
   const [scanning, setScanning] = useState(false);
   const [verifying, setVerifying] = useState(false);
   const [result, setResult] = useState(null);
+  const [scanHistory, setScanHistory] = useState([]);
 
   // Camera state
   const [cameraActive, setCameraActive] = useState(false);
@@ -107,6 +108,16 @@ function PartnerScanner() {
       const row = data?.[0];
       if (row) {
         setResult(row);
+        if (row.result === "valid" && row.deal_title) {
+          setScanHistory((prev) => {
+            const newLog = {
+              id: Date.now(),
+              title: row.deal_title,
+              time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+            };
+            return [newLog, ...prev].slice(0, 3);
+          });
+        }
       } else {
         setResult({
           result: "error",
@@ -133,6 +144,16 @@ function PartnerScanner() {
         const row = data?.[0];
         if (row) {
           setResult(row);
+          if (row.result === "valid" && row.deal_title) {
+            setScanHistory((prev) => {
+              const newLog = {
+                id: Date.now(),
+                title: row.deal_title,
+                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+              };
+              return [newLog, ...prev].slice(0, 3);
+            });
+          }
         }
       } catch (fallbackErr) {
         if (!isMountedRef.current) return;
@@ -341,174 +362,181 @@ function PartnerScanner() {
         </div>
       )}
 
-      <div className="max-w-2xl mx-auto space-y-6">
-        {/* Result Display */}
-        {result &&
-          (() => {
-            const style = resultColors[result.result] || resultColors.error;
-            return (
-              <div
-                className={`rounded-2xl border-2 ${style.border} ${style.bg} p-6 text-center animate-fade-in`}
-              >
-                <span
-                  className={`material-symbols-outlined text-5xl ${style.iconColor} mb-3 block`}
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  {style.icon}
-                </span>
-                <p
-                  className={`font-headline font-extrabold text-xl ${style.text} mb-2`}
-                >
-                  {result.result === "valid"
-                    ? "Valid Ticket!"
-                    : result.result
-                        ?.replace(/_/g, " ")
-                        .replace(/\b\w/g, (l) => l.toUpperCase())}
-                </p>
-                <p className={`text-sm ${style.text} mb-4`}>{result.message}</p>
-
-                {result.deal_title && (
-                  <div className="bg-white/60 rounded-xl p-4 mb-4 inline-block">
-                    <p className="text-sm font-bold text-on-background">
-                      {result.deal_title}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 animate-fade-in">
+        
+        {/* Left Column - Scanner Console */}
+        <div className="lg:col-span-8 flex flex-col">
+          {/* Result Display Overlaying Scanner */}
+          {result ? (
+            <div className="h-full min-h-[400px] flex items-center justify-center bg-surface border border-outline-variant/15 rounded-3xl shadow-sm p-8">
+              {(() => {
+                const style = resultColors[result.result] || resultColors.error;
+                return (
+                  <div className={`w-full max-w-md rounded-3xl border-2 ${style.border} ${style.bg} p-8 text-center animate-fade-in`}>
+                    <span className={`material-symbols-outlined text-6xl ${style.iconColor} mb-4 block`} style={{ fontVariationSettings: "'FILL' 1" }}>
+                      {style.icon}
+                    </span>
+                    <p className={`font-headline font-extrabold text-2xl ${style.text} mb-2`}>
+                      {result.result === "valid"
+                        ? "Valid Ticket!"
+                        : result.result?.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                     </p>
-                    {result.deal_discount && (
-                      <p className="text-primary text-sm font-headline font-bold mt-1">
-                        {result.deal_discount}
-                      </p>
+                    <p className={`text-base ${style.text} mb-6`}>{result.message}</p>
+
+                    {result.deal_title && (
+                      <div className="bg-white/60 rounded-xl p-4 mb-6 inline-block w-full">
+                        <p className="text-sm font-bold text-on-background">
+                          {result.deal_title}
+                        </p>
+                        {result.deal_discount && (
+                          <p className="text-primary text-sm font-headline font-bold mt-1">
+                            {result.deal_discount}
+                          </p>
+                        )}
+                      </div>
                     )}
+
+                    <button
+                      onClick={handleScanAnother}
+                      className="w-full inline-flex justify-center items-center gap-2 emerald-gradient text-on-primary px-6 py-4 rounded-xl font-headline font-bold text-base shadow-sm hover:shadow-md transition-all"
+                    >
+                      <span className="material-symbols-outlined text-xl">replay</span>
+                      Scan Another
+                    </button>
                   </div>
-                )}
-
-                <button
-                  onClick={handleScanAnother}
-                  className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    replay
-                  </span>
-                  Scan Another
-                </button>
-              </div>
-            );
-          })()}
-
-        {/* Scanner UI */}
-        {!result && (
-          <>
-            {/* Camera Scanner */}
-            <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
-              <h2 className="font-headline font-bold text-lg text-on-background mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">
-                  photo_camera
-                </span>
-                QR Scanner
-              </h2>
-
+                );
+              })()}
+            </div>
+          ) : (
+            <div className="bg-surface rounded-3xl border border-outline-variant/15 p-6 md:p-10 shadow-sm flex-1 flex flex-col items-center justify-center min-h-[500px] relative">
+              
               {cameraError && (
-                <div className="mb-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
-                  <p className="text-amber-700 text-sm">{cameraError}</p>
+                <div className="absolute top-6 left-1/2 -translate-x-1/2 w-[90%] max-w-md bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-center z-10 shadow-sm">
+                  <p className="text-amber-700 text-sm font-bold">{cameraError}</p>
+                </div>
+              )}
+
+              {verifying && (
+                <div className="absolute inset-0 bg-surface/80 backdrop-blur-sm flex flex-col items-center justify-center z-20 rounded-3xl border border-outline-variant/15">
+                  <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4" />
+                  <p className="font-headline font-bold text-lg text-on-background">
+                    Verifying...
+                  </p>
                 </div>
               )}
 
               {cameraActive ? (
-                <div className="space-y-3">
-                  <div className="relative rounded-xl overflow-hidden bg-black aspect-video">
+                <div className="w-full max-w-xl flex flex-col items-center">
+                  <div className="relative rounded-3xl overflow-hidden bg-black w-full aspect-square md:aspect-video shadow-inner">
                     <video
                       ref={videoRef}
                       autoPlay
                       playsInline
                       muted
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-cover opacity-90"
                     />
                     <canvas ref={canvasRef} className="hidden" />
                     {/* Scan overlay */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="w-48 h-48 md:w-56 md:h-56 border-2 border-primary/50 rounded-2xl">
-                        <div
-                          className="w-full h-full border-2 border-transparent rounded-2xl"
-                          style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.35)" }}
-                        />
+                      <div className="w-56 h-56 md:w-72 md:h-72 border-2 border-dashed border-primary rounded-3xl relative">
+                        <div className="absolute -top-1 -left-1 w-6 h-6 border-t-4 border-l-4 border-primary rounded-tl-xl"></div>
+                        <div className="absolute -top-1 -right-1 w-6 h-6 border-t-4 border-r-4 border-primary rounded-tr-xl"></div>
+                        <div className="absolute -bottom-1 -left-1 w-6 h-6 border-b-4 border-l-4 border-primary rounded-bl-xl"></div>
+                        <div className="absolute -bottom-1 -right-1 w-6 h-6 border-b-4 border-r-4 border-primary rounded-br-xl"></div>
                       </div>
+                      <div className="absolute inset-0" style={{ boxShadow: "0 0 0 9999px rgba(0,0,0,0.5)" }} />
                     </div>
                   </div>
                   <button
                     onClick={stopCamera}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl border border-outline-variant/20 text-on-surface-variant font-headline font-bold text-sm hover:bg-surface-container-low transition-colors"
+                    className="mt-8 px-8 py-3 rounded-xl border-2 border-error/20 text-error font-headline font-bold text-sm hover:bg-error/10 transition-colors flex items-center gap-2"
                   >
-                    <span className="material-symbols-outlined text-lg">
-                      stop
-                    </span>
-                    Stop Camera
+                    <span className="material-symbols-outlined text-lg">stop_circle</span>
+                    Close Scanner
                   </button>
                 </div>
               ) : (
-                <button
-                  onClick={startCamera}
-                  className="w-full inline-flex items-center justify-center gap-3 emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base shadow-sm hover:shadow-md transition-all"
-                >
-                  <span className="material-symbols-outlined text-2xl">
-                    qr_code_scanner
-                  </span>
-                  Open Camera Scanner
-                </button>
+                <div onClick={startCamera} className="w-full max-w-md aspect-square rounded-3xl border-2 border-dashed border-outline-variant/40 bg-surface-container/30 flex flex-col items-center justify-center hover:bg-surface-container/50 transition-colors hover:border-primary/50 group cursor-pointer shadow-sm">
+                  <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                    <span className="material-symbols-outlined text-primary text-4xl">qr_code_scanner</span>
+                  </div>
+                  <h3 className="font-headline font-bold text-xl text-on-background mb-2 group-hover:text-primary transition-colors">Start Scanning</h3>
+                  <p className="text-on-surface-variant text-sm text-center max-w-[250px]">
+                    Click to grant camera access and scan student ticket QR codes.
+                  </p>
+                </div>
               )}
             </div>
+          )}
+        </div>
 
-            {/* Divider */}
-            <div className="flex items-center gap-4">
-              <div className="flex-1 h-px bg-outline-variant/15" />
-              <span className="text-xs font-bold tracking-[0.15em] text-on-surface-variant/50 uppercase">
-                or
-              </span>
-              <div className="flex-1 h-px bg-outline-variant/15" />
-            </div>
-
-            {/* Manual Entry */}
-            <div className="bg-surface rounded-2xl border border-outline-variant/15 p-5 shadow-sm">
-              <h2 className="font-headline font-bold text-lg text-on-background mb-4 flex items-center gap-2">
-                <span className="material-symbols-outlined text-primary text-xl">
-                  keyboard
-                </span>
-                Manual Code Entry
-              </h2>
-
-              <form onSubmit={handleManualSubmit} className="flex gap-3">
+        {/* Right Column - Contextual Tools */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
+          
+          {/* Manual Entry Card */}
+          <div className="bg-surface rounded-3xl border border-outline-variant/15 p-6 shadow-sm">
+            <h3 className="font-headline font-bold text-base text-on-background mb-4">Manual Entry</h3>
+            <form onSubmit={handleManualSubmit} className="flex flex-col gap-4">
+              <div className="relative">
+                <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant/50">keyboard</span>
                 <input
                   type="text"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                  placeholder="Enter ticket code (e.g. UD-A7X9K2)"
-                  className="flex-1 bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm font-body font-bold tracking-wider focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none uppercase"
+                  placeholder="Ticket Code (e.g. A7X9K2)"
+                  className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl pl-12 pr-4 py-3 text-sm font-body font-bold tracking-widest focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none uppercase placeholder:font-normal placeholder:tracking-normal"
                 />
-                <button
-                  type="submit"
-                  disabled={verifying || !manualCode.trim()}
-                  className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all disabled:opacity-60"
-                >
-                  {verifying ? (
-                    <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                  ) : (
-                    <span className="material-symbols-outlined text-lg">
-                      verified
-                    </span>
-                  )}
-                  Verify
-                </button>
-              </form>
-            </div>
-          </>
-        )}
-
-        {/* Verifying state */}
-        {verifying && (
-          <div className="flex items-center justify-center gap-3 py-8">
-            <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-            <p className="font-headline font-bold text-on-surface-variant">
-              Verifying ticket...
-            </p>
+              </div>
+              <button
+                type="submit"
+                disabled={verifying || !manualCode.trim()}
+                className="w-full inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-3.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all disabled:opacity-60"
+              >
+                {verifying ? (
+                  <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span className="material-symbols-outlined text-[18px]">verified</span>
+                    Verify Ticket
+                  </>
+                )}
+              </button>
+            </form>
           </div>
-        )}
+
+          {/* Quick Scan History Card */}
+          <div className="bg-surface rounded-3xl border border-outline-variant/15 p-6 shadow-sm flex-1 flex flex-col">
+            <h3 className="font-headline font-bold text-base text-on-background mb-4 flex items-center justify-between">
+              Recent Activity
+              <span className="material-symbols-outlined text-on-surface-variant/50 text-[18px]">history</span>
+            </h3>
+            
+            {scanHistory.length === 0 ? (
+              <div className="flex flex-col flex-1 items-center justify-center text-center py-8">
+                 <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3">
+                   <span className="material-symbols-outlined text-on-surface-variant/50">receipt_long</span>
+                 </div>
+                 <p className="text-sm font-bold text-on-surface-variant">No recent scans</p>
+                 <p className="text-xs text-on-surface-variant/70 mt-1">Scanned tickets will appear here.</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {scanHistory.map((log) => (
+                  <div key={log.id} className="flex items-start gap-3 p-3 rounded-xl bg-surface-container-low border border-outline-variant/10">
+                    <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                      <span className="material-symbols-outlined text-emerald-600 text-[16px]">check</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-on-background truncate">{log.title}</p>
+                      <p className="text-[10px] text-on-surface-variant font-bold uppercase tracking-wider mt-0.5">{log.time}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          
+        </div>
       </div>
     </PortalLayout>
   );
