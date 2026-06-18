@@ -97,9 +97,9 @@ function PartnerOverview() {
 
   const metrics = useMemo(() => {
     const total = deals.length;
-    const approved = deals.filter((d) => d.status === "approved").length;
-    const pending = deals.filter((d) => d.status === "pending").length;
-    return { total, approved, pending };
+    const active = deals.filter((d) => d.status === "active" || d.status === "approved").length;
+    const expired = deals.filter((d) => d.status === "expired").length;
+    return { total, active, expired };
   }, [deals]);
 
   if (roleLoading || loading) {
@@ -107,8 +107,8 @@ function PartnerOverview() {
       <PortalLayout portalType="partner" brandName="">
         <div className="space-y-5">
           <div className="h-8 w-48 rounded-xl skeleton-shimmer" />
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-            {Array.from({ length: 5 }).map((_, i) => (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="h-28 rounded-2xl skeleton-shimmer" />
             ))}
           </div>
@@ -126,22 +126,16 @@ function PartnerOverview() {
       color: "text-on-background",
     },
     {
-      label: "Active",
-      value: metrics.approved,
+      label: "Active Deals",
+      value: metrics.active,
       icon: "check_circle",
       color: "text-emerald-600",
     },
     {
-      label: "Pending",
-      value: metrics.pending,
-      icon: "pending_actions",
-      color: "text-amber-600",
-    },
-    {
-      label: "Total Scans",
-      value: stats.totalScans,
-      icon: "qr_code_scanner",
-      color: "text-on-background",
+      label: "Expired Deals",
+      value: metrics.expired,
+      icon: "history",
+      color: "text-on-surface-variant",
     },
     {
       label: "Redemptions",
@@ -181,13 +175,11 @@ function PartnerOverview() {
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
-        {metricCards.map((card, idx) => (
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        {metricCards.map((card) => (
           <article
             key={card.label}
-            className={`bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow ${
-              idx === 4 ? "col-span-2 md:col-span-1" : ""
-            }`}
+            className="bg-surface rounded-2xl border border-outline-variant/15 p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow"
           >
             <div className="flex items-center justify-between gap-2 mb-3">
               <p className="text-[10px] md:text-[11px] font-bold tracking-[0.12em] text-on-surface-variant uppercase">
@@ -237,10 +229,10 @@ function PartnerOverview() {
                 desc: "Scan tickets",
               },
               {
-                to: "/partner/deals",
-                icon: "pending_actions",
-                label: "Pending Approvals",
-                desc: "Check deal status",
+                to: "/partner/analytics",
+                icon: "monitoring",
+                label: "Analytics",
+                desc: "View performance",
               },
             ].map((link) => (
               <Link
