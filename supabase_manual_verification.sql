@@ -21,38 +21,32 @@ CREATE TABLE IF NOT EXISTS public.manual_verifications (
 ALTER TABLE public.manual_verifications ENABLE ROW LEVEL SECURITY;
 
 -- Users can read their own verifications
+DROP POLICY IF EXISTS "Users can view own manual verifications" ON public.manual_verifications;
 CREATE POLICY "Users can view own manual verifications"
 ON public.manual_verifications FOR SELECT
 TO authenticated
 USING (user_id = auth.uid());
 
 -- Admins can read all verifications
+DROP POLICY IF EXISTS "Admins can view all manual verifications" ON public.manual_verifications;
 CREATE POLICY "Admins can view all manual verifications"
 ON public.manual_verifications FOR SELECT
 TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'
-  )
-);
+USING (public.get_user_role() = 'admin');
 
 -- Users can insert their own verifications (via RPC mostly, but good for safety)
+DROP POLICY IF EXISTS "Users can insert own manual verifications" ON public.manual_verifications;
 CREATE POLICY "Users can insert own manual verifications"
 ON public.manual_verifications FOR INSERT
 TO authenticated
 WITH CHECK (user_id = auth.uid());
 
 -- Admins can update all verifications
+DROP POLICY IF EXISTS "Admins can update all manual verifications" ON public.manual_verifications;
 CREATE POLICY "Admins can update all manual verifications"
 ON public.manual_verifications FOR UPDATE
 TO authenticated
-USING (
-  EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_roles.user_id = auth.uid() AND user_roles.role = 'admin'
-  )
-);
+USING (public.get_user_role() = 'admin');
 
 -- 2) Setup Storage Bucket for verification-documents
 INSERT INTO storage.buckets (id, name, public)
@@ -60,11 +54,13 @@ VALUES ('verification-documents', 'verification-documents', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Storage Policies for verification-documents
+DROP POLICY IF EXISTS "Allow authenticated users to upload verification documents" ON storage.objects;
 CREATE POLICY "Allow authenticated users to upload verification documents"
 ON storage.objects FOR INSERT
 TO authenticated
 WITH CHECK (bucket_id = 'verification-documents');
 
+DROP POLICY IF EXISTS "Allow public to read verification documents" ON storage.objects;
 CREATE POLICY "Allow public to read verification documents"
 ON storage.objects FOR SELECT
 TO public
@@ -135,10 +131,11 @@ BEGIN
   END IF;
 
   -- Validate admin role
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_roles.user_id = calling_user_id AND user_roles.role = 'admin'
-  ) INTO is_admin;
+  IF public.get_user_role() = 'admin' THEN
+    is_admin := true;
+  ELSE
+    is_admin := false;
+  END IF;
 
   IF NOT is_admin THEN
     RETURN json_build_object('success', false, 'error', 'Unauthorized. Admin access required.');
@@ -181,10 +178,11 @@ BEGIN
   END IF;
 
   -- Validate admin role
-  SELECT EXISTS (
-    SELECT 1 FROM public.user_roles 
-    WHERE user_roles.user_id = calling_user_id AND user_roles.role = 'admin'
-  ) INTO is_admin;
+  IF public.get_user_role() = 'admin' THEN
+    is_admin := true;
+  ELSE
+    is_admin := false;
+  END IF;
 
   IF NOT is_admin THEN
     RETURN json_build_object('success', false, 'error', 'Unauthorized. Admin access required.');
