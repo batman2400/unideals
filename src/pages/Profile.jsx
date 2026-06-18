@@ -372,16 +372,16 @@ function Profile({ isLoggedIn, user }) {
   if (!isLoggedIn) return <Navigate to="/" replace />;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-8 md:py-12 animate-fade-in">
+    <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 md:py-12 animate-fade-in">
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
         {/* Left Column (Identity & ID Card) */}
-        <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-start">
+        <div className="w-full lg:w-80 flex-shrink-0 flex flex-col items-center lg:items-start">
           {/* Header section */}
           <div className="flex flex-col items-center text-center space-y-4">
         <div className="relative avatar-upload-container group">
           <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative shadow-lg border-4 border-surface">
             {avatarUrl ? (
-              <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
+              <img src={avatarUrl} alt={fullName} className="w-24 h-24 rounded-full object-cover shadow-sm" />
             ) : (
               <span className="material-symbols-outlined text-5xl text-on-surface-variant">person</span>
             )}
@@ -465,7 +465,7 @@ function Profile({ isLoggedIn, user }) {
         </div>
 
         {/* Right Column (Settings & Security) */}
-        <div className="w-full lg:w-2/3 flex flex-col gap-6" ref={settingsRef}>
+        <div className="flex-1 w-full flex flex-col gap-6" ref={settingsRef}>
         
         {/* Personal & Academic Details Card */}
         <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
@@ -593,31 +593,55 @@ function Profile({ isLoggedIn, user }) {
           )}
         </div>
 
-        {/* Notification Preferences Card */}
-        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
-          <h3 className="font-headline font-bold text-base text-on-background mb-4">Notification Preferences</h3>
-          <div className="space-y-4">
-            <label className="flex items-center justify-between cursor-pointer group">
+        {/* Desktop Grid for Settings */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full">
+          {/* Notification Preferences Card */}
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
+            <h3 className="font-headline font-bold text-base text-on-background mb-4">Notification Preferences</h3>
+            <div className="space-y-4">
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <p className="text-sm font-bold text-on-background">New Deal Alerts</p>
+                  <p className="text-xs text-on-surface-variant">Get notified when new exclusive deals drop.</p>
+                </div>
+                <div className="relative ml-4">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
+                </div>
+              </label>
+              
+              <label className="flex items-center justify-between cursor-pointer group">
+                <div>
+                  <p className="text-sm font-bold text-on-background">Campus Event Reminders</p>
+                  <p className="text-xs text-on-surface-variant">Receive reminders for upcoming events.</p>
+                </div>
+                <div className="relative ml-4">
+                  <input type="checkbox" className="sr-only peer" defaultChecked />
+                  <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          {/* Preferences / Account Security Card */}
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
+            <h3 className="font-headline font-bold text-base text-on-background mb-4">Account Security</h3>
+            <form onSubmit={handleSettingsSave} className="space-y-4">
               <div>
-                <p className="text-sm font-bold text-on-background">New Deal Alerts</p>
-                <p className="text-xs text-on-surface-variant">Get notified when new exclusive deals drop.</p>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Change Password</label>
+                <input type="password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
               </div>
-              <div className="relative ml-4">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
-              </div>
-            </label>
-            
-            <label className="flex items-center justify-between cursor-pointer group">
-              <div>
-                <p className="text-sm font-bold text-on-background">Campus Event Reminders</p>
-                <p className="text-xs text-on-surface-variant">Receive reminders for upcoming events.</p>
-              </div>
-              <div className="relative ml-4">
-                <input type="checkbox" className="sr-only peer" defaultChecked />
-                <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
-              </div>
-            </label>
+              <button type="submit" disabled={settingsSaving} className="min-h-[44px] px-6 py-3 bg-primary/10 text-primary hover:bg-primary/20 font-bold text-sm rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                {settingsSaving ? "Saving..." : "Update Password"}
+              </button>
+              {settingsError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{settingsError}</p>}
+              {settingsSaved && (
+                <div className="flex items-center gap-2 text-primary bg-primary/10 p-2.5 rounded-lg">
+                  <span className="material-symbols-outlined text-sm">check_circle</span>
+                  <p className="text-xs font-bold">Settings updated successfully.</p>
+                </div>
+              )}
+            </form>
           </div>
         </div>
 
@@ -737,26 +761,7 @@ function Profile({ isLoggedIn, user }) {
           </div>
         )}
 
-        {/* Preferences / Account Security Card */}
-        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
-          <h3 className="font-headline font-bold text-base text-on-background mb-4">Account Security</h3>
-          <form onSubmit={handleSettingsSave} className="space-y-4">
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Change Password</label>
-              <input type="password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
-            </div>
-            <button type="submit" disabled={settingsSaving} className="min-h-[44px] px-6 py-3 bg-primary/10 text-primary hover:bg-primary/20 font-bold text-sm rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-              {settingsSaving ? "Saving..." : "Update Password"}
-            </button>
-            {settingsError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{settingsError}</p>}
-            {settingsSaved && (
-              <div className="flex items-center gap-2 text-primary bg-primary/10 p-2.5 rounded-lg">
-                <span className="material-symbols-outlined text-sm">check_circle</span>
-                <p className="text-xs font-bold">Settings updated successfully.</p>
-              </div>
-            )}
-          </form>
-        </div>
+
         
         </div>
       </div>
