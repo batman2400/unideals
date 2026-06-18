@@ -1,12 +1,50 @@
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { supabase } from "../lib/supabaseClient";
 import { useDeals } from "../lib/useDeals";
+import { useRoleContext } from "../lib/RoleContext";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
 export default function SavedDeals() {
-  const { deals, loading: dealsLoading, error: dealsError, savedDealIds, savedLoading, savedError } = useDeals();
+  const { deals, loading: dealsLoading, error: dealsError } = useDeals();
+  const { user } = useRoleContext();
 
-  const savedDeals = deals.filter((d) => savedDealIds.has(d.id));
+  const [savedDealIds, setSavedDealIds] = useState([]);
+  const [savedLoading, setSavedLoading] = useState(true);
+  const [savedError, setSavedError] = useState(null);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchSaved() {
+      if (!user) {
+        setSavedError(null);
+        setSavedLoading(false);
+        return;
+      }
+      setSavedLoading(true);
+      setSavedError(null);
+      const { data, error } = await supabase
+        .from("saved_deals")
+        .select("deal_id")
+        .eq("user_id", user.id);
+      
+      if (active && !error) {
+        setSavedDealIds(data ? data.map((d) => d.deal_id) : []);
+        setSavedError(null);
+        setSavedLoading(false);
+      } else if (active && error) {
+        setSavedError(error.message || "Could not load your saved deals.");
+        setSavedLoading(false);
+      }
+    }
+    fetchSaved();
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  const savedDeals = deals.filter((d) => savedDealIds.includes(d.id));
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 animate-fade-in">

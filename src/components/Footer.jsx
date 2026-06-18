@@ -9,7 +9,7 @@ import { Link } from "react-router-dom";
 
 function Footer() {
   return (
-    <footer className="bg-[#f6f3f2] dark:bg-[#1a1a1b] w-full py-10 md:py-12 px-4 sm:px-6 md:px-8">
+    <footer className="mt-auto bg-[#f6f3f2] dark:bg-[#1a1a1b] w-full py-10 md:py-12 px-4 sm:px-6 md:px-8">
       <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
         {/* Brand — links back to home */}
         <div className="flex flex-col items-center md:items-start gap-2">

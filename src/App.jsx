@@ -145,11 +145,11 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-[100dvh] bg-background">
+    <div className="min-h-[100dvh] bg-background flex flex-col md:block">
       <Sidebar onLogout={handleLogout} />
 
       {/* Page Content */}
-      <main className="flex-1 md:ml-72 pt-16 md:pt-0 pb-safe-content min-w-0">
+      <main className="flex-1 md:ml-72 pt-16 md:pt-0 pb-safe-content min-w-0 flex flex-col min-h-[100dvh]">
         <Suspense fallback={<RouteSkeleton />}>
           <div
             key={`${location.pathname}${location.search}`}

@@ -88,7 +88,7 @@ function InStoreRedemption({ dealId, brand }) {
           )}
         </button>
         <p className="text-on-surface-variant/50 text-xs mt-3">
-          Generates a unique single-use ticket with a 15-minute timer. The
+          Generates a unique single-use ticket with a 10-minute timer. The
           cashier will scan this QR code.
         </p>
       </div>
@@ -118,7 +118,7 @@ function InStoreTicketDisplay({
   const [secondsLeft, setSecondsLeft] = useState(() =>
     Math.max(0, Math.round((expiresAt.getTime() - Date.now()) / 1000)),
   );
-  const totalSeconds = 15 * 60;
+  const totalSeconds = 10 * 60;
 
   useEffect(() => {
     if (alreadyRedeemed || secondsLeft <= 0) return;
@@ -828,7 +828,7 @@ function DealDetails() {
                   <span className="material-symbols-outlined text-primary text-sm mt-0.5">
                     check_circle
                   </span>
-                  QR ticket expires 15 minutes after activation to prevent
+                  QR ticket expires 10 minutes after activation to prevent
                   screenshot fraud.
                 </li>
               )}
