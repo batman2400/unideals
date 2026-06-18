@@ -353,15 +353,13 @@ function Profile({ isLoggedIn, user }) {
         {/* Left Column (Identity & ID Card) */}
         <div className="w-full lg:w-1/3 flex flex-col items-center lg:items-start">
           {/* Header section */}
-          <div className="flex flex-col items-center lg:items-start text-center lg:text-left space-y-4">
+          <div className="flex flex-col items-center text-center space-y-4">
         <div className="relative avatar-upload-container group">
-          <div className="w-24 h-24 md:w-28 md:h-28 rounded-full overflow-hidden shadow-lg border-4 border-surface bg-surface-container">
+          <div className="w-24 h-24 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center relative shadow-lg border-4 border-surface">
             {avatarUrl ? (
               <img src={avatarUrl} alt={fullName} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-on-surface-variant">
-                <span className="material-symbols-outlined text-5xl">person</span>
-              </div>
+              <span className="material-symbols-outlined text-5xl text-on-surface-variant">person</span>
             )}
             <div className="avatar-upload-overlay rounded-full" onClick={() => fileInputRef.current?.click()}>
               {avatarUploading ? (
@@ -377,7 +375,7 @@ function Profile({ isLoggedIn, user }) {
           <h1 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
             {user?.user_metadata?.full_name?.split(' ')[0] || "Student"}
           </h1>
-          <div className="mt-1 flex items-center justify-center lg:justify-start">
+          <div className="mt-1 flex items-center justify-center">
             {isVerified || role === "admin" || role === "partner" ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                 <span className="material-symbols-outlined text-[14px]">verified</span>
@@ -435,9 +433,64 @@ function Profile({ isLoggedIn, user }) {
         {/* Right Column (Settings & Security) */}
         <div className="w-full lg:w-2/3 flex flex-col gap-6" ref={settingsRef}>
         
+        {/* Personal & Academic Details Card */}
+        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
+          <h3 className="font-headline font-bold text-base text-on-background mb-4">Personal & Academic Details</h3>
+          <div className="space-y-3">
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
+              <p className="text-sm font-medium text-on-background">Uvaram Mohanaram</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email</p>
+              <p className="text-sm font-medium text-on-background">uvaram@example.com</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">University</p>
+              <p className="text-sm font-medium text-on-background">General Sir John Kotelawala Defence University</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Department</p>
+              <p className="text-sm font-medium text-on-background">Faculty of Computing</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Batch/Intake</p>
+              <p className="text-sm font-medium text-on-background">Intake 42</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Notification Preferences Card */}
+        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
+          <h3 className="font-headline font-bold text-base text-on-background mb-4">Notification Preferences</h3>
+          <div className="space-y-4">
+            <label className="flex items-center justify-between cursor-pointer group">
+              <div>
+                <p className="text-sm font-bold text-on-background">New Deal Alerts</p>
+                <p className="text-xs text-on-surface-variant">Get notified when new exclusive deals drop.</p>
+              </div>
+              <div className="relative ml-4">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
+              </div>
+            </label>
+            
+            <label className="flex items-center justify-between cursor-pointer group">
+              <div>
+                <p className="text-sm font-bold text-on-background">Campus Event Reminders</p>
+                <p className="text-xs text-on-surface-variant">Receive reminders for upcoming events.</p>
+              </div>
+              <div className="relative ml-4">
+                <input type="checkbox" className="sr-only peer" defaultChecked />
+                <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
+              </div>
+            </label>
+          </div>
+        </div>
+
         {/* University Email Verification Card */}
         {role === "student" && !isVerified && (
-          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5 md:p-6 shadow-sm">
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
             <div className="flex items-start gap-3 mb-4">
               <span className="material-symbols-outlined text-primary text-2xl mt-0.5" style={{ fontVariationSettings: "'FILL' 1" }}>school</span>
               <div>
@@ -480,7 +533,7 @@ function Profile({ isLoggedIn, user }) {
 
         {/* Manual Verification Card */}
         {role === "student" && !isVerified && (
-          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5 md:p-6 shadow-sm">
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
             <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-4">
               <div>
                 <h3 className="font-headline font-bold text-base text-on-background">Manual Verification</h3>
@@ -552,7 +605,7 @@ function Profile({ isLoggedIn, user }) {
         )}
 
         {/* Preferences / Account Security Card */}
-        <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5 md:p-6 shadow-sm">
+        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
           <h3 className="font-headline font-bold text-base text-on-background mb-4">Account Security</h3>
           <form onSubmit={handleSettingsSave} className="space-y-4">
             <div>
