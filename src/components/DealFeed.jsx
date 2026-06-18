@@ -68,11 +68,11 @@ function DealFeed({ searchQuery = "" }) {
             </div>
 
             {/* Horizontal Swipeable Container */}
-            <div className="flex overflow-x-auto gap-4 px-6 md:px-8 pb-8 snap-x snap-mandatory scrollbar-hide">
+            <div className="flex overflow-x-auto gap-4 px-6 md:px-8 pb-8 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               {trendingDeals.map((deal) => (
                 <div 
                   key={deal.id} 
-                  className="w-[85vw] md:w-72 flex-shrink-0 snap-start"
+                  className="w-[85vw] md:w-72 flex-shrink-0"
                 >
                   <DealCard
                     deal={deal}

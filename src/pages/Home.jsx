@@ -24,7 +24,7 @@ function Home({ searchQuery, onSearchChange }) {
       
       {/* Category Chips - Touch Swipeable Row */}
       <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-4 mb-2">
-        <div className="flex overflow-x-auto gap-3 pb-4 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+        <div className="flex overflow-x-auto gap-4 pb-4 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] -mx-4 px-4 md:mx-0 md:px-0">
           {categories.map((cat) => (
             <button
               key={cat.label}
@@ -32,7 +32,7 @@ function Home({ searchQuery, onSearchChange }) {
                 const params = new URLSearchParams({ filter: cat.label });
                 navigate(`/categories?${params.toString()}`);
               }}
-              className="flex-shrink-0 flex items-center gap-2.5 bg-surface-container-low border border-outline-variant/15 px-5 py-3 rounded-2xl hover:bg-surface-container hover:border-outline-variant/30 hover:shadow-sm transition-all snap-start active:scale-[0.98] min-h-[48px]"
+              className="flex-shrink-0 flex items-center gap-2.5 bg-surface-container-low border border-outline-variant/15 px-5 py-3 rounded-2xl hover:bg-surface-container hover:border-outline-variant/30 hover:shadow-sm transition-all active:scale-[0.98] min-h-[48px]"
             >
               <span className="material-symbols-outlined text-primary text-2xl drop-shadow-sm" style={{ fontVariationSettings: "'FILL' 1" }}>
                 {cat.icon}
