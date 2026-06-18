@@ -333,6 +333,28 @@ function Profile({ isLoggedIn, user }) {
     setIsEditing(false);
   };
 
+  // ── Notification Preferences ────────────────────────
+  const [prefDealAlerts, setPrefDealAlerts] = useState(user?.user_metadata?.pref_deal_alerts ?? true);
+  const [prefEventReminders, setPrefEventReminders] = useState(user?.user_metadata?.pref_event_reminders ?? true);
+  const [prefSaving, setPrefSaving] = useState(false);
+
+  const togglePreference = async (key, currentValue, setter) => {
+    const newValue = !currentValue;
+    setter(newValue); // Optimistic UI update
+    setPrefSaving(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        data: { [key]: newValue }
+      });
+      if (error) throw error;
+    } catch (err) {
+      console.error("Failed to update preference:", err);
+      setter(currentValue); // Revert on failure
+    } finally {
+      setPrefSaving(false);
+    }
+  };
+
   // ── Settings form state ─────────────────────────────
   const [settingsEmail, setSettingsEmail] = useState(userEmail);
   const [settingsPassword, setSettingsPassword] = useState("");
@@ -605,8 +627,8 @@ function Profile({ isLoggedIn, user }) {
                   <p className="text-xs text-on-surface-variant">Get notified when new exclusive deals drop.</p>
                 </div>
                 <div className="relative ml-4">
-                  <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
+                  <input type="checkbox" className="sr-only peer" checked={prefDealAlerts} onChange={() => togglePreference('pref_deal_alerts', prefDealAlerts, setPrefDealAlerts)} disabled={prefSaving} />
+                  <div className={`w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity ${prefSaving ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
                 </div>
               </label>
               
@@ -616,8 +638,8 @@ function Profile({ isLoggedIn, user }) {
                   <p className="text-xs text-on-surface-variant">Receive reminders for upcoming events.</p>
                 </div>
                 <div className="relative ml-4">
-                  <input type="checkbox" className="sr-only peer" defaultChecked />
-                  <div className="w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity"></div>
+                  <input type="checkbox" className="sr-only peer" checked={prefEventReminders} onChange={() => togglePreference('pref_event_reminders', prefEventReminders, setPrefEventReminders)} disabled={prefSaving} />
+                  <div className={`w-11 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary group-hover:opacity-80 transition-opacity ${prefSaving ? 'opacity-50 cursor-not-allowed' : ''}`}></div>
                 </div>
               </label>
             </div>
