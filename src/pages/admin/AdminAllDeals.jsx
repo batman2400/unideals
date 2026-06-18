@@ -9,14 +9,12 @@ const STATUS_TABS = [
   { value: "active", label: "Active" },
   { value: "scheduled", label: "Scheduled" },
   { value: "expired", label: "Expired" },
-  { value: "paused", label: "Paused" },
 ];
 
 const STATUS_BADGE = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
   expired: "bg-surface-container-high text-on-surface-variant border-outline-variant/50",
-  paused: "bg-red-50 text-red-600 border-red-200",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
@@ -82,12 +80,14 @@ function AdminAllDeals() {
          const st = d.db_status;
          
          let computedStatus = st;
-         if (st === "active" || st === "approved") {
-           if (start > now) computedStatus = "scheduled";
-           else if (end && end < now) computedStatus = "expired";
-           else computedStatus = "active";
-         } else if (end && end < now) {
-           computedStatus = "expired";
+         if (statusFilter === 'active') {
+           return (st === 'active' || st === 'approved') && start <= now && (!end || end >= now);
+         }
+         if (statusFilter === 'scheduled') {
+           return (st === 'active' || st === 'approved') && start > now;
+         }
+         if (statusFilter === 'expired') {
+           return end && end < now;
          }
          
          return computedStatus === statusFilter;
@@ -359,34 +359,6 @@ function AdminAllDeals() {
                       </td>
                       <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
                         <div className="flex items-center justify-end gap-1.5 w-full md:w-auto">
-                          {(displayStatus === "active" || displayStatus === "scheduled") && (
-                            <button
-                              onClick={() =>
-                                handleStatusChange(deal.id, "paused")
-                              }
-                              disabled={isActing}
-                              title="Pause Deal"
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-amber-600 hover:bg-amber-50 transition-colors disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-lg">
-                                pause_circle
-                              </span>
-                            </button>
-                          )}
-                          {displayStatus === "paused" && (
-                            <button
-                              onClick={() =>
-                                handleStatusChange(deal.id, "active")
-                              }
-                              disabled={isActing}
-                              title="Activate Deal"
-                              className="w-8 h-8 flex items-center justify-center rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-lg">
-                                play_circle
-                              </span>
-                            </button>
-                          )}
                           <button
                             onClick={() => handleDelete(deal.id)}
                             disabled={isActing}
