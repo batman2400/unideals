@@ -140,7 +140,7 @@ function CreateEvent() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto px-4 py-8 md:py-12 animate-fade-in">
+    <div className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 animate-fade-in">
       <div className="mb-8">
         <h1 className="font-headline font-extrabold text-3xl tracking-tighter text-on-background">
           Create New Event
@@ -150,7 +150,10 @@ function CreateEvent() {
         </p>
       </div>
 
-      <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-outline-variant/20">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        {/* Left Form Column */}
+        <div className="lg:col-span-7 xl:col-span-8">
+          <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-outline-variant/20">
         {success && (
           <div className="mb-6 p-4 bg-primary/10 text-primary rounded-2xl flex items-center gap-3">
             <span className="material-symbols-outlined">check_circle</span>
@@ -316,7 +319,7 @@ function CreateEvent() {
             ></textarea>
           </div>
 
-          <div className="pt-4 flex items-center justify-end gap-4">
+          <div className="pt-6 mt-8 border-t border-outline-variant/20 flex items-center justify-end gap-4">
             <button
               type="button"
               onClick={() => navigate(-1)}
@@ -343,6 +346,74 @@ function CreateEvent() {
             </button>
           </div>
         </form>
+          </div>
+        </div>
+
+        {/* Right Live Preview Column */}
+        <div className="lg:col-span-5 xl:col-span-4 hidden lg:block">
+          <div className="sticky top-28">
+            <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4 flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+              Live Preview
+            </h3>
+            <div className="bg-white rounded-3xl p-6 border border-outline-variant/20 shadow-sm relative">
+              <div className="pointer-events-none">
+                <div className="bg-surface rounded-3xl overflow-hidden border border-outline-variant/20 shadow-sm flex flex-col h-full">
+                  {/* Cover Image Placeholder or Real */}
+                  <div className="relative w-full aspect-video bg-surface-container-high/30 overflow-hidden flex-shrink-0">
+                    {(selectedImagePreviewUrl || formData.cover_image_url) ? (
+                      <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Cover" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-on-surface-variant/40">
+                         <span className="material-symbols-outlined text-4xl mb-2">image</span>
+                         <span className="text-xs font-bold uppercase tracking-wider">Cover Image</span>
+                      </div>
+                    )}
+                    
+                    {/* Category Badge over image */}
+                    {formData.category && (
+                      <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-on-background shadow-sm">
+                        {formData.category.replace('_', ' ')}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-5 flex flex-col flex-1">
+                    {/* Date/Time */}
+                    <div className="flex items-center gap-2 mb-3 text-primary text-xs font-bold uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-[16px]">calendar_month</span>
+                      <span>{formData.start_time ? new Date(formData.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : 'Date & Time'}</span>
+                    </div>
+
+                    {/* Title */}
+                    <h3 className="font-headline font-bold text-xl text-on-background mb-2 line-clamp-2">
+                      {formData.title || "Your Event Title"}
+                    </h3>
+
+                    {/* Location */}
+                    <div className="flex items-center gap-2 text-on-surface-variant text-sm mb-4">
+                      <span className="material-symbols-outlined text-[18px]">location_on</span>
+                      <span className="truncate">{formData.location_name || "Event Location"}</span>
+                    </div>
+
+                    {/* Description (Preview) */}
+                    <p className="text-on-surface-variant text-sm line-clamp-3 mb-6 flex-1 min-h-[60px]">
+                      {formData.description || "Provide the exciting details about your event to attract students..."}
+                    </p>
+
+                    {/* Action button */}
+                    <div className="mt-auto">
+                      <div className="w-full py-3 rounded-xl bg-surface-container-low text-on-surface-variant font-bold text-sm border border-outline-variant/30 flex items-center justify-center gap-2">
+                        <span className="material-symbols-outlined text-[18px]">local_activity</span>
+                        Get Tickets
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
