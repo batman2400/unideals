@@ -3,7 +3,7 @@ import { useRoleContext } from "../lib/RoleContext";
 
 export default function Navbar({ onLogout, isLoggedIn }) {
   const location = useLocation();
-  const { role } = useRoleContext();
+  const { role, loading } = useRoleContext();
 
   const handleOpenAuth = () => {
     window.dispatchEvent(new Event("open-auth-modal"));
@@ -54,7 +54,9 @@ export default function Navbar({ onLogout, isLoggedIn }) {
       <div className="flex items-center gap-4">
         {isLoggedIn ? (
           <>
-            {(role === "admin" || role === "partner") && (
+            {loading ? (
+              <div className="hidden lg:block w-[140px] h-[36px] rounded-full skeleton-shimmer bg-surface-container-low" />
+            ) : (role === "admin" || role === "partner") ? (
               <Link
                 to={role === "admin" ? "/admin" : "/partner"}
                 className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-full transition-colors shadow-sm"
@@ -64,7 +66,7 @@ export default function Navbar({ onLogout, isLoggedIn }) {
                   {role === "admin" ? "Admin Portal" : "Partner Portal"}
                 </span>
               </Link>
-            )}
+            ) : null}
             <Link
               to="/profile"
               className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/20 hover:bg-surface-container transition-colors"

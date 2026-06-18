@@ -5,7 +5,7 @@ import { useRoleContext } from "../lib/RoleContext";
 export default function Sidebar({ onLogout, isLoggedIn }) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
-  const { role } = useRoleContext();
+  const { role, loading } = useRoleContext();
 
   const handleOpenAuth = () => {
     setIsOpen(false);
@@ -32,7 +32,9 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
     const mainLinks = [...studentLinks];
     
     // Add entry link to portal for privileged users
-    if (role === "admin") {
+    if (loading) {
+      mainLinks.push({ isSkeleton: true, id: 'loading-portal' });
+    } else if (role === "admin") {
       mainLinks.push({ path: "/admin", label: "Admin Portal", icon: "admin_panel_settings" });
     } else if (role === "partner") {
       mainLinks.push({ path: "/partner", label: "Partner Portal", icon: "handshake" });
@@ -125,7 +127,11 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
         {/* Navigation Links */}
         <nav className="flex-1 overflow-y-auto px-4 py-6 space-y-1 scrollbar-hide">
           {navLinks.map((link) => (
-            <NavItem key={link.path} link={link} />
+            link.isSkeleton ? (
+              <div key={link.id} className="h-[44px] w-full rounded-xl skeleton-shimmer bg-surface-container-low" />
+            ) : (
+              <NavItem key={link.path} link={link} />
+            )
           ))}
         </nav>
 
