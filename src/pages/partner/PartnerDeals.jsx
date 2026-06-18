@@ -13,14 +13,14 @@ const STATUS_BADGE = {
   approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
   expired: "bg-surface-container-high text-on-surface border-outline-variant/30",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
-  rejected: "bg-red-50 text-red-600 border-red-200",
+  scheduled: "bg-blue-50 text-blue-700 border-blue-200",
 };
 
 const STATUS_TABS = [
   { value: null, label: "All" },
   { value: "active", label: "Active" },
+  { value: "scheduled", label: "Scheduled" },
   { value: "expired", label: "Expired" },
-  { value: "rejected", label: "Rejected" },
 ];
 
 function PartnerDeals() {
@@ -158,6 +158,10 @@ function PartnerDeals() {
           return (d.status === "active" || d.status === "approved") && 
                  start <= now && (!end || end >= now);
         }
+        if (statusFilter === "scheduled") {
+          return (d.status === "active" || d.status === "approved") && 
+                 start > now;
+        }
         if (statusFilter === "expired") {
           return d.status === "expired" || (end && end < now);
         }
@@ -224,6 +228,10 @@ function PartnerDeals() {
                   return (d.status === "active" || d.status === "approved") && 
                          start <= now && (!end || end >= now);
                 }
+                if (tab.value === "scheduled") {
+                  return (d.status === "active" || d.status === "approved") && 
+                         start > now;
+                }
                 if (tab.value === "expired") {
                   return d.status === "expired" || (end && end < now);
                 }
@@ -281,7 +289,18 @@ function PartnerDeals() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filteredDeals.map((deal) => {
             const isDeleting = deletingDealId === deal.id;
-            const badge = STATUS_BADGE[deal.status] || STATUS_BADGE.pending;
+            const start = deal.start_time ? new Date(deal.start_time) : new Date(0);
+            const end = deal.end_time ? new Date(deal.end_time) : null;
+            let displayStatus = deal.status;
+            if (deal.status === "active" || deal.status === "approved") {
+              if (start > now) displayStatus = "scheduled";
+              else if (end && end < now) displayStatus = "expired";
+              else displayStatus = "active";
+            } else if (end && end < now) {
+              displayStatus = "expired";
+            }
+            
+            const badge = STATUS_BADGE[displayStatus] || STATUS_BADGE.pending;
 
             return (
               <article
@@ -299,7 +318,7 @@ function PartnerDeals() {
                     <span
                       className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase backdrop-blur-sm ${badge}`}
                     >
-                      {deal.status}
+                      {displayStatus}
                     </span>
                   </div>
                   <div className="absolute top-3 right-3">
