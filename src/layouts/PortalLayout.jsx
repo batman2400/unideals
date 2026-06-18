@@ -50,6 +50,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
     { path: "/admin/deals", label: "All Deals", icon: "storefront" },
     { path: "/admin/users", label: "Users", icon: "group" },
     { path: "/admin/brands", label: "Brands", icon: "add_business" },
+    { path: "/events/new", label: "Create Event", icon: "event_available" },
     { path: "/admin/analytics", label: "Analytics", icon: "monitoring" },
   ];
 
@@ -57,6 +58,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
     { path: "/partner", label: "Overview", icon: "dashboard", exact: true },
     { path: "/partner/deals", label: "My Deals", icon: "local_offer" },
     { path: "/partner/create-deal", label: "Create Deal", icon: "add_circle" },
+    { path: "/events/new", label: "Create Event", icon: "event_available" },
     { path: "/partner/scanner", label: "Scanner", icon: "qr_code_scanner" },
     { path: "/partner/analytics", label: "Analytics", icon: "monitoring" },
   ];
