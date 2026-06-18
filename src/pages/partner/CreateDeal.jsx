@@ -301,7 +301,7 @@ function CreateDeal() {
           `${formData.title.trim()} student offer.`,
         redemption_code: normalizedRedemptionCode,
         partner_id: targetUserId,
-        status: "pending",
+        status: "active",
       };
 
       const { error: insertError } = await supabase
@@ -319,7 +319,7 @@ function CreateDeal() {
       setOfferValue("");
       setSelectedImageFile(null);
       setSuccessMessage(
-        "Deal submitted successfully. It is now pending admin approval.",
+        "Deal launched successfully. It is now active on the platform.",
       );
     } catch (submitError) {
       if (!isMountedRef.current) return;
@@ -362,8 +362,8 @@ function CreateDeal() {
             Create a New Deal Submission
           </h1>
           <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
-            Complete all fields and submit for review. The deal will remain
-            pending until an admin approves it.
+            Complete all fields and launch your deal. It will be immediately
+            available to students.
           </p>
         </div>
 
@@ -666,9 +666,9 @@ function CreateDeal() {
                 ) : (
                   <>
                     <span className="material-symbols-outlined text-xl">
-                      send
+                      rocket_launch
                     </span>
-                    Submit for Approval
+                    Launch Deal
                   </>
                 )}
               </button>
