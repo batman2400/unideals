@@ -112,7 +112,7 @@ function DealCard({
   );
 
   return (
-    <div className="flex flex-col group cursor-pointer relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-xl">
+    <div className="flex flex-col h-full group cursor-pointer relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-xl">
       {/* Deal Image */}
       <Link
         to={isDemo ? "#" : `/perks/${id}`}

@@ -19,7 +19,7 @@ import { lazy, Suspense, useState, useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
-import Navbar from "./components/Navbar";
+import Sidebar from "./components/Sidebar";
 import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -32,6 +32,8 @@ const Brands = lazy(() => import("./pages/Brands"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Profile = lazy(() => import("./pages/Profile"));
+const SavedDeals = lazy(() => import("./pages/SavedDeals"));
+const UniversityEvents = lazy(() => import("./pages/UniversityEvents"));
 const PartnerOverview = lazy(() => import("./pages/partner/PartnerOverview"));
 const PartnerDeals = lazy(() => import("./pages/partner/PartnerDeals"));
 const PartnerScanner = lazy(() => import("./pages/partner/PartnerScanner"));
@@ -45,6 +47,7 @@ const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
+const SupportTickets = lazy(() => import("./pages/admin/SupportTickets"));
 
 function RouteSkeleton() {
   return (
@@ -142,19 +145,11 @@ function App() {
   }
 
   return (
-    <>
-      {/* Persistent Navbar */}
-      <Navbar
-        onOpenAuth={() => setAuthModalOpen(true)}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        isLoggedIn={isLoggedIn}
-        user={user}
-        onLogout={handleLogout}
-      />
+    <div className="flex min-h-[100dvh] bg-background">
+      <Sidebar onLogout={handleLogout} />
 
       {/* Page Content */}
-      <main className="pt-20 md:pt-24 pb-safe-content">
+      <main className="flex-1 md:ml-72 pt-16 md:pt-0 pb-safe-content min-w-0">
         <Suspense fallback={<RouteSkeleton />}>
           <div
             key={`${location.pathname}${location.search}`}
@@ -179,6 +174,8 @@ function App() {
               <Route path="/brands" element={<Brands />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/saved" element={<SavedDeals />} />
+              <Route path="/events" element={<UniversityEvents />} />
               <Route
                 path="/profile"
                 element={<Profile isLoggedIn={isLoggedIn} user={user} />}
@@ -212,9 +209,10 @@ function App() {
                 <Route path="pending" element={<AdminPendingDeals />} />
                 <Route path="deals" element={<AdminAllDeals />} />
                 <Route path="users" element={<AdminUsers />} />
-                <Route path="verifications" element={<AdminVerifications />} />
-                <Route path="brands" element={<AdminBrands />} />
-                <Route path="analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/verifications" element={<AdminVerifications />} />
+                <Route path="/admin/brands" element={<AdminBrands />} />
+                <Route path="/admin/analytics" element={<AdminAnalytics />} />
+                <Route path="/admin/tickets" element={<SupportTickets />} />
               </Route>
 
               {/* Catch-all 404 → redirect to home */}
@@ -224,15 +222,12 @@ function App() {
         </Suspense>
       </main>
 
-      {/* Persistent Footer */}
-      <Footer />
-
-      {/* Auth Modal */}
+      {/* Global Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
         onClose={() => setAuthModalOpen(false)}
       />
-    </>
+    </div>
   );
 }
 
