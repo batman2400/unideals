@@ -148,12 +148,13 @@ function App() {
   }
 
   return (
-    <div className="min-h-[100dvh] bg-background flex flex-col">
-      <Navbar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
-      <Sidebar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
+    <div className="flex flex-col min-h-screen w-full bg-background">
+      <div className="flex flex-1 w-full flex-col">
+        <Navbar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
+        <Sidebar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
 
-      {/* Page Content */}
-      <main className="flex-1 pt-16 md:pt-0 pb-safe-content min-w-0 flex flex-col min-h-[100dvh]">
+        {/* Page Content */}
+        <main className="flex-1 pt-16 md:pt-0 pb-16 min-w-0 flex flex-col">
         <Suspense fallback={<RouteSkeleton />}>
           <div
             key={`${location.pathname}${location.search}`}
@@ -227,9 +228,11 @@ function App() {
           </div>
         </Suspense>
 
-        {/* Persistent Footer */}
-        <Footer />
-      </main>
+        </main>
+      </div>
+
+      {/* Persistent Footer */}
+      <Footer />
 
       {/* Global Auth Modal */}
       <AuthModal
