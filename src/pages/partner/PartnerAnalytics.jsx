@@ -401,7 +401,7 @@ function PartnerAnalytics() {
                         Redeemed
                       </span>
                       <span className="text-right md:text-right">
-                        {isInStore ? d.total_tickets_redeemed : "-"}
+                        {isInStore ? d.confirmed_redemptions : "-"}
                       </span>
                     </td>
                   </tr>
