@@ -4,6 +4,16 @@ import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
 import { uploadBrandLogo } from "../../lib/brandLogoUpload";
 
+const CATEGORIES = [
+  "Food & Beverage",
+  "Fashion & Apparel",
+  "Tech & Electronics",
+  "Entertainment",
+  "Health & Beauty",
+  "Travel",
+  "Other"
+];
+
 function AdminBrands() {
   const { role, loading: roleLoading } = useRoleContext();
   const [brands, setBrands] = useState([]);
@@ -13,20 +23,28 @@ function AdminBrands() {
 
   const [showCreate, setShowCreate] = useState(false);
   const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
   const [description, setDescription] = useState("");
   const [websiteUrl, setWebsiteUrl] = useState("");
+  const [instagramHandle, setInstagramHandle] = useState("");
+  const [tiktokHandle, setTiktokHandle] = useState("");
   const [logoFile, setLogoFile] = useState(null);
   const [logoPreview, setLogoPreview] = useState("");
   const [saving, setSaving] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Edit Drawer State
   const [editingBrand, setEditingBrand] = useState(null);
   const [editName, setEditName] = useState("");
+  const [editCategory, setEditCategory] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editWebsiteUrl, setEditWebsiteUrl] = useState("");
+  const [editInstagramHandle, setEditInstagramHandle] = useState("");
+  const [editTiktokHandle, setEditTiktokHandle] = useState("");
   const [editLogoFile, setEditLogoFile] = useState(null);
   const [editLogoPreview, setEditLogoPreview] = useState("");
   const [updating, setUpdating] = useState(false);
+  const [isEditDragging, setIsEditDragging] = useState(false);
 
   const isMountedRef = useRef(true);
 
@@ -42,7 +60,6 @@ function AdminBrands() {
     setLoading(true);
     setError("");
 
-    // Use a custom RPC if we had one for stats, else fetch from brands table
     const { data, error: fetchError } = await supabase
       .from("brands")
       .select("*")
@@ -67,6 +84,24 @@ function AdminBrands() {
       if (isMountedRef.current) setMessage("");
     }, 4000);
   }, []);
+
+  const handleLogoDrop = (e, isEdit = false) => {
+    e.preventDefault();
+    if (isEdit) setIsEditDragging(false);
+    else setIsDragging(false);
+
+    const file = e.dataTransfer?.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      const url = URL.createObjectURL(file);
+      if (isEdit) {
+        setEditLogoFile(file);
+        setEditLogoPreview(url);
+      } else {
+        setLogoFile(file);
+        setLogoPreview(url);
+      }
+    }
+  };
 
   const handleLogoChange = (e, isEdit = false) => {
     const file = e.target.files?.[0];
@@ -113,8 +148,11 @@ function AdminBrands() {
       const { error: insertError } = await supabase.from("brands").insert([
         {
           name: name.trim(),
+          category: category || null,
           description: description.trim() || null,
           website_url: websiteUrl.trim() || null,
+          instagram_handle: instagramHandle.trim() || null,
+          tiktok_handle: tiktokHandle.trim() || null,
           logo_url: uploadedLogoUrl,
         },
       ]);
@@ -124,8 +162,11 @@ function AdminBrands() {
       if (isMountedRef.current) {
         setShowCreate(false);
         setName("");
+        setCategory("");
         setDescription("");
         setWebsiteUrl("");
+        setInstagramHandle("");
+        setTiktokHandle("");
         setLogoFile(null);
         setLogoPreview("");
         showMsg(`Brand "${name}" created successfully.`);
@@ -145,8 +186,11 @@ function AdminBrands() {
   const openEditDrawer = (brand) => {
     setEditingBrand(brand);
     setEditName(brand.name);
+    setEditCategory(brand.category || "");
     setEditDescription(brand.description || "");
     setEditWebsiteUrl(brand.website_url || "");
+    setEditInstagramHandle(brand.instagram_handle || "");
+    setEditTiktokHandle(brand.tiktok_handle || "");
     setEditLogoPreview(brand.logo_url || "");
     setEditLogoFile(null);
     setError("");
@@ -155,8 +199,11 @@ function AdminBrands() {
   const closeEditDrawer = () => {
     setEditingBrand(null);
     setEditName("");
+    setEditCategory("");
     setEditDescription("");
     setEditWebsiteUrl("");
+    setEditInstagramHandle("");
+    setEditTiktokHandle("");
     setEditLogoPreview("");
     setEditLogoFile(null);
     setError("");
@@ -186,8 +233,11 @@ function AdminBrands() {
         .from("brands")
         .update({
           name: editName.trim(),
+          category: editCategory || null,
           description: editDescription.trim() || null,
           website_url: editWebsiteUrl.trim() || null,
+          instagram_handle: editInstagramHandle.trim() || null,
+          tiktok_handle: editTiktokHandle.trim() || null,
           logo_url: uploadedLogoUrl,
         })
         .eq("id", editingBrand.id);
@@ -287,17 +337,17 @@ function AdminBrands() {
       )}
 
       {showCreate && (
-        <div className="mb-6 bg-surface rounded-2xl border border-primary/20 p-5 shadow-sm animate-slide-down">
-          <h3 className="font-headline font-bold text-on-background mb-4 flex items-center gap-2">
-            <span className="material-symbols-outlined text-primary text-lg">
+        <div className="mb-6 bg-surface rounded-2xl border border-primary/20 p-6 shadow-sm animate-slide-down">
+          <h3 className="font-headline font-bold text-on-background mb-6 flex items-center gap-2 text-lg">
+            <span className="material-symbols-outlined text-primary text-xl">
               add_business
             </span>
             Create New Brand
           </h3>
-          <form onSubmit={handleCreate} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <form onSubmit={handleCreate} className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                   Brand Name *
                 </label>
                 <input
@@ -306,53 +356,131 @@ function AdminBrands() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Apple"
                   required
-                  className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
+                  className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                  Website URL
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  Category
                 </label>
-                <input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={(e) => setWebsiteUrl(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-                />
+                <select
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                >
+                  <option value="">Select Category</option>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                 Description
               </label>
               <textarea
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="A short description about this brand..."
-                className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none min-h-[80px]"
+                className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none min-h-[80px] transition-all"
               />
             </div>
 
+            <div className="p-5 rounded-2xl bg-surface-container-low/50 border border-outline-variant/20 space-y-5">
+              <h4 className="text-xs font-bold text-on-background uppercase tracking-wider flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+                <span className="material-symbols-outlined text-[16px] text-primary">link</span>
+                Links & Socials
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <div>
+                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Website URL</label>
+                  <div className="relative">
+                    <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-[18px]">language</span>
+                    <input
+                      type="url"
+                      value={websiteUrl}
+                      onChange={(e) => setWebsiteUrl(e.target.value)}
+                      placeholder="https://..."
+                      className="w-full bg-surface border border-outline-variant/20 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Instagram</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/50 font-bold">@</span>
+                    <input
+                      type="text"
+                      value={instagramHandle}
+                      onChange={(e) => setInstagramHandle(e.target.value)}
+                      placeholder="handle"
+                      className="w-full bg-surface border border-outline-variant/20 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">TikTok</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/50 font-bold">@</span>
+                    <input
+                      type="text"
+                      value={tiktokHandle}
+                      onChange={(e) => setTiktokHandle(e.target.value)}
+                      placeholder="handle"
+                      className="w-full bg-surface border border-outline-variant/20 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                 Brand Logo
               </label>
-              <div className="flex items-center gap-4">
-                {logoPreview && (
-                  <img
-                    src={logoPreview}
-                    alt="Preview"
-                    className="w-16 h-16 rounded-xl object-contain bg-gray-50 border border-outline-variant/20"
-                  />
-                )}
+              <div
+                className={`relative flex flex-col items-center justify-center p-6 border-2 border-dashed rounded-2xl transition-all ${
+                  isDragging
+                    ? "border-primary bg-primary/5"
+                    : "border-outline-variant/30 bg-surface hover:border-primary/50 hover:bg-surface-container-low"
+                }`}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDragging(true);
+                }}
+                onDragLeave={() => setIsDragging(false)}
+                onDrop={(e) => handleLogoDrop(e, false)}
+              >
                 <input
                   type="file"
                   accept="image/*"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                   onChange={(e) => handleLogoChange(e, false)}
-                  className="text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-primary-container file:text-on-primary-container hover:file:bg-primary-container/80 transition-all cursor-pointer"
                 />
+                {logoPreview ? (
+                  <div className="flex flex-col items-center gap-3">
+                    <img
+                      src={logoPreview}
+                      alt="Preview"
+                      className="w-24 h-24 rounded-xl object-contain bg-gray-50 border border-outline-variant/20 shadow-sm"
+                    />
+                    <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full backdrop-blur-sm">Click or drag to replace</span>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2 text-center pointer-events-none">
+                    <span className="material-symbols-outlined text-4xl text-on-surface-variant/40 mb-1">
+                      add_photo_alternate
+                    </span>
+                    <p className="text-sm font-bold text-on-surface">Upload Brand Logo</p>
+                    <p className="text-xs text-on-surface-variant">Drag and drop or click to browse</p>
+                    <div className="mt-2 inline-flex items-center gap-1.5 px-3 py-1 bg-surface-variant/50 rounded-lg text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">
+                      <span className="material-symbols-outlined text-[14px]">aspect_ratio</span>
+                      Recommended: Square 400x400px
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -360,16 +488,16 @@ function AdminBrands() {
               <button
                 type="submit"
                 disabled={saving}
-                className="inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary px-6 py-3 rounded-xl font-headline font-bold text-sm shadow-sm disabled:opacity-60"
+                className="inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary px-8 py-3.5 rounded-xl font-headline font-extrabold text-sm shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:hover:translate-y-0"
               >
                 {saving ? (
-                  <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
                 ) : (
-                  <span className="material-symbols-outlined text-lg">
-                    check
+                  <span className="material-symbols-outlined text-[20px]">
+                    check_circle
                   </span>
                 )}
-                Create Brand
+                Create Brand Profile
               </button>
             </div>
           </form>
@@ -413,20 +541,26 @@ function AdminBrands() {
                     <h3 className="font-headline font-bold text-on-background text-lg truncate group-hover:text-emerald-700 transition-colors">
                       {b.name}
                     </h3>
-                    {b.website_url && (
-                      <a
-                        href={b.website_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                        className="text-primary hover:underline text-xs flex items-center gap-1 mt-0.5"
-                      >
-                        <span className="material-symbols-outlined text-[14px]">
-                          link
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {b.category && (
+                        <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider bg-surface-container px-2 py-0.5 rounded-md">
+                          {b.category}
                         </span>
-                        Website
-                      </a>
-                    )}
+                      )}
+                      {b.website_url && (
+                        <a
+                          href={b.website_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-primary hover:underline text-xs flex items-center gap-1"
+                        >
+                          <span className="material-symbols-outlined text-[14px]">
+                            link
+                          </span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
                 {b.description ? (
@@ -477,64 +611,137 @@ function AdminBrands() {
                   <p className="text-error text-sm font-bold">{error}</p>
                 </div>
               )}
-              <form id="edit-brand-form" onSubmit={handleUpdate} className="space-y-5">
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                    Brand Name *
-                  </label>
-                  <input
-                    type="text"
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    required
-                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-                  />
+              <form id="edit-brand-form" onSubmit={handleUpdate} className="space-y-6">
+                <div className="grid grid-cols-1 gap-5">
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                      Brand Name *
+                    </label>
+                    <input
+                      type="text"
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      required
+                      className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                      Category
+                    </label>
+                    <select
+                      value={editCategory}
+                      onChange={(e) => setEditCategory(e.target.value)}
+                      className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    >
+                      <option value="">Select Category</option>
+                      {CATEGORIES.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
-                    Website URL
-                  </label>
-                  <input
-                    type="url"
-                    value={editWebsiteUrl}
-                    onChange={(e) => setEditWebsiteUrl(e.target.value)}
-                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                     Description
                   </label>
                   <textarea
                     value={editDescription}
                     onChange={(e) => setEditDescription(e.target.value)}
-                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none min-h-[100px]"
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none min-h-[100px] transition-all"
                   />
                 </div>
+
+                <div className="p-5 rounded-2xl bg-surface-container-low/50 border border-outline-variant/20 space-y-4">
+                  <h4 className="text-xs font-bold text-on-background uppercase tracking-wider flex items-center gap-2 border-b border-outline-variant/10 pb-3">
+                    <span className="material-symbols-outlined text-[16px] text-primary">link</span>
+                    Links & Socials
+                  </h4>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Website URL</label>
+                      <div className="relative">
+                        <span className="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/40 text-[18px]">language</span>
+                        <input
+                          type="url"
+                          value={editWebsiteUrl}
+                          onChange={(e) => setEditWebsiteUrl(e.target.value)}
+                          className="w-full bg-surface border border-outline-variant/20 rounded-xl pl-9 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Instagram</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 font-bold text-sm">@</span>
+                          <input
+                            type="text"
+                            value={editInstagramHandle}
+                            onChange={(e) => setEditInstagramHandle(e.target.value)}
+                            className="w-full bg-surface border border-outline-variant/20 rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">TikTok</label>
+                        <div className="relative">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant/50 font-bold text-sm">@</span>
+                          <input
+                            type="text"
+                            value={editTiktokHandle}
+                            onChange={(e) => setEditTiktokHandle(e.target.value)}
+                            className="w-full bg-surface border border-outline-variant/20 rounded-xl pl-8 pr-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
                     Update Logo
                   </label>
-                  <div className="flex items-center gap-4">
-                    {editLogoPreview ? (
-                      <img
-                        src={editLogoPreview}
-                        alt="Preview"
-                        className="w-16 h-16 rounded-xl object-contain bg-gray-50 border border-outline-variant/20"
-                      />
-                    ) : (
-                      <div className="w-16 h-16 rounded-xl bg-gray-100 border border-outline-variant/20 flex items-center justify-center">
-                        <span className="font-headline font-extrabold text-xl text-gray-400">
-                          {editName.substring(0,2).toUpperCase()}
-                        </span>
-                      </div>
-                    )}
+                  <div
+                    className={`relative flex flex-col items-center justify-center p-5 border-2 border-dashed rounded-2xl transition-all ${
+                      isEditDragging
+                        ? "border-primary bg-primary/5"
+                        : "border-outline-variant/30 bg-surface hover:border-primary/50 hover:bg-surface-container-low"
+                    }`}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      setIsEditDragging(true);
+                    }}
+                    onDragLeave={() => setIsEditDragging(false)}
+                    onDrop={(e) => handleLogoDrop(e, true)}
+                  >
                     <input
                       type="file"
                       accept="image/*"
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                       onChange={(e) => handleLogoChange(e, true)}
-                      className="text-sm text-on-surface-variant file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-surface-container-high file:text-on-surface hover:file:bg-surface-variant transition-all cursor-pointer"
                     />
+                    {editLogoPreview ? (
+                      <div className="flex flex-col items-center gap-3">
+                        <img
+                          src={editLogoPreview}
+                          alt="Preview"
+                          className="w-20 h-20 rounded-xl object-contain bg-gray-50 border border-outline-variant/20 shadow-sm"
+                        />
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-primary bg-primary/10 px-3 py-1 rounded-full">Click to replace</span>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center gap-2 text-center pointer-events-none">
+                        <div className="w-16 h-16 rounded-xl bg-gray-100 border border-outline-variant/20 flex items-center justify-center mb-1">
+                          <span className="font-headline font-extrabold text-xl text-gray-400">
+                            {editName.substring(0,2).toUpperCase()}
+                          </span>
+                        </div>
+                        <p className="text-xs text-on-surface-variant">Drag new logo here</p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </form>
@@ -554,14 +761,14 @@ function AdminBrands() {
                 type="submit"
                 form="edit-brand-form"
                 disabled={updating}
-                className="inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm disabled:opacity-60 flex-1"
+                className="inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary px-6 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all disabled:opacity-60 disabled:hover:translate-y-0 flex-1"
               >
                 {updating ? (
-                  <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                  <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <span className="material-symbols-outlined text-lg">save</span>
                 )}
-                Save Changes
+                Save Profile
               </button>
             </div>
           </div>

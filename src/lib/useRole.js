@@ -172,31 +172,15 @@ export function useRole() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      resolveRole(session, false);
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      // Prevent disruptive loading spinners on background token refreshes
+      const isBackground = event === "TOKEN_REFRESHED" || event === "USER_UPDATED";
+      resolveRole(session, isBackground);
     });
-
-    const refreshOnVisible = () => {
-      if (document.visibilityState === "visible") {
-        resolveRole(null, true);
-      }
-    };
-
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", refreshOnVisible);
-    }
-
-    const refreshIntervalId = setInterval(() => {
-      resolveRole(null, true);
-    }, 120000);
 
     return () => {
       active = false;
       subscription.unsubscribe();
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", refreshOnVisible);
-      }
-      clearInterval(refreshIntervalId);
       detachRoleChannel();
     };
   }, [refreshKey]);
