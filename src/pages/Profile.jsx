@@ -20,37 +20,10 @@ import { useRoleContext } from "../lib/RoleContext";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
-// Simulated active in-store subscriptions
-const activeSubscriptions = [
-  {
-    id: 1,
-    brand: "Brew & Co.",
-    plan: "Student Monthly Pass",
-    status: "Active",
-    renewsOn: "May 15, 2026",
-    discount: "15% OFF",
-  },
-  {
-    id: 2,
-    brand: "Nexus Fitness",
-    plan: "All-Access Free Month",
-    status: "Active",
-    renewsOn: "May 01, 2026",
-    discount: "FREE MONTH",
-  },
-  {
-    id: 3,
-    brand: "ThreadLine",
-    plan: "Campus Essentials Club",
-    status: "Paused",
-    renewsOn: "—",
-    discount: "35% OFF",
-  },
-];
+// No subscriptions for now
 
 const tabConfig = [
   { key: "saved", label: "Saved Deals", icon: "bookmark" },
-  { key: "subscriptions", label: "Subscriptions", icon: "loyalty" },
   { key: "settings", label: "Settings", icon: "settings" },
 ];
 
@@ -586,12 +559,7 @@ function Profile({ isLoggedIn, user }) {
               label: "Saved",
               color: "text-on-background",
             },
-            {
-              value: activeSubscriptions.filter((s) => s.status === "Active")
-                .length,
-              label: "Active",
-              color: "text-on-background",
-            },
+            { value: "—", label: "Active", color: "text-on-background" },
             { value: "—", label: "Claimed", color: "text-primary" },
           ].map((stat, i) => (
             <div
@@ -736,63 +704,7 @@ function Profile({ isLoggedIn, user }) {
         </div>
       )}
 
-      {/* Active Subscriptions */}
-      {activeTab === "subscriptions" && (
-        <div className="animate-modal-enter">
-          <div className="mb-6">
-            <h2 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
-              Active Subscriptions
-            </h2>
-            <p className="text-on-surface-variant text-sm mt-1">
-              Your ongoing in-store memberships and plans.
-            </p>
-          </div>
-          <div className="space-y-4">
-            {activeSubscriptions.map((sub) => (
-              <div
-                key={sub.id}
-                className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-surface-container-low rounded-xl p-5 md:p-6 border border-outline-variant/10 hover:border-outline-variant/20 transition-colors"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center flex-shrink-0">
-                    <span className="material-symbols-outlined text-primary text-xl">
-                      storefront
-                    </span>
-                  </div>
-                  <div>
-                    <h3 className="font-headline font-bold text-base text-on-background">
-                      {sub.brand}
-                    </h3>
-                    <p className="text-on-surface-variant text-sm">
-                      {sub.plan}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-4 flex-shrink-0">
-                  <span className="text-primary font-headline font-black text-sm">
-                    {sub.discount}
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full ${sub.status === "Active" ? "bg-primary-container/40 text-primary border border-primary/15" : "bg-surface-container text-on-surface-variant border border-outline-variant/20"}`}
-                  >
-                    <span className="material-symbols-outlined text-xs">
-                      {sub.status === "Active"
-                        ? "check_circle"
-                        : "pause_circle"}
-                    </span>
-                    {sub.status}
-                  </span>
-                  {sub.status === "Active" && (
-                    <span className="text-xs text-on-surface-variant/50 hidden sm:inline">
-                      Renews {sub.renewsOn}
-                    </span>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* Account Settings */}
       {activeTab === "settings" && (
