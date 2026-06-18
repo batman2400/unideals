@@ -364,7 +364,7 @@ function PartnerAnalytics() {
                         {displayStatus}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Reveals
                       </span>
@@ -372,7 +372,7 @@ function PartnerAnalytics() {
                         {isOnline ? d.total_reveals : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Copies
                       </span>
@@ -380,7 +380,7 @@ function PartnerAnalytics() {
                         {isOnline ? d.total_copies : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Clicks
                       </span>
@@ -388,7 +388,7 @@ function PartnerAnalytics() {
                         {isOnline ? d.total_click_throughs : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm tabular-nums text-on-surface-variant">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Tickets
                       </span>
@@ -396,7 +396,7 @@ function PartnerAnalytics() {
                         {isInStore ? d.total_tickets_generated : "-"}
                       </span>
                     </td>
-                    <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
+                    <td className="flex justify-between items-center md:table-cell md:text-right px-0 md:px-4 py-2 md:py-3 md:border-none text-sm font-bold text-emerald-600 tabular-nums">
                       <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                         Redeemed
                       </span>
