@@ -55,13 +55,24 @@ export default function Navbar({ onLogout, isLoggedIn }) {
         {isLoggedIn ? (
           <>
             {(role === "admin" || role === "partner") && (
-              <Link
-                to="/events/new"
-                className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors"
-              >
-                <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                <span className="font-headline font-bold text-sm">Create Event</span>
-              </Link>
+              <>
+                <Link
+                  to={role === "admin" ? "/admin" : "/partner"}
+                  className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-full transition-colors shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  <span className="font-headline font-bold text-sm">
+                    {role === "admin" ? "Admin Portal" : "Partner Portal"}
+                  </span>
+                </Link>
+                <Link
+                  to="/events/new"
+                  className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-full transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[18px]">add_circle</span>
+                  <span className="font-headline font-bold text-sm">Create Event</span>
+                </Link>
+              </>
             )}
             <Link
               to="/profile"
