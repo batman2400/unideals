@@ -25,6 +25,7 @@ function AdminUsers() {
   const [message, setMessage] = useState("");
   const [roleFilter, setRoleFilter] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const [actingUserId, setActingUserId] = useState(null);
   const [brands, setBrands] = useState([]);
 
@@ -155,7 +156,14 @@ function AdminUsers() {
     [showMsg, fetchUsers],
   );
 
-  if (roleLoading || loading) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(inputValue);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  if (roleLoading) {
     return (
       <PortalLayout portalType="admin">
         <div className="space-y-5">
@@ -258,8 +266,8 @@ function AdminUsers() {
           </span>
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             placeholder="Search by email or brand..."
             className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
@@ -282,7 +290,9 @@ function AdminUsers() {
       </div>
 
       {/* Users Table */}
-      {users.length === 0 ? (
+      {loading ? (
+        <div className="h-96 rounded-2xl skeleton-shimmer" />
+      ) : users.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
             group_off
