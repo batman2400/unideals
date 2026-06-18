@@ -309,6 +309,30 @@ function Profile({ isLoggedIn, user }) {
     : "—";
   const studentRef = user?.id ? user.id.slice(0, 8).toUpperCase() : "—";
 
+  // ── Profile Editing ───────────────────────────────────
+  const [isEditing, setIsEditing] = useState(false);
+  const [profileData, setProfileData] = useState({
+    fullName: fullName || "",
+    email: userEmail || "",
+    studentType: user?.user_metadata?.student_type || "university", // 'university' or 'school'
+    institution: user?.user_metadata?.institution || "",
+    department: user?.user_metadata?.department || "",
+    batch: user?.user_metadata?.batch || "",
+    grade: user?.user_metadata?.grade || "",
+  });
+  const [formData, setFormData] = useState({ ...profileData });
+
+  const handleSaveProfile = (e) => {
+    e?.preventDefault();
+    setProfileData({ ...formData });
+    setIsEditing(false);
+  };
+
+  const handleCancelEdit = () => {
+    setFormData({ ...profileData });
+    setIsEditing(false);
+  };
+
   // ── Settings form state ─────────────────────────────
   const [settingsEmail, setSettingsEmail] = useState(userEmail);
   const [settingsPassword, setSettingsPassword] = useState("");
@@ -373,7 +397,7 @@ function Profile({ isLoggedIn, user }) {
         
         <div>
           <h1 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
-            {user?.user_metadata?.full_name?.split(' ')[0] || "Student"}
+            {profileData.fullName?.split(' ')[0] || "Student"}
           </h1>
           <div className="mt-1 flex items-center justify-center">
             {isVerified || role === "admin" || role === "partner" ? (
@@ -410,20 +434,30 @@ function Profile({ isLoggedIn, user }) {
           </div>
           <div className="min-w-0">
             <p className="font-headline font-bold text-sm text-on-background truncate">
-              {fullName}
+              {profileData.fullName}
             </p>
-            <p className="text-xs text-on-surface-variant/60 truncate">Uni Deals iD</p>
+            <p className="text-xs text-on-surface-variant/60 truncate">
+              {profileData.studentType === 'school' ? 'High School ID' : 'University ID'}
+            </p>
           </div>
         </div>
 
         <div className="flex flex-wrap sm:flex-col gap-4 sm:gap-2 text-xs w-full sm:w-auto">
           <div>
-            <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Member Since</p>
-            <p className="font-headline font-bold text-on-background">{memberSince}</p>
+            <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
+              {profileData.studentType === 'school' ? 'Grade / Level' : 'Batch / Intake'}
+            </p>
+            <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
+              {profileData.studentType === 'school' ? (profileData.grade || "—") : (profileData.batch || "—")}
+            </p>
           </div>
           <div>
-            <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Reference</p>
-            <p className="font-headline font-bold text-on-background font-mono tracking-wider">#{studentRef}</p>
+            <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
+              {profileData.studentType === 'school' ? 'School' : 'Faculty'}
+            </p>
+            <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
+              {profileData.studentType === 'school' ? (profileData.institution || "—") : (profileData.department || "—")}
+            </p>
           </div>
         </div>
       </div>
@@ -434,30 +468,129 @@ function Profile({ isLoggedIn, user }) {
         <div className="w-full lg:w-2/3 flex flex-col gap-6" ref={settingsRef}>
         
         {/* Personal & Academic Details Card */}
-        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
-          <h3 className="font-headline font-bold text-base text-on-background mb-4">Personal & Academic Details</h3>
-          <div className="space-y-3">
-            <div>
-              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
-              <p className="text-sm font-medium text-on-background">Uvaram Mohanaram</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email</p>
-              <p className="text-sm font-medium text-on-background">uvaram@example.com</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">University</p>
-              <p className="text-sm font-medium text-on-background">General Sir John Kotelawala Defence University</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Department</p>
-              <p className="text-sm font-medium text-on-background">Faculty of Computing</p>
-            </div>
-            <div>
-              <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Batch/Intake</p>
-              <p className="text-sm font-medium text-on-background">Intake 42</p>
-            </div>
+        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-headline font-bold text-base text-on-background">Personal & Academic Details</h3>
+            {!isEditing && (
+              <button 
+                onClick={() => setIsEditing(true)} 
+                className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[16px]">edit</span>
+                Edit Profile
+              </button>
+            )}
           </div>
+          
+          {isEditing ? (
+            <form onSubmit={handleSaveProfile} className="space-y-5 animate-fade-in">
+              {/* Student Type Toggle */}
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Student Type</label>
+                <div className="flex gap-2 p-1 bg-surface-container-low rounded-xl border border-outline-variant/20">
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, studentType: 'school' })}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.studentType === 'school' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-background'}`}
+                  >
+                    High School
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFormData({ ...formData, studentType: 'university' })}
+                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.studentType === 'university' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-background'}`}
+                  >
+                    University / College
+                  </button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Full Name</label>
+                  <input type="text" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                </div>
+                
+                {formData.studentType === 'university' ? (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">University Name</label>
+                      <input type="text" value={formData.institution} onChange={(e) => setFormData({...formData, institution: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Faculty / Department</label>
+                      <input type="text" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Batch / Intake</label>
+                      <input type="text" value={formData.batch} onChange={(e) => setFormData({...formData, batch: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">School Name</label>
+                      <input type="text" value={formData.institution} onChange={(e) => setFormData({...formData, institution: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Current Grade / Year</label>
+                      <input type="text" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="flex items-center gap-4 pt-2">
+                <button type="submit" className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]">
+                  Save Changes
+                </button>
+                <button type="button" onClick={handleCancelEdit} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
+                  Cancel
+                </button>
+              </div>
+            </form>
+          ) : (
+            <div className="space-y-4 animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                <div>
+                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
+                  <p className="text-sm font-medium text-on-background">{profileData.fullName || "Not provided"}</p>
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email</p>
+                  <p className="text-sm font-medium text-on-background">{profileData.email || "Not provided"}</p>
+                </div>
+                
+                {profileData.studentType === 'university' ? (
+                  <>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">University</p>
+                      <p className="text-sm font-medium text-on-background">{profileData.institution || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Faculty / Department</p>
+                      <p className="text-sm font-medium text-on-background">{profileData.department || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Batch / Intake</p>
+                      <p className="text-sm font-medium text-on-background">{profileData.batch || "Not provided"}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">School</p>
+                      <p className="text-sm font-medium text-on-background">{profileData.institution || "Not provided"}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Grade / Year Level</p>
+                      <p className="text-sm font-medium text-on-background">{profileData.grade || "Not provided"}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Notification Preferences Card */}
