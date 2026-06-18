@@ -157,6 +157,18 @@ function Profile({ isLoggedIn, user }) {
   const [manualError, setManualError] = useState("");
   const [manualSuccess, setManualSuccess] = useState(false);
 
+  // Pending verification status (single source of truth)
+  const [hasPendingVerification, setHasPendingVerification] = useState(false);
+
+  // Settings ref for smooth scrolling
+  const settingsRef = useRef(null);
+
+  const scrollToSettings = () => {
+    setActiveTab("settings");
+    setTimeout(() => {
+      settingsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
   
   // Custom allowed domains from backend
   const [allowedDomains, setAllowedDomains] = useState([]);
@@ -175,6 +187,25 @@ function Profile({ isLoggedIn, user }) {
     fetchAllowedDomains();
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchPendingVerification() {
+      if (!user) return;
+      const { data, error } = await supabase
+        .from('manual_verifications')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('status', 'pending')
+        .limit(1);
+      
+      if (active && !error && data && data.length > 0) {
+        setHasPendingVerification(true);
+      }
+    }
+    fetchPendingVerification();
+    return () => { active = false; };
+  }, [user, manualSuccess]);
 
   useEffect(() => {
     let timer;
@@ -397,7 +428,7 @@ function Profile({ isLoggedIn, user }) {
   if (!isLoggedIn) return <Navigate to="/" replace />;
 
   return (
-    <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16">
+    <section className="max-w-[1440px] mx-auto px-4 py-6 md:px-8 md:py-16">
       {/* ── Profile Header ─────────────────────────────── */}
       <div className="flex flex-col md:flex-row items-start md:items-center gap-6 md:gap-8 mb-8">
         {/* Avatar with upload */}
@@ -494,24 +525,39 @@ function Profile({ isLoggedIn, user }) {
                 </span>
                 Verified Student
               </span>
+            ) : hasPendingVerification ? (
+              <button
+                type="button"
+                onClick={scrollToSettings}
+                className="inline-flex items-center gap-1.5 bg-[#d4a017]/10 text-[#b58711] border border-[#d4a017]/25 text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer active:scale-95 touch-manipulation transition hover:bg-[#d4a017]/20"
+              >
+                <span className="material-symbols-outlined text-sm">
+                  pending_actions
+                </span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#d4a017] amber-pulse" />
+                Pending Review
+              </button>
             ) : (
-              <span className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant border border-outline-variant/25 text-xs font-bold px-3 py-1.5 rounded-full">
+              <button
+                type="button"
+                onClick={scrollToSettings}
+                className="inline-flex items-center gap-1.5 bg-surface-container-low text-on-surface-variant border border-outline-variant/25 text-xs font-bold px-3 py-1.5 rounded-full cursor-pointer active:scale-95 touch-manipulation transition hover:bg-surface-container-high"
+              >
                 <span className="material-symbols-outlined text-sm">
                   gpp_maybe
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-[#d4a017] amber-pulse" />
                 Unverified
-              </span>
+              </button>
             )}
           </div>
           <p className="text-on-surface-variant text-base md:text-lg mb-3">
             {userEmail}
           </p>
           <div className="flex flex-wrap items-center gap-3">
-            {!verificationLoading && role === "student" && !isVerified && (
+            {!verificationLoading && role === "student" && !isVerified && !hasPendingVerification && (
               <button
                 type="button"
-                onClick={() => setActiveTab("settings")}
+                onClick={scrollToSettings}
                 className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant/70 hover:text-primary border border-outline-variant/25 px-3 py-1.5 rounded-full transition-colors"
               >
                 <span className="material-symbols-outlined text-sm">
@@ -565,7 +611,7 @@ function Profile({ isLoggedIn, user }) {
       </div>
 
       {/* ── Student ID Card ────────────────────────────── */}
-      <div className="id-card-glass rounded-2xl p-5 md:p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center gap-5">
+      <div className="id-card-glass rounded-2xl p-5 md:p-6 mb-10 flex flex-col sm:flex-row items-start sm:items-center gap-5 w-full max-w-sm mx-auto md:max-w-none">
         <div className="flex items-center gap-4 flex-1 min-w-0">
           <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0">
             {avatarUrl ? (
@@ -603,10 +649,15 @@ function Profile({ isLoggedIn, user }) {
                   <span className="w-2 h-2 rounded-full bg-primary" />
                   Verified
                 </>
-              ) : (
+              ) : hasPendingVerification ? (
                 <>
                   <span className="w-2 h-2 rounded-full bg-[#d4a017] amber-pulse" />
-                  Pending
+                  Pending Review
+                </>
+              ) : (
+                <>
+                  <span className="w-2 h-2 rounded-full bg-on-surface-variant/40" />
+                  Unverified
                 </>
               )}
             </p>
@@ -745,7 +796,7 @@ function Profile({ isLoggedIn, user }) {
 
       {/* Account Settings */}
       {activeTab === "settings" && (
-        <div className="animate-modal-enter max-w-2xl">
+        <div ref={settingsRef} className="animate-modal-enter max-w-2xl">
           <div className="mb-6">
             <h2 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
               Account Settings
