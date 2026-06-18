@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Navigate, useNavigate } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../lib/supabaseClient";
 
 function CreateEvent() {
   const { role, user, loading: roleLoading } = useRoleContext();
