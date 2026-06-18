@@ -30,6 +30,7 @@ function AdminAllDeals() {
   const [error, setError] = useState("");
   const [statusFilter, setStatusFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState("");
+  const [inputValue, setInputValue] = useState("");
   const [message, setMessage] = useState("");
   const [actingDealId, setActingDealId] = useState(null);
   const isMountedRef = useRef(true);
@@ -154,7 +155,14 @@ function AdminAllDeals() {
     }, 3000);
   }, []);
 
-  if (roleLoading || loading) {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setSearchQuery(inputValue);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [inputValue]);
+
+  if (roleLoading) {
     return (
       <PortalLayout portalType="admin">
         <div className="space-y-5">
@@ -198,8 +206,8 @@ function AdminAllDeals() {
           </span>
           <input
             type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
             placeholder="Search by title or brand..."
             className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl pl-10 pr-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
           />
@@ -227,7 +235,9 @@ function AdminAllDeals() {
       </div>
 
       {/* Deals Table */}
-      {deals.length === 0 ? (
+      {loading ? (
+        <div className="h-96 rounded-2xl skeleton-shimmer" />
+      ) : deals.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
             search_off
