@@ -140,7 +140,7 @@ export default function Sidebar({ onLogout }) {
         </nav>
 
         {/* Footer Area */}
-        <div className="p-4 border-t border-outline-variant/10 bg-surface-container-lowest/50 space-y-1 flex-shrink-0">
+        <div className="mt-auto p-4 border-t border-outline-variant/10 bg-surface-container-lowest/50 space-y-1 flex-shrink-0">
           {footerLinks.map((link) => (
             <NavItem key={link.path} link={link} />
           ))}

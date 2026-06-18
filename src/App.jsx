@@ -220,6 +220,9 @@ function App() {
             </Routes>
           </div>
         </Suspense>
+
+        {/* Persistent Footer */}
+        <Footer />
       </main>
 
       {/* Global Auth Modal */}
