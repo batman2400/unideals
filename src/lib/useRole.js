@@ -14,6 +14,7 @@ export function useRole() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
+  const hasInitialResolvedRef = useRef(false);
   const roleChannelRef = useRef(null);
   const roleChannelUserIdRef = useRef(null);
   const roleChannelSequenceRef = useRef(0);
@@ -86,7 +87,7 @@ export function useRole() {
     async function resolveRole(sessionOverride = null, isBackgroundRefresh = false) {
       if (!active) return;
 
-      if (!isBackgroundRefresh) {
+      if (!isBackgroundRefresh && !hasInitialResolvedRef.current) {
         setLoading(true);
       }
       setError(null);
@@ -118,6 +119,7 @@ export function useRole() {
           setRole(null);
           setIsVerified(false);
           setLoading(false);
+          hasInitialResolvedRef.current = true;
           return;
         }
 
@@ -160,11 +162,13 @@ export function useRole() {
         setRole(resolvedRole);
         setIsVerified(resolvedIsVerified);
         setLoading(false);
+        hasInitialResolvedRef.current = true;
       } catch (err) {
         if (!active) return;
         // Preserve the last known role on transient failures.
         setError(err?.message || "Failed to load user role.");
         setLoading(false);
+        hasInitialResolvedRef.current = true;
       }
     }
 
