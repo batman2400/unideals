@@ -37,7 +37,6 @@ const INITIAL_FORM = {
   type: "Online",
   category: "Fashion",
   description: "",
-  redemptionCode: "",
   start_time: "",
   end_time: "",
 };
@@ -276,9 +275,7 @@ function CreateDeal() {
       }
 
       let effectiveImageUrl = "";
-      const normalizedRedemptionCode = formData.redemptionCode
-        .trim()
-        .toUpperCase();
+      const generatedRedemptionCode = "UD-" + Math.random().toString(36).substring(2, 8).toUpperCase();
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
@@ -301,7 +298,7 @@ function CreateDeal() {
         description:
           formData.description.trim() ||
           `${formData.title.trim()} student offer.`,
-        redemption_code: normalizedRedemptionCode,
+        redemption_code: generatedRedemptionCode,
         partner_id: targetUserId,
         status: "active",
         start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
@@ -574,37 +571,10 @@ function CreateDeal() {
               </div>
             </div>
 
-            {/* Section 3: Redemption Mechanics */}
+            {/* Section 3: Deal Image */}
             <div>
               <h2 className="font-headline font-bold text-lg text-on-background mb-4 pb-2 border-b border-outline-variant/10">
-                3. Redemption Mechanics
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-                    Redemption Code
-                  </label>
-                  <input
-                    name="redemptionCode"
-                    type="text"
-                    value={formData.redemptionCode}
-                    onChange={onChange}
-                    disabled={submitting}
-                    placeholder="TECHNOVA20"
-                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
-                  />
-                  <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
-                    Must be unique for your brand. This code is shown to
-                    students when they claim the deal.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Section 4: Deal Image */}
-            <div>
-              <h2 className="font-headline font-bold text-lg text-on-background mb-4 pb-2 border-b border-outline-variant/10">
-                4. Deal Image
+                3. Deal Image
               </h2>
               <div
                 className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
