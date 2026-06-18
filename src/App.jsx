@@ -35,6 +35,7 @@ const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
 const Profile = lazy(() => import("./pages/Profile"));
 const SavedDeals = lazy(() => import("./pages/SavedDeals"));
 const UniversityEvents = lazy(() => import("./pages/UniversityEvents"));
+const Support = lazy(() => import("./pages/Support"));
 const PartnerOverview = lazy(() => import("./pages/partner/PartnerOverview"));
 const PartnerDeals = lazy(() => import("./pages/partner/PartnerDeals"));
 const PartnerScanner = lazy(() => import("./pages/partner/PartnerScanner"));
@@ -178,6 +179,7 @@ function App() {
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/saved" element={<SavedDeals />} />
               <Route path="/events" element={<UniversityEvents />} />
+              <Route path="/support" element={<Support />} />
               <Route
                 path="/profile"
                 element={<Profile isLoggedIn={isLoggedIn} user={user} />}
