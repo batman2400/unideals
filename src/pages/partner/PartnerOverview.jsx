@@ -104,11 +104,16 @@ function PartnerOverview() {
       const end = d.end_time ? new Date(d.end_time) : null;
       return start <= now && (!end || end >= now);
     }).length;
+    const scheduled = deals.filter((d) => {
+      if (d.status !== "active" && d.status !== "approved") return false;
+      const start = d.start_time ? new Date(d.start_time) : new Date(0);
+      return start > now;
+    }).length;
     const expired = deals.filter((d) => {
       const end = d.end_time ? new Date(d.end_time) : null;
       return d.status === "expired" || (end && end < now);
     }).length;
-    return { total, active, expired };
+    return { total, active, scheduled, expired };
   }, [deals]);
 
   if (roleLoading || loading) {
@@ -116,8 +121,8 @@ function PartnerOverview() {
       <PortalLayout portalType="partner" brandName="">
         <div className="space-y-5">
           <div className="h-8 w-48 rounded-xl skeleton-shimmer" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-28 rounded-2xl skeleton-shimmer" />
             ))}
           </div>
@@ -141,6 +146,13 @@ function PartnerOverview() {
       icon: "check_circle",
       color: "text-emerald-600",
       to: "/partner/deals?filter=active",
+    },
+    {
+      label: "Scheduled",
+      value: metrics.scheduled,
+      icon: "schedule",
+      color: "text-blue-600",
+      to: "/partner/deals?filter=scheduled",
     },
     {
       label: "Expired Deals",
@@ -188,7 +200,7 @@ function PartnerOverview() {
       )}
 
       {/* Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
         {metricCards.map((card) => (
           <Link
             to={card.to}
