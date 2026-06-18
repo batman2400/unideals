@@ -67,7 +67,7 @@ export function useRole() {
             filter: `user_id=eq.${userId}`,
           },
           () => {
-            resolveRole();
+            resolveRole(null, true);
           },
         )
         .subscribe((status) => {
@@ -76,17 +76,19 @@ export function useRole() {
             status === "TIMED_OUT" ||
             status === "CLOSED"
           ) {
-            resolveRole();
+            resolveRole(null, true);
           }
         });
 
       roleChannelUserIdRef.current = userId;
     }
 
-    async function resolveRole(sessionOverride = null) {
+    async function resolveRole(sessionOverride = null, isBackgroundRefresh = false) {
       if (!active) return;
 
-      setLoading(true);
+      if (!isBackgroundRefresh) {
+        setLoading(true);
+      }
       setError(null);
 
       try {
@@ -166,17 +168,17 @@ export function useRole() {
       }
     }
 
-    resolveRole();
+    resolveRole(null, false);
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      resolveRole(session);
+      resolveRole(session, false);
     });
 
     const refreshOnVisible = () => {
       if (document.visibilityState === "visible") {
-        resolveRole();
+        resolveRole(null, true);
       }
     };
 
@@ -185,7 +187,7 @@ export function useRole() {
     }
 
     const refreshIntervalId = setInterval(() => {
-      resolveRole();
+      resolveRole(null, true);
     }, 120000);
 
     return () => {
