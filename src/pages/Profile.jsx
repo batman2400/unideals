@@ -145,6 +145,18 @@ function Profile({ isLoggedIn, user }) {
   const [uniVerifying, setUniVerifying] = useState(false);
   const [uniError, setUniError] = useState("");
   const [uniSuccess, setUniSuccess] = useState(false);
+
+  // ── Manual Verification ───────────────────────────────
+  const [showManualVerification, setShowManualVerification] = useState(false);
+  const [manualInstType, setManualInstType] = useState("university");
+  const [manualInstName, setManualInstName] = useState("");
+  const [manualCourse, setManualCourse] = useState("");
+  const [manualStudentId, setManualStudentId] = useState("");
+  const [manualFile, setManualFile] = useState(null);
+  const [manualVerifying, setManualVerifying] = useState(false);
+  const [manualError, setManualError] = useState("");
+  const [manualSuccess, setManualSuccess] = useState(false);
+
   
   // Custom allowed domains from backend
   const [allowedDomains, setAllowedDomains] = useState([]);
@@ -254,6 +266,73 @@ function Profile({ isLoggedIn, user }) {
   const handleResendOtp = () => {
     if (resendCooldown === 0) {
       handleRequestVerification();
+    }
+  };
+
+  const handleManualVerify = async (e) => {
+    e.preventDefault();
+    setManualError("");
+    
+    if (!manualInstName.trim() || !manualFile) {
+      setManualError("Institution name and proof document are required.");
+      return;
+    }
+    
+    if (manualInstType === "university" && (!manualCourse.trim() || !manualStudentId.trim())) {
+      setManualError("Course details and Student ID are required for University verification.");
+      return;
+    }
+
+    // Check file type
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(manualFile.type)) {
+      setManualError("Please upload a valid image file (JPEG, PNG, or WEBP).");
+      return;
+    }
+
+    setManualVerifying(true);
+    
+    try {
+      // 1. Upload file to Supabase Storage
+      const fileExt = manualFile.name.split('.').pop();
+      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('verification-documents')
+        .upload(filePath, manualFile);
+        
+      if (uploadError) throw uploadError;
+      
+      // 2. Get public URL
+      const { data: publicUrlData } = supabase.storage
+        .from('verification-documents')
+        .getPublicUrl(filePath);
+        
+      const imageUrl = publicUrlData.publicUrl;
+      
+      // 3. Call RPC submit_manual_verification
+      const { data, error } = await supabase.rpc("submit_manual_verification", {
+        inst_type: manualInstType,
+        inst_name: manualInstName.trim(),
+        course: manualCourse.trim(),
+        student_id: manualStudentId.trim(),
+        email: user?.email || "unknown@example.com",
+        image_url: imageUrl
+      });
+      
+      if (error) throw error;
+      
+      if (data?.success) {
+        setManualSuccess(true);
+        setShowManualVerification(false);
+      } else {
+        setManualError(data?.error || "Failed to submit verification request.");
+      }
+    } catch (err) {
+      setManualError(err.message || "An error occurred during submission.");
+    } finally {
+      setManualVerifying(false);
     }
   };
 
@@ -777,6 +856,97 @@ function Profile({ isLoggedIn, user }) {
                   {uniError}
                 </div>
               )}
+
+              {/* Fallback toggle */}
+              <div className="mt-4 pt-4 border-t border-outline-variant/10 text-center">
+                <button
+                  type="button"
+                  onClick={() => setShowManualVerification(!showManualVerification)}
+                  className="text-primary text-xs font-bold hover:underline transition-all"
+                >
+                  {showManualVerification ? "Hide Manual Verification" : "Can't verify via email? Request Manual Verification"}
+                </button>
+              </div>
+
+              {/* Manual Verification Form */}
+              {showManualVerification && (
+                <div className="mt-5 p-4 border border-outline-variant/20 bg-surface rounded-xl animate-fade-in">
+                  <h4 className="font-headline font-bold text-sm text-on-background mb-3">Manual Verification Request</h4>
+                  <form onSubmit={handleManualVerify} className="space-y-3">
+                    <select
+                      value={manualInstType}
+                      onChange={(e) => setManualInstType(e.target.value)}
+                      disabled={manualVerifying}
+                      className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
+                    >
+                      <option value="university">University / College</option>
+                      <option value="school">High School</option>
+                    </select>
+
+                    <input
+                      type="text"
+                      placeholder={manualInstType === "school" ? "School Name" : "University Name"}
+                      value={manualInstName}
+                      onChange={(e) => setManualInstName(e.target.value)}
+                      disabled={manualVerifying}
+                      className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
+                    />
+
+                    {manualInstType === "university" && (
+                      <>
+                        <input
+                          type="text"
+                          placeholder="Course Details (e.g. BSc Computer Science)"
+                          value={manualCourse}
+                          onChange={(e) => setManualCourse(e.target.value)}
+                          disabled={manualVerifying}
+                          className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
+                        />
+                        <input
+                          type="text"
+                          placeholder="Student ID Number"
+                          value={manualStudentId}
+                          onChange={(e) => setManualStudentId(e.target.value)}
+                          disabled={manualVerifying}
+                          className="w-full bg-surface-container border border-outline-variant/20 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-primary/30 outline-none"
+                        />
+                      </>
+                    )}
+
+                    <div className="pt-2">
+                      <p className="text-xs text-on-surface-variant font-bold mb-1">
+                        {manualInstType === "school" ? "Upload Photo Proof of Enrollment (JPEG/PNG/WEBP)" : "Upload University ID Card (JPEG/PNG/WEBP)"}
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/jpeg, image/png, image/webp"
+                        onChange={(e) => setManualFile(e.target.files[0])}
+                        disabled={manualVerifying}
+                        className="w-full text-xs file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-primary/10 file:text-primary hover:file:bg-primary/20"
+                      />
+                    </div>
+
+                    {manualError && (
+                      <div className="flex items-center gap-2 mt-2 text-error text-xs font-bold">
+                        <span className="material-symbols-outlined text-xs">error</span>
+                        {manualError}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      disabled={manualVerifying}
+                      className="w-full mt-3 bg-primary text-on-primary py-2.5 rounded-lg font-headline font-bold text-sm transition-all active:scale-[0.98] disabled:opacity-60 flex items-center justify-center gap-2"
+                    >
+                      {manualVerifying ? (
+                        <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        "Submit Request"
+                      )}
+                    </button>
+                  </form>
+                </div>
+              )}
             </div>
           )}
 
@@ -799,6 +969,30 @@ function Profile({ isLoggedIn, user }) {
                   <p className="text-on-surface-variant text-xs mt-0.5">
                     You now have full access to all deal codes and in-store
                     perks.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Manual verification submitted success */}
+          {manualSuccess && (
+            <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-5 mb-8 animate-modal-enter">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <span
+                    className="material-symbols-outlined text-emerald-600 text-xl"
+                    style={{ fontVariationSettings: "'FILL' 1" }}
+                  >
+                    hourglass_top
+                  </span>
+                </div>
+                <div>
+                  <p className="font-headline font-bold text-sm text-on-background">
+                    Verification Request Submitted
+                  </p>
+                  <p className="text-on-surface-variant text-xs mt-0.5">
+                    Our team will review your document shortly. We'll email you once your status is approved.
                   </p>
                 </div>
               </div>
