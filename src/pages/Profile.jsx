@@ -347,12 +347,23 @@ function Profile({ isLoggedIn, user }) {
       if (!user || (role !== 'partner' && role !== 'admin')) return;
       
       const { data: accessData } = await supabase
-        .from('partner_access')
-        .select('brands(*)')
+        .from('partner_profiles')
+        .select('brand_id, brand_name, brands(*)')
         .eq('user_id', user.id);
         
       if (active && accessData && accessData.length > 0) {
-        const brands = accessData.map(a => a.brands).filter(Boolean);
+        const brands = accessData.map(a => {
+          if (a.brands) return a.brands;
+          return {
+            id: a.brand_id || null,
+            name: a.brand_name || "",
+            category: "",
+            description: "",
+            website_url: "",
+            instagram_handle: "",
+            tiktok_handle: ""
+          };
+        });
         setManagedBrands(brands);
         if (brands.length > 0) {
           setActiveBrand(brands[0]);
