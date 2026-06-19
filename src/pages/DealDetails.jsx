@@ -135,7 +135,7 @@ function InStoreTicketDisplay({
   }, [expiresAt, alreadyRedeemed, secondsLeft]);
 
   useEffect(() => {
-    if (alreadyRedeemed || secondsLeft <= 0) return;
+    if (alreadyRedeemed) return;
 
     const channel = supabase
       .channel(`ticket-${ticketCode}`)
@@ -156,25 +156,29 @@ function InStoreTicketDisplay({
       )
       .subscribe();
 
-    // Fallback polling just in case Realtime is not enabled in Supabase
+    // Fallback polling every 3 seconds in case Realtime is not enabled
     const pollId = setInterval(async () => {
-      const { data } = await supabase
-        .from("student_redemption_tickets")
-        .select("redeemed_at")
-        .eq("ticket_code", ticketCode)
-        .single();
-        
-      if (data && data.redeemed_at) {
-        setAlreadyRedeemed(true);
-        setSecondsLeft(0);
+      try {
+        const { data } = await supabase
+          .from("student_redemption_tickets")
+          .select("redeemed_at")
+          .eq("ticket_code", ticketCode)
+          .single();
+          
+        if (data && data.redeemed_at) {
+          setAlreadyRedeemed(true);
+          setSecondsLeft(0);
+        }
+      } catch {
+        // Silent fail — will retry on next interval
       }
-    }, 5000);
+    }, 3000);
 
     return () => {
       supabase.removeChannel(channel);
       clearInterval(pollId);
     };
-  }, [ticketCode, alreadyRedeemed, secondsLeft]);
+  }, [ticketCode, alreadyRedeemed]);
 
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
