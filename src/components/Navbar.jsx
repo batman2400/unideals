@@ -57,15 +57,24 @@ export default function Navbar({ onLogout, isLoggedIn }) {
             {loading ? (
               <div className="hidden lg:block w-[140px] h-[36px] rounded-full skeleton-shimmer bg-surface-container-low" />
             ) : (role === "admin" || role === "partner") ? (
-              <Link
-                to={role === "admin" ? "/admin" : "/partner"}
-                className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-full transition-colors shadow-sm"
-              >
-                <span className="material-symbols-outlined text-[18px]">dashboard</span>
-                <span className="font-headline font-bold text-sm">
-                  {role === "admin" ? "Admin Portal" : "Partner Portal"}
-                </span>
-              </Link>
+              <>
+                <Link
+                  to="/partner/scanner"
+                  className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100 rounded-full transition-colors shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                  <span className="font-headline font-bold text-sm">Scanner</span>
+                </Link>
+                <Link
+                  to={role === "admin" ? "/admin" : "/partner"}
+                  className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-full transition-colors shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                  <span className="font-headline font-bold text-sm">
+                    {role === "admin" ? "Admin Portal" : "Partner Portal"}
+                  </span>
+                </Link>
+              </>
             ) : null}
             <Link
               to="/profile"

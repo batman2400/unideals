@@ -36,8 +36,10 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
       mainLinks.push({ isSkeleton: true, id: 'loading-portal' });
     } else if (role === "admin") {
       mainLinks.push({ path: "/admin", label: "Admin Portal", icon: "admin_panel_settings" });
+      mainLinks.push({ path: "/partner/scanner", label: "Scanner", icon: "qr_code_scanner" });
     } else if (role === "partner") {
       mainLinks.push({ path: "/partner", label: "Partner Portal", icon: "handshake" });
+      mainLinks.push({ path: "/partner/scanner", label: "Scanner", icon: "qr_code_scanner" });
     }
 
     return { main: mainLinks, footer: studentFooterLinks };
