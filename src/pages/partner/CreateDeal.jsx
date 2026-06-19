@@ -299,7 +299,7 @@ function CreateDeal() {
           `${formData.title.trim()} student offer.`,
         redemption_code: generatedRedemptionCode,
         partner_id: targetUserId,
-        status: role === "admin" ? "approved" : "pending",
+        status: "approved",
         start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
         end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       };
