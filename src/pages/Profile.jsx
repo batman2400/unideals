@@ -373,7 +373,8 @@ function Profile({ isLoggedIn, user }) {
             description: brands[0].description || "",
             website_url: brands[0].website_url || "",
             instagram_handle: brands[0].instagram_handle || "",
-            tiktok_handle: brands[0].tiktok_handle || ""
+            tiktok_handle: brands[0].tiktok_handle || "",
+            location: brands[0].location || ""
           });
         }
       }
@@ -620,7 +621,8 @@ function Profile({ isLoggedIn, user }) {
                           description: newBrand.description || "",
                           website_url: newBrand.website_url || "",
                           instagram_handle: newBrand.instagram_handle || "",
-                          tiktok_handle: newBrand.tiktok_handle || ""
+                          tiktok_handle: newBrand.tiktok_handle || "",
+                          location: newBrand.location || ""
                         });
                         setIsEditingBrand(false);
                       }
@@ -666,6 +668,10 @@ function Profile({ isLoggedIn, user }) {
                     <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Instagram Handle</label>
                     <input type="text" value={brandFormData.instagram_handle} onChange={(e) => setBrandFormData({...brandFormData, instagram_handle: e.target.value})} placeholder="@username" className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
                   </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Location</label>
+                    <input type="text" value={brandFormData.location} onChange={(e) => setBrandFormData({...brandFormData, location: e.target.value})} placeholder="e.g. Sydney, NSW" className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-4 pt-2">
@@ -699,6 +705,10 @@ function Profile({ isLoggedIn, user }) {
                   <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Instagram</p>
                     <p className="text-sm font-medium text-on-background">{activeBrand.instagram_handle || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Location</p>
+                    <p className="text-sm font-medium text-on-background">{activeBrand.location || "Not provided"}</p>
                   </div>
                 </div>
               </div>
