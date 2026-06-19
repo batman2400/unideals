@@ -89,12 +89,12 @@ export default function UniversityEvents() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 justify-items-center sm:justify-items-stretch">
           {events.map((event) => (
             <Link 
               to={`/events/${event.id}`}
               key={event.id} 
-              className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col"
+              className="w-full max-w-sm sm:max-w-none bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group flex flex-col"
             >
               {/* Image Header */}
               <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-surface-container-high">
@@ -102,12 +102,15 @@ export default function UniversityEvents() {
                   <img 
                     src={event.cover_image_url} 
                     alt={event.title} 
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
                   />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center bg-primary-container/20">
-                    <span className="material-symbols-outlined text-4xl text-primary/40">
-                      image
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-primary/10 via-surface to-primary/5">
+                    <span className="material-symbols-outlined text-5xl text-primary/30 mb-2">
+                      event
+                    </span>
+                    <span className="text-xs font-bold text-primary/30 uppercase tracking-widest">
+                      Unideals Event
                     </span>
                   </div>
                 )}
@@ -156,10 +159,10 @@ export default function UniversityEvents() {
                 </div>
 
                 <button 
-                  className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-primary/10 text-primary hover:bg-primary/20`}
+                  className="w-full py-3.5 rounded-xl font-headline font-bold text-sm flex items-center justify-center gap-2 transition-all bg-surface-container border border-outline-variant/20 text-on-surface hover:bg-primary hover:text-on-primary hover:border-primary hover:shadow-md"
                 >
                   View Event Details
-                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                  <span className="material-symbols-outlined text-[18px] group-hover:translate-x-1 transition-transform">arrow_forward</span>
                 </button>
               </div>
             </Link>
