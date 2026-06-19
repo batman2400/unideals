@@ -156,8 +156,23 @@ function InStoreTicketDisplay({
       )
       .subscribe();
 
+    // Fallback polling just in case Realtime is not enabled in Supabase
+    const pollId = setInterval(async () => {
+      const { data } = await supabase
+        .from("student_redemption_tickets")
+        .select("redeemed_at")
+        .eq("ticket_code", ticketCode)
+        .single();
+        
+      if (data && data.redeemed_at) {
+        setAlreadyRedeemed(true);
+        setSecondsLeft(0);
+      }
+    }, 5000);
+
     return () => {
       supabase.removeChannel(channel);
+      clearInterval(pollId);
     };
   }, [ticketCode, alreadyRedeemed, secondsLeft]);
 
