@@ -333,6 +333,83 @@ function Profile({ isLoggedIn, user }) {
     setIsEditing(false);
   };
 
+  // ── Partner Specific State ────────────────────────────
+  const [managedBrands, setManagedBrands] = useState([]);
+  const [activeBrand, setActiveBrand] = useState(null);
+  const [activeDealsCount, setActiveDealsCount] = useState(0);
+  const [brandFormData, setBrandFormData] = useState({});
+  const [isEditingBrand, setIsEditingBrand] = useState(false);
+  const [brandSaving, setBrandSaving] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchPartnerData() {
+      if (!user || (role !== 'partner' && role !== 'admin')) return;
+      
+      const { data: accessData } = await supabase
+        .from('partner_access')
+        .select('brands(*)')
+        .eq('user_id', user.id);
+        
+      if (active && accessData && accessData.length > 0) {
+        const brands = accessData.map(a => a.brands).filter(Boolean);
+        setManagedBrands(brands);
+        if (brands.length > 0) {
+          setActiveBrand(brands[0]);
+          setBrandFormData({
+            name: brands[0].name || "",
+            category: brands[0].category || "",
+            description: brands[0].description || "",
+            website_url: brands[0].website_url || "",
+            instagram_handle: brands[0].instagram_handle || "",
+            tiktok_handle: brands[0].tiktok_handle || ""
+          });
+        }
+      }
+    }
+    fetchPartnerData();
+    return () => { active = false; };
+  }, [user, role]);
+
+  useEffect(() => {
+    let active = true;
+    async function fetchActiveDeals() {
+      if (!user || !activeBrand) return;
+      const { count } = await supabase
+        .from('deals')
+        .select('*', { count: 'exact', head: true })
+        .eq('partner_id', user.id)
+        .eq('brand', activeBrand.name)
+        .eq('status', 'active');
+      
+      if (active && count !== null) {
+        setActiveDealsCount(count);
+      }
+    }
+    fetchActiveDeals();
+    return () => { active = false; };
+  }, [user, activeBrand]);
+
+  const handleSaveBrand = async (e) => {
+    e.preventDefault();
+    if (!activeBrand) return;
+    setBrandSaving(true);
+    try {
+      const { error } = await supabase
+        .from('brands')
+        .update(brandFormData)
+        .eq('id', activeBrand.id);
+      if (error) throw error;
+      setActiveBrand({ ...activeBrand, ...brandFormData });
+      setManagedBrands(prev => prev.map(b => b.id === activeBrand.id ? { ...b, ...brandFormData } : b));
+      setIsEditingBrand(false);
+    } catch (err) {
+      console.error("Failed to update brand:", err);
+    } finally {
+      setBrandSaving(false);
+    }
+  };
+
   // ── Notification Preferences ────────────────────────
   const [prefDealAlerts, setPrefDealAlerts] = useState(user?.user_metadata?.pref_deal_alerts ?? true);
   const [prefEventReminders, setPrefEventReminders] = useState(user?.user_metadata?.pref_event_reminders ?? true);
@@ -442,178 +519,306 @@ function Profile({ isLoggedIn, user }) {
         </div>
       </div>
 
-      {/* Student ID Card */}
-      <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center lg:items-start xl:items-center gap-5 w-full max-w-sm mx-auto lg:mx-0 shadow-xl">
-        <div className="flex items-center gap-4 flex-1 w-full">
-          <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-on-surface-variant">person</span>
+      {/* Dynamic Left Card */}
+      {(role === 'partner' || role === 'admin') ? (
+        <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 w-full max-w-sm mx-auto lg:mx-0 shadow-xl border border-outline-variant/20 flex flex-col gap-5">
+          <h3 className="font-headline font-bold text-base text-on-background border-b border-outline-variant/20 pb-2">Platform Status</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Status</p>
+              <div className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/10 px-3 py-1.5 rounded-lg w-fit">
+                <span className="material-symbols-outlined text-[16px]">verified</span>
+                {role === 'admin' ? 'Active Admin' : 'Active Partner'}
               </div>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="font-headline font-bold text-sm text-on-background truncate">
-              {profileData.fullName}
-            </p>
-            <p className="text-xs text-on-surface-variant/60 truncate">
-              {profileData.studentType === 'school' ? 'High School ID' : 'University ID'}
-            </p>
+            </div>
+            <div>
+              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Joined Date</p>
+              <p className="font-headline font-bold text-on-background">{memberSince}</p>
+            </div>
+            <div>
+              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Active Deals</p>
+              <p className="font-headline font-bold text-3xl text-primary">{activeDealsCount}</p>
+            </div>
           </div>
         </div>
+      ) : (
+        <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center lg:items-start xl:items-center gap-5 w-full max-w-sm mx-auto lg:mx-0 shadow-xl">
+          <div className="flex items-center gap-4 flex-1 w-full">
+            <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-on-surface-variant">person</span>
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <p className="font-headline font-bold text-sm text-on-background truncate">
+                {profileData.fullName}
+              </p>
+              <p className="text-xs text-on-surface-variant/60 truncate">
+                {profileData.studentType === 'school' ? 'High School ID' : 'University ID'}
+              </p>
+            </div>
+          </div>
 
-        <div className="flex flex-wrap sm:flex-col gap-4 sm:gap-2 text-xs w-full sm:w-auto">
-          <div>
-            <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
-              {profileData.studentType === 'school' ? 'Grade / Level' : 'Batch / Intake'}
-            </p>
-            <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
-              {profileData.studentType === 'school' ? (profileData.grade || "—") : (profileData.batch || "—")}
-            </p>
-          </div>
-          <div>
-            <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
-              {profileData.studentType === 'school' ? 'School' : 'Faculty'}
-            </p>
-            <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
-              {profileData.studentType === 'school' ? (profileData.institution || "—") : (profileData.department || "—")}
-            </p>
+          <div className="flex flex-wrap sm:flex-col gap-4 sm:gap-2 text-xs w-full sm:w-auto">
+            <div>
+              <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
+                {profileData.studentType === 'school' ? 'Grade / Level' : 'Batch / Intake'}
+              </p>
+              <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
+                {profileData.studentType === 'school' ? (profileData.grade || "—") : (profileData.batch || "—")}
+              </p>
+            </div>
+            <div>
+              <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
+                {profileData.studentType === 'school' ? 'School' : 'Faculty'}
+              </p>
+              <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
+                {profileData.studentType === 'school' ? (profileData.institution || "—") : (profileData.department || "—")}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
         </div>
 
         {/* Right Column (Settings & Security) */}
         <div className="flex-1 w-full flex flex-col gap-6" ref={settingsRef}>
         
-        {/* Personal & Academic Details Card */}
-        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="font-headline font-bold text-base text-on-background">Personal & Academic Details</h3>
-            {!isEditing && (
-              <button 
-                onClick={() => setIsEditing(true)} 
-                className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
-              >
-                <span className="material-symbols-outlined text-[16px]">edit</span>
-                Edit Profile
-              </button>
-            )}
-          </div>
-          
-          {isEditing ? (
-            <form onSubmit={handleSaveProfile} className="space-y-5 animate-fade-in">
-              {/* Student Type Toggle */}
-              <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Student Type</label>
-                <div className="flex gap-2 p-1 bg-surface-container-low rounded-xl border border-outline-variant/20">
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, studentType: 'school' })}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.studentType === 'school' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-background'}`}
+        {/* Dynamic Right Column Profile Card */}
+        {(role === 'partner' || role === 'admin') && activeBrand ? (
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-headline font-bold text-base text-on-background">Brand Profile</h3>
+              <div className="flex items-center gap-3">
+                {managedBrands.length > 1 && (
+                  <select 
+                    className="bg-surface text-sm font-bold border border-outline-variant/30 rounded-lg px-2 py-1 text-on-surface-variant focus:outline-none"
+                    value={activeBrand.id}
+                    onChange={(e) => {
+                      const newBrand = managedBrands.find(b => b.id === e.target.value);
+                      if (newBrand) {
+                        setActiveBrand(newBrand);
+                        setBrandFormData({
+                          name: newBrand.name || "",
+                          category: newBrand.category || "",
+                          description: newBrand.description || "",
+                          website_url: newBrand.website_url || "",
+                          instagram_handle: newBrand.instagram_handle || "",
+                          tiktok_handle: newBrand.tiktok_handle || ""
+                        });
+                        setIsEditingBrand(false);
+                      }
+                    }}
                   >
-                    High School
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setFormData({ ...formData, studentType: 'university' })}
-                    className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.studentType === 'university' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-background'}`}
-                  >
-                    University / College
-                  </button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Full Name</label>
-                  <input type="text" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
-                </div>
-                
-                {formData.studentType === 'university' ? (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">University Name</label>
-                      <input type="text" value={formData.institution} onChange={(e) => setFormData({...formData, institution: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Faculty / Department</label>
-                      <input type="text" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Batch / Intake</label>
-                      <input type="text" value={formData.batch} onChange={(e) => setFormData({...formData, batch: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">School Name</label>
-                      <input type="text" value={formData.institution} onChange={(e) => setFormData({...formData, institution: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Current Grade / Year</label>
-                      <input type="text" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
-                    </div>
-                  </>
+                    {managedBrands.map(b => (
+                      <option key={b.id} value={b.id}>{b.name}</option>
+                    ))}
+                  </select>
                 )}
-              </div>
-
-              <div className="flex items-center gap-4 pt-2">
-                <button type="submit" className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]">
-                  Save Changes
-                </button>
-                <button type="button" onClick={handleCancelEdit} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
-                  Cancel
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div className="space-y-4 animate-fade-in">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
-                <div>
-                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
-                  <p className="text-sm font-medium text-on-background">{profileData.fullName || "Not provided"}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email</p>
-                  <p className="text-sm font-medium text-on-background">{profileData.email || "Not provided"}</p>
-                </div>
-                
-                {profileData.studentType === 'university' ? (
-                  <>
-                    <div>
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">University</p>
-                      <p className="text-sm font-medium text-on-background">{profileData.institution || "Not provided"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Faculty / Department</p>
-                      <p className="text-sm font-medium text-on-background">{profileData.department || "Not provided"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Batch / Intake</p>
-                      <p className="text-sm font-medium text-on-background">{profileData.batch || "Not provided"}</p>
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div>
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">School</p>
-                      <p className="text-sm font-medium text-on-background">{profileData.institution || "Not provided"}</p>
-                    </div>
-                    <div>
-                      <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Grade / Year Level</p>
-                      <p className="text-sm font-medium text-on-background">{profileData.grade || "Not provided"}</p>
-                    </div>
-                  </>
+                {!isEditingBrand && (
+                  <button 
+                    onClick={() => setIsEditingBrand(true)} 
+                    className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">edit</span>
+                    Edit Profile
+                  </button>
                 )}
               </div>
             </div>
-          )}
-        </div>
+
+            {isEditingBrand ? (
+              <form onSubmit={handleSaveBrand} className="space-y-5 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Brand Name</label>
+                    <input type="text" value={brandFormData.name} onChange={(e) => setBrandFormData({...brandFormData, name: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Category</label>
+                    <input type="text" value={brandFormData.category} onChange={(e) => setBrandFormData({...brandFormData, category: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Description</label>
+                    <textarea value={brandFormData.description} onChange={(e) => setBrandFormData({...brandFormData, description: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background min-h-[80px]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Website URL</label>
+                    <input type="url" value={brandFormData.website_url} onChange={(e) => setBrandFormData({...brandFormData, website_url: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Instagram Handle</label>
+                    <input type="text" value={brandFormData.instagram_handle} onChange={(e) => setBrandFormData({...brandFormData, instagram_handle: e.target.value})} placeholder="@username" className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-4 pt-2">
+                  <button type="submit" disabled={brandSaving} className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50">
+                    {brandSaving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                  <button type="button" onClick={() => setIsEditingBrand(false)} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Brand Name</p>
+                    <p className="text-sm font-medium text-on-background">{activeBrand.name || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Category</p>
+                    <p className="text-sm font-medium text-on-background">{activeBrand.category || "Not provided"}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</p>
+                    <p className="text-sm font-medium text-on-background">{activeBrand.description || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Website URL</p>
+                    <p className="text-sm font-medium text-primary hover:underline">{activeBrand.website_url ? <a href={activeBrand.website_url} target="_blank" rel="noreferrer">{activeBrand.website_url}</a> : "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Instagram</p>
+                    <p className="text-sm font-medium text-on-background">{activeBrand.instagram_handle || "Not provided"}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-headline font-bold text-base text-on-background">Personal & Academic Details</h3>
+              {!isEditing && (
+                <button 
+                  onClick={() => setIsEditing(true)} 
+                  className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                  Edit Profile
+                </button>
+              )}
+            </div>
+            
+            {isEditing ? (
+              <form onSubmit={handleSaveProfile} className="space-y-5 animate-fade-in">
+                {/* Student Type Toggle */}
+                <div>
+                  <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Student Type</label>
+                  <div className="flex gap-2 p-1 bg-surface-container-low rounded-xl border border-outline-variant/20">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, studentType: 'school' })}
+                      className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.studentType === 'school' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-background'}`}
+                    >
+                      High School
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, studentType: 'university' })}
+                      className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${formData.studentType === 'university' ? 'bg-white shadow-sm text-primary' : 'text-on-surface-variant hover:text-on-background'}`}
+                    >
+                      University / College
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Full Name</label>
+                    <input type="text" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                  </div>
+                  
+                  {formData.studentType === 'university' ? (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">University Name</label>
+                        <input type="text" value={formData.institution} onChange={(e) => setFormData({...formData, institution: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Faculty / Department</label>
+                        <input type="text" value={formData.department} onChange={(e) => setFormData({...formData, department: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Batch / Intake</label>
+                        <input type="text" value={formData.batch} onChange={(e) => setFormData({...formData, batch: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">School Name</label>
+                        <input type="text" value={formData.institution} onChange={(e) => setFormData({...formData, institution: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Current Grade / Year</label>
+                        <input type="text" value={formData.grade} onChange={(e) => setFormData({...formData, grade: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4 pt-2">
+                  <button type="submit" className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]">
+                    Save Changes
+                  </button>
+                  <button type="button" onClick={handleCancelEdit} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
+                    Cancel
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <div className="space-y-4 animate-fade-in">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
+                    <p className="text-sm font-medium text-on-background">{profileData.fullName || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email</p>
+                    <p className="text-sm font-medium text-on-background">{profileData.email || "Not provided"}</p>
+                  </div>
+                  
+                  {profileData.studentType === 'university' ? (
+                    <>
+                      <div>
+                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">University</p>
+                        <p className="text-sm font-medium text-on-background">{profileData.institution || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Faculty / Department</p>
+                        <p className="text-sm font-medium text-on-background">{profileData.department || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Batch / Intake</p>
+                        <p className="text-sm font-medium text-on-background">{profileData.batch || "Not provided"}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div>
+                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">School</p>
+                        <p className="text-sm font-medium text-on-background">{profileData.institution || "Not provided"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Grade / Year Level</p>
+                        <p className="text-sm font-medium text-on-background">{profileData.grade || "Not provided"}</p>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Desktop Grid for Settings */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full">
@@ -623,8 +828,12 @@ function Profile({ isLoggedIn, user }) {
             <div className="space-y-4">
               <label className="flex items-center justify-between cursor-pointer group">
                 <div>
-                  <p className="text-sm font-bold text-on-background">New Deal Alerts</p>
-                  <p className="text-xs text-on-surface-variant">Get notified when new exclusive deals drop.</p>
+                  <p className="text-sm font-bold text-on-background">
+                    {role === 'partner' || role === 'admin' ? 'Daily Redemption Summaries' : 'New Deal Alerts'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    {role === 'partner' || role === 'admin' ? 'Get a daily summary of all redemptions.' : 'Get notified when new exclusive deals drop.'}
+                  </p>
                 </div>
                 <div className="relative ml-4">
                   <input type="checkbox" className="sr-only peer" checked={prefDealAlerts} onChange={() => togglePreference('pref_deal_alerts', prefDealAlerts, setPrefDealAlerts)} disabled={prefSaving} />
@@ -634,8 +843,12 @@ function Profile({ isLoggedIn, user }) {
               
               <label className="flex items-center justify-between cursor-pointer group">
                 <div>
-                  <p className="text-sm font-bold text-on-background">Campus Event Reminders</p>
-                  <p className="text-xs text-on-surface-variant">Receive reminders for upcoming events.</p>
+                  <p className="text-sm font-bold text-on-background">
+                    {role === 'partner' || role === 'admin' ? 'Deal Expiry Warnings' : 'Campus Event Reminders'}
+                  </p>
+                  <p className="text-xs text-on-surface-variant">
+                    {role === 'partner' || role === 'admin' ? 'Receive warnings before your active deals expire.' : 'Receive reminders for upcoming events.'}
+                  </p>
                 </div>
                 <div className="relative ml-4">
                   <input type="checkbox" className="sr-only peer" checked={prefEventReminders} onChange={() => togglePreference('pref_event_reminders', prefEventReminders, setPrefEventReminders)} disabled={prefSaving} />
