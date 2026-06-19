@@ -50,8 +50,8 @@ export default function UniversityEvents() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[1, 2, 3].map((i) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
             <div key={i} className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm animate-pulse">
               <div className="w-full h-48 bg-outline-variant/10"></div>
               <div className="p-6 space-y-4">
@@ -89,12 +89,12 @@ export default function UniversityEvents() {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8">
           {events.map((event) => (
             <Link 
               to={`/events/${event.id}`}
               key={event.id} 
-              className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col block"
+              className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col"
             >
               {/* Image Header */}
               <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-surface-container-high">
