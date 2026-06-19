@@ -531,8 +531,7 @@ function Profile({ isLoggedIn, user }) {
         </div>
       </div>
 
-      {/* Dynamic Left Card */}
-      {(role === 'partner' || role === 'admin') ? (
+      {role === 'admin' ? (
         <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 w-full max-w-sm mx-auto lg:mx-0 shadow-xl border border-outline-variant/20 flex flex-col gap-5">
           <h3 className="font-headline font-bold text-base text-on-background border-b border-outline-variant/20 pb-2">Platform Status</h3>
           <div className="space-y-4">
@@ -540,7 +539,27 @@ function Profile({ isLoggedIn, user }) {
               <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Status</p>
               <div className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/10 px-3 py-1.5 rounded-lg w-fit">
                 <span className="material-symbols-outlined text-[16px]">verified</span>
-                {role === 'admin' ? 'Active Admin' : 'Active Partner'}
+                Active Admin
+              </div>
+            </div>
+            <div>
+              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">System Status</p>
+              <p className="font-headline font-bold text-on-background flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+                Online
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : role === 'partner' ? (
+        <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 w-full max-w-sm mx-auto lg:mx-0 shadow-xl border border-outline-variant/20 flex flex-col gap-5">
+          <h3 className="font-headline font-bold text-base text-on-background border-b border-outline-variant/20 pb-2">Platform Status</h3>
+          <div className="space-y-4">
+            <div>
+              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Status</p>
+              <div className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/10 px-3 py-1.5 rounded-lg w-fit">
+                <span className="material-symbols-outlined text-[16px]">verified</span>
+                Active Partner
               </div>
             </div>
             <div>
@@ -602,7 +621,27 @@ function Profile({ isLoggedIn, user }) {
         <div className="flex-1 w-full flex flex-col gap-6" ref={settingsRef}>
         
         {/* Dynamic Right Column Profile Card */}
-        {(role === 'partner' || role === 'admin') && activeBrand ? (
+        {role === 'admin' ? (
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="font-headline font-bold text-base text-on-background">Administrative Account</h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
+              <div>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
+                <p className="text-sm font-medium text-on-background">{profileData.fullName || "Admin User"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Email</p>
+                <p className="text-sm font-medium text-on-background">{user?.email || "Not available"}</p>
+              </div>
+              <div className="md:col-span-2">
+                <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Access Level</p>
+                <p className="text-sm font-medium text-primary">Super Admin</p>
+              </div>
+            </div>
+          </div>
+        ) : role === 'partner' && activeBrand ? (
           <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-headline font-bold text-base text-on-background">Brand Profile</h3>
@@ -850,10 +889,10 @@ function Profile({ isLoggedIn, user }) {
               <label className="flex items-center justify-between cursor-pointer group">
                 <div>
                   <p className="text-sm font-bold text-on-background">
-                    {role === 'partner' || role === 'admin' ? 'Daily Redemption Summaries' : 'New Deal Alerts'}
+                    {role === 'admin' ? 'New Partner Signups' : role === 'partner' ? 'Daily Redemption Summaries' : 'New Deal Alerts'}
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    {role === 'partner' || role === 'admin' ? 'Get a daily summary of all redemptions.' : 'Get notified when new exclusive deals drop.'}
+                    {role === 'admin' ? 'Get notified when a new brand registers.' : role === 'partner' ? 'Get a daily summary of all redemptions.' : 'Get notified when new exclusive deals drop.'}
                   </p>
                 </div>
                 <div className="relative ml-4">
@@ -865,10 +904,10 @@ function Profile({ isLoggedIn, user }) {
               <label className="flex items-center justify-between cursor-pointer group">
                 <div>
                   <p className="text-sm font-bold text-on-background">
-                    {role === 'partner' || role === 'admin' ? 'Deal Expiry Warnings' : 'Campus Event Reminders'}
+                    {role === 'admin' ? 'Pending Verifications' : role === 'partner' ? 'Deal Expiry Warnings' : 'Campus Event Reminders'}
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    {role === 'partner' || role === 'admin' ? 'Receive warnings before your active deals expire.' : 'Receive reminders for upcoming events.'}
+                    {role === 'admin' ? 'Alerts for unverified student IDs.' : role === 'partner' ? 'Receive warnings before your active deals expire.' : 'Receive reminders for upcoming events.'}
                   </p>
                 </div>
                 <div className="relative ml-4">
