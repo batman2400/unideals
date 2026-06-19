@@ -3,7 +3,7 @@ function PrivacyPolicy() {
     <section className="max-w-[920px] mx-auto px-4 sm:px-6 md:px-8 py-10 md:py-14 animate-fade-in">
       <header className="mb-8 md:mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant/60 font-body font-semibold">
-          Uniperq Trust Center
+          Uni Deals Trust Center
         </p>
         <h1 className="mt-2 text-3xl md:text-4xl font-headline font-black tracking-tight text-on-background">
           Privacy Policy
@@ -19,7 +19,7 @@ function PrivacyPolicy() {
             1. Who We Are
           </h2>
           <p>
-            Uniperq is a student discount platform serving universities and
+            Uni Deals is a student discount platform serving universities and
             partner businesses in Sri Lanka. This Privacy Policy explains how we
             collect, use, protect, and disclose personal information when you
             use our website and services.
@@ -56,7 +56,7 @@ function PrivacyPolicy() {
             4. Verification, Security, and Access Control
           </h2>
           <p>
-            Uniperq uses safeguards such as authenticated sessions, role-based
+            Uni Deals uses safeguards such as authenticated sessions, role-based
             authorization, controlled data access paths, and verification checks
             to reduce unauthorized access. While no system can be guaranteed
             100% secure, we apply industry-standard measures to protect data in
@@ -69,7 +69,7 @@ function PrivacyPolicy() {
             5. Third-Party Partners and Service Providers
           </h2>
           <p>
-            Deals shown on Uniperq are provided by third-party partners. We
+            Deals shown on Uni Deals are provided by third-party partners. We
             may share only the minimum necessary information with trusted
             service providers and infrastructure vendors for hosting,
             authentication, analytics, and communications. Partner businesses
@@ -130,7 +130,7 @@ function PrivacyPolicy() {
             10. Contact
           </h2>
           <p>
-            For privacy questions or requests, contact: support@uniperq.lk.
+            For privacy questions or requests, contact: support@unideals.lk.
           </p>
         </section>
       </div>
