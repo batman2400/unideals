@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 
 export default function UniversityEvents() {
@@ -90,9 +91,10 @@ export default function UniversityEvents() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
           {events.map((event) => (
-            <div 
+            <Link 
+              to={`/events/${event.id}`}
               key={event.id} 
-              className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col"
+              className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300 group flex flex-col block"
             >
               {/* Image Header */}
               <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-surface-container-high">
@@ -120,9 +122,16 @@ export default function UniversityEvents() {
               {/* Content Body */}
               <div className="p-6 flex flex-col flex-grow">
                 <div className="flex items-start justify-between gap-2 mb-3">
-                  <span className="text-[10px] font-bold tracking-[0.2em] text-primary uppercase bg-primary/10 px-2.5 py-1 rounded-md">
-                    {event.category || 'Event'}
-                  </span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold tracking-[0.2em] text-primary uppercase bg-primary/10 px-2.5 py-1 rounded-md">
+                      {event.category || 'Event'}
+                    </span>
+                    {event.university_name && (
+                      <span className="text-[10px] font-bold tracking-[0.1em] text-on-surface-variant uppercase bg-surface-container-high border border-outline-variant/20 px-2.5 py-1 rounded-md">
+                        {event.university_name}
+                      </span>
+                    )}
+                  </div>
                 </div>
                 
                 <h3 className="font-headline font-extrabold text-xl text-on-background mb-2 line-clamp-2 leading-tight">
@@ -146,26 +155,14 @@ export default function UniversityEvents() {
                   )}
                 </div>
 
-                <a 
-                  href={event.external_registration_url || '#'}
-                  target={event.external_registration_url ? "_blank" : "_self"}
-                  rel="noopener noreferrer"
-                  className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                    event.external_registration_url 
-                      ? "bg-primary text-on-primary hover:bg-primary/90 active:scale-[0.98] shadow-sm hover:shadow"
-                      : "bg-surface-container border border-outline-variant/30 text-on-surface-variant cursor-not-allowed"
-                  }`}
-                  onClick={(e) => {
-                    if (!event.external_registration_url) {
-                      e.preventDefault();
-                    }
-                  }}
+                <button 
+                  className={`w-full py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all bg-primary/10 text-primary hover:bg-primary/20`}
                 >
-                  {event.external_registration_url ? "Register Now" : "No Registration Link"}
-                  {event.external_registration_url && <span className="material-symbols-outlined text-[18px]">open_in_new</span>}
-                </a>
+                  View Event Details
+                  <span className="material-symbols-outlined text-[18px]">arrow_forward</span>
+                </button>
               </div>
-            </div>
+            </Link>
           ))}
         </div>
       )}

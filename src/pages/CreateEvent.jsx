@@ -15,6 +15,8 @@ function CreateEvent() {
     end_time: "",
     location_name: "",
     category: "social",
+    university_name: "",
+    club_name: "",
     cover_image_url: "",
     target_audience: "all_students",
     external_registration_url: "",
@@ -124,6 +126,8 @@ function CreateEvent() {
         end_time: "",
         location_name: "",
         category: "social",
+        university_name: "",
+        club_name: "",
         cover_image_url: "",
         target_audience: "all_students",
         external_registration_url: "",
@@ -211,6 +215,33 @@ function CreateEvent() {
                 <option value="entertainment">Entertainment</option>
                 <option value="other">Other</option>
               </select>
+            </div>
+          </div>
+
+          {/* University and Club */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">University Name</label>
+              <input
+                type="text"
+                name="university_name"
+                value={formData.university_name}
+                onChange={handleChange}
+                placeholder="e.g. University of Example"
+                required
+                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Hosting Club / Society (Optional)</label>
+              <input
+                type="text"
+                name="club_name"
+                value={formData.club_name}
+                onChange={handleChange}
+                placeholder="e.g. Computer Science Society"
+                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+              />
             </div>
           </div>
 
