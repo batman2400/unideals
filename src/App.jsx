@@ -52,6 +52,7 @@ const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
 const AdminAnalytics = lazy(() => import("./pages/admin/AdminAnalytics"));
 const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications"));
 const SupportTickets = lazy(() => import("./pages/admin/SupportTickets"));
+const AdminAllEvents = lazy(() => import("./pages/admin/AdminAllEvents"));
 
 function RouteSkeleton() {
   return (
@@ -217,6 +218,7 @@ function App() {
                 <Route index element={<AdminOverview />} />
                 <Route path="pending" element={<AdminPendingDeals />} />
                 <Route path="deals" element={<AdminAllDeals />} />
+                <Route path="events" element={<AdminAllEvents />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="/admin/verifications" element={<AdminVerifications />} />
                 <Route path="/admin/brands" element={<AdminBrands />} />

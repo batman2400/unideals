@@ -47,6 +47,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
     { path: "/admin", label: "Overview", icon: "dashboard", exact: true },
     { path: "/admin/verifications", label: "Verifications", icon: "how_to_reg" },
     { path: "/admin/deals", label: "All Deals", icon: "storefront" },
+    { path: "/admin/events", label: "All Events", icon: "event" },
     { path: "/admin/users", label: "Users", icon: "group" },
     { path: "/admin/brands", label: "Brands", icon: "add_business" },
     { path: "/events/new", label: "Create Event", icon: "event_available" },
