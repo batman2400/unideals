@@ -560,6 +560,7 @@ function DealDetails() {
   }, []);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
     let active = true;
     if (id) {
       checkIfSaved(id)
@@ -790,8 +791,44 @@ function DealDetails() {
             {description}
           </p>
 
+          {/* ── Redemption Section ────────────────────────── */}
+          {showVerificationWall ? (
+            <VerificationWall
+              isAuthenticated={isAuthenticated}
+              verificationLoading={roleLoading && isAuthenticated}
+              onOpenAuthModal={handleOpenAuthModal}
+            />
+          ) : (
+            <>
+              {isInStore || hasRedemptionCode ? (
+                <>
+                  {isInStore ? (
+                    <InStoreRedemption dealId={deal.id} brand={brand} />
+                  ) : (
+                    <OnlineRedemption
+                      dealId={deal.id}
+                      redemptionCode={redemptionCode}
+                      brand={brand}
+                      storeUrl={storeUrl}
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 text-sm text-on-surface-variant mb-8">
+                  <p className="font-headline font-bold text-on-surface mb-2">
+                    Redemption code unavailable
+                  </p>
+                  <p>
+                    This offer does not currently have a valid redemption code.
+                    Please try again later or contact support.
+                  </p>
+                </div>
+              )}
+            </>
+          )}
+
           {/* Terms & Conditions */}
-          <div className="bg-surface-container-low rounded-xl p-5 md:p-6 mb-8 border border-outline-variant/10">
+          <div className="bg-surface-container-low rounded-xl p-5 md:p-6 mb-8 mt-8 border border-outline-variant/10">
             <h3 className="font-headline font-bold text-sm text-on-background mb-3 flex items-center gap-2">
               <span className="material-symbols-outlined text-primary text-lg">
                 gavel
@@ -842,41 +879,6 @@ function DealDetails() {
             </ul>
           </div>
 
-          {/* ── Redemption Section ────────────────────────── */}
-          {showVerificationWall ? (
-            <VerificationWall
-              isAuthenticated={isAuthenticated}
-              verificationLoading={roleLoading && isAuthenticated}
-              onOpenAuthModal={handleOpenAuthModal}
-            />
-          ) : (
-            <>
-              {isInStore || hasRedemptionCode ? (
-                <>
-                  {isInStore ? (
-                    <InStoreRedemption dealId={deal.id} brand={brand} />
-                  ) : (
-                    <OnlineRedemption
-                      dealId={deal.id}
-                      redemptionCode={redemptionCode}
-                      brand={brand}
-                      storeUrl={storeUrl}
-                    />
-                  )}
-                </>
-              ) : (
-                <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 text-sm text-on-surface-variant">
-                  <p className="font-headline font-bold text-on-surface mb-2">
-                    Redemption code unavailable
-                  </p>
-                  <p>
-                    This offer does not currently have a valid redemption code.
-                    Please try again later or contact support.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
 
           {/* Back link */}
           <Link
