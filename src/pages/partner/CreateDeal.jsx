@@ -656,7 +656,7 @@ function CreateDeal() {
                   submitting ||
                   brandLoading ||
                   !formData.title.trim() ||
-                  !formData.brand.trim() ||
+                  !partnerBrand ||
                   !offerPreview ||
                   !selectedImageFile
                 }
