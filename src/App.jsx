@@ -54,6 +54,8 @@ const AdminVerifications = lazy(() => import("./pages/admin/AdminVerifications")
 const SupportTickets = lazy(() => import("./pages/admin/SupportTickets"));
 const AdminAllEvents = lazy(() => import("./pages/admin/AdminAllEvents"));
 const AdminPendingEvents = lazy(() => import("./pages/admin/AdminPendingEvents"));
+const Contact = lazy(() => import("./pages/Contact"));
+const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
 
 function RouteSkeleton() {
   return (
@@ -187,6 +189,7 @@ function App() {
               <Route path="/events/:id" element={<EventDetails />} />
               <Route path="/events/new" element={<CreateEvent />} />
               <Route path="/support" element={<Support />} />
+              <Route path="/contact" element={<Contact />} />
               <Route
                 path="/profile"
                 element={<Profile isLoggedIn={isLoggedIn} user={user} />}
@@ -226,6 +229,7 @@ function App() {
                 <Route path="/admin/brands" element={<AdminBrands />} />
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/tickets" element={<SupportTickets />} />
+                <Route path="inquiries" element={<AdminInquiries />} />
               </Route>
 
               {/* Catch-all 404 → redirect to home */}

@@ -32,7 +32,7 @@ function Footer() {
         </div>
 
         {/* Legal Links — use Link to avoid full page reloads */}
-        <div className="flex gap-8">
+        <div className="flex flex-wrap gap-6 md:gap-8 justify-center">
           <Link
             to="/privacy"
             className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
@@ -46,16 +46,22 @@ function Footer() {
             Terms of Service
           </Link>
           <Link
-            to="/"
+            to="/contact"
             className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
           >
-            Support
+            Contact Us
           </Link>
           <Link
             to="/brands"
             className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
           >
             Partnerships
+          </Link>
+          <Link
+            to="/contact?type=partner"
+            className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
+          >
+            Partner Application
           </Link>
         </div>
 
