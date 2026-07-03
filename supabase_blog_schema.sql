@@ -73,7 +73,7 @@ When scouting for the perfect study spot, you need three non-negotiables:
 
 ### The UniDeals Hack
 Before you order that iced latte, always check your **UniDeals app**! Many local cafes around campus offer 10% to 15% off for verified students when you scan your QR code at the counter. Keep your eyes peeled on our Explore feed for new cafe partners dropping this week!',
-  'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=80',
+  '/images/study-cafe.jpg',
   'UniDeals Editorial Team',
   true
 ),
@@ -91,7 +91,7 @@ By working directly with local brands, restaurants, and entertainment spots, we 
 1. **Check the Explore Feed Daily:** Our partner brands drop limited-time flash deals every week. If you see a deal you like, hit the save icon immediately!
 2. **Use the QR Scanner:** No paper coupons required. Just open your Scanner tab, scan the partner brand’s counter code, and watch the discount apply instantly.
 3. **Share With Your Batchmates:** Group dinners are way cheaper when everyone at the table knows which restaurants are currently running 20% student promos!',
-  'https://images.unsplash.com/photo-1523240795612-9a054b0db644?auto=format&fit=crop&w=1200&q=80',
+  '/images/student-discounts.jpg',
   'UniDeals Team',
   true
 ),
@@ -108,7 +108,7 @@ You do not need a two-hour workout to reap the cognitive benefits of exercise. S
 * **Schedule Your Workouts Like Lectures:** If it is not on your calendar, it will not happen. Treat your gym time or evening run as a mandatory class.
 * **Prep Simple Meals:** Swap out daily delivery orders for high-protein, budget-friendly meal preps. Your brain (and your bank account) will thank you.
 * **Look for Gym Discounts:** Staying fit should not cost a fortune. Check the **Sports & Fitness** category on UniDeals to find local gyms offering exclusive monthly membership rates for university students!',
-  'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=1200&q=80',
+  '/images/student-fitness.jpg',
   'UniDeals Editorial Team',
   true
 );
