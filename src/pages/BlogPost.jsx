@@ -78,7 +78,7 @@ export default function BlogPost() {
     <div className="min-h-screen bg-background pb-20">
       <article className="animate-fade-in">
         {/* Cover Image Header */}
-        <div className="w-full h-[40vh] md:h-[50vh] lg:h-[60vh] relative bg-surface-container-low">
+        <div className="w-full h-56 sm:h-80 md:h-96 relative bg-surface-container-low">
           {post.cover_image_url ? (
             <img
               src={post.cover_image_url}
@@ -127,7 +127,7 @@ export default function BlogPost() {
             </header>
 
             {/* Prose Content */}
-            <div className="prose prose-lg dark:prose-invert prose-headings:font-headline prose-headings:font-black prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-2xl max-w-none text-on-background/90 leading-relaxed space-y-6 whitespace-pre-wrap">
+            <div className="prose prose-sm sm:prose lg:prose-lg dark:prose-invert prose-headings:font-headline prose-headings:font-black prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-2xl max-w-none text-on-background/90 leading-relaxed space-y-6 whitespace-pre-wrap">
               {post.content}
             </div>
 

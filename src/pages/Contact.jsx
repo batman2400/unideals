@@ -161,7 +161,7 @@ export default function Contact() {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="Jane Doe"
-                      className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-4 text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                      className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-4 text-base md:text-sm text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -183,7 +183,7 @@ export default function Contact() {
                       value={formData.email}
                       onChange={handleChange}
                       placeholder="jane@university.edu"
-                      className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-4 text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                      className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-4 text-base md:text-sm text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                     />
                   </div>
                 </div>
@@ -204,7 +204,7 @@ export default function Contact() {
                     required
                     value={formData.inquiry_type}
                     onChange={handleChange}
-                    className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-10 text-on-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
+                    className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-10 text-base md:text-sm text-on-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all appearance-none cursor-pointer"
                   >
                     <option value="general">General Question</option>
                     <option value="partner">Partner / Brand Application</option>
@@ -238,7 +238,7 @@ export default function Contact() {
                     value={formData.brand_name}
                     onChange={handleChange}
                     placeholder="e.g. Uni Deals Society"
-                    className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-4 text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
+                    className="w-full h-12 bg-surface-container-low border border-outline-variant/30 rounded-xl pl-11 pr-4 text-base md:text-sm text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all"
                   />
                 </div>
               </div>
@@ -256,16 +256,16 @@ export default function Contact() {
                   value={formData.message}
                   onChange={handleChange}
                   placeholder="How can we help you today?"
-                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-4 text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-y"
+                  className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-4 text-base md:text-sm text-on-background placeholder:text-on-surface-variant/50 focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-y"
                 />
               </div>
 
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="h-14 mt-4 w-full bg-primary hover:bg-primary/90 text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden"
-              >
+              <div className="flex sm:justify-start">
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="mt-4 py-3 px-8 w-full sm:w-auto bg-primary hover:bg-primary/90 text-on-primary font-bold rounded-xl flex items-center justify-center gap-2 transition-colors disabled:opacity-70 disabled:cursor-not-allowed group relative overflow-hidden min-h-[44px]"
+                >
                 {/* Subtle highlight effect */}
                 <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 ease-out" />
                 
@@ -283,6 +283,7 @@ export default function Contact() {
                   )}
                 </span>
               </button>
+              </div>
             </form>
           </div>
         </div>

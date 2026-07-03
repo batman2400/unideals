@@ -62,7 +62,7 @@ export default function Blog() {
           )}
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 animate-pulse">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 animate-pulse px-4 sm:px-6">
               {[1, 2, 3, 4, 5, 6].map((i) => (
                 <div key={i} className="flex flex-col gap-4">
                   <div className="h-48 w-full bg-surface-container-low rounded-3xl" />
@@ -85,7 +85,7 @@ export default function Blog() {
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8 px-4 sm:px-6">
               {posts.map((post) => (
                 <Link
                   key={post.id}

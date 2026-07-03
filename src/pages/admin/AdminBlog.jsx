@@ -157,9 +157,8 @@ export default function AdminBlog() {
       )}
 
       {/* Posts Table */}
-      <div className="bg-surface border border-outline-variant/20 rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse min-w-[800px]">
+      <div className="w-full overflow-x-auto shadow-sm rounded-lg bg-surface border border-outline-variant/20">
+        <table className="min-w-full divide-y divide-outline-variant/10 text-left border-collapse">
             <thead>
               <tr className="border-b border-outline-variant/10 bg-surface-container-low/50">
                 <th className="px-6 py-4 text-xs font-bold text-on-surface-variant uppercase tracking-wider w-16">Cover</th>
@@ -230,7 +229,6 @@ export default function AdminBlog() {
               )}
             </tbody>
           </table>
-        </div>
       </div>
 
       {/* New Article Modal */}
