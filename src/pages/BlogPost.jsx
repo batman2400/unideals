@@ -133,7 +133,20 @@ export default function BlogPost() {
         {/* Article Body (Typography Zone) */}
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 md:py-10">
           <ReactMarkdown 
-            className="prose prose-lg md:prose-xl max-w-none prose-slate prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-emerald-600 prose-ul:list-disc prose-ul:pl-6 prose-li:my-1 leading-relaxed space-y-6"
+            className="prose prose-lg md:prose-xl max-w-none text-slate-700" 
+            components={{
+              h1: ({ node, ...props }) => <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-8 mb-4 tracking-tight" {...props} />,
+              h2: ({ node, ...props }) => <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-8 mb-4 border-b border-slate-200 pb-2" {...props} />,
+              h3: ({ node, ...props }) => <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mt-6 mb-3" {...props} />,
+              h4: ({ node, ...props }) => <h4 className="text-lg sm:text-xl font-semibold text-slate-800 mt-4 mb-2" {...props} />,
+              p: ({ node, ...props }) => <p className="text-base sm:text-lg leading-relaxed text-slate-700 my-4" {...props} />,
+              ul: ({ node, ...props }) => <ul className="list-disc list-outside pl-6 space-y-2 my-4 text-slate-700" {...props} />,
+              ol: ({ node, ...props }) => <ol className="list-decimal list-outside pl-6 space-y-2 my-4 text-slate-700" {...props} />,
+              li: ({ node, ...props }) => <li className="text-base sm:text-lg leading-relaxed pl-1" {...props} />,
+              strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />,
+              a: ({ node, ...props }) => <a className="text-emerald-600 font-medium hover:underline transition-colors" {...props} />,
+              blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-emerald-500 pl-4 py-1 my-6 italic bg-slate-50 text-slate-600 rounded-r" {...props} />,
+            }}
           >
             {post.content}
           </ReactMarkdown>
