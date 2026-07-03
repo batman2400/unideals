@@ -111,4 +111,11 @@ You do not need a two-hour workout to reap the cognitive benefits of exercise. S
   '/images/student-fitness.jpg',
   'UniDeals Editorial Team',
   true
-);
+)
+ON CONFLICT (slug) DO UPDATE SET
+  title = EXCLUDED.title,
+  excerpt = EXCLUDED.excerpt,
+  content = EXCLUDED.content,
+  cover_image_url = EXCLUDED.cover_image_url,
+  author_name = EXCLUDED.author_name,
+  is_published = EXCLUDED.is_published;
