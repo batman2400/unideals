@@ -63,6 +63,12 @@ function Footer() {
           >
             Partner Application
           </Link>
+          <Link
+            to="/blog"
+            className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
+          >
+            Blog
+          </Link>
         </div>
 
         {/* Social Icons — log click for now */}

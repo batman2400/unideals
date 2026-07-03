@@ -56,6 +56,9 @@ const AdminAllEvents = lazy(() => import("./pages/admin/AdminAllEvents"));
 const AdminPendingEvents = lazy(() => import("./pages/admin/AdminPendingEvents"));
 const Contact = lazy(() => import("./pages/Contact"));
 const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
+const Blog = lazy(() => import("./pages/Blog"));
+const BlogPost = lazy(() => import("./pages/BlogPost"));
+const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 
 function RouteSkeleton() {
   return (
@@ -188,6 +191,8 @@ function App() {
               <Route path="/events" element={<UniversityEvents />} />
               <Route path="/events/:id" element={<EventDetails />} />
               <Route path="/events/new" element={<CreateEvent />} />
+              <Route path="/blog" element={<Blog />} />
+              <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/support" element={<Support />} />
               <Route path="/contact" element={<Contact />} />
               <Route
@@ -230,6 +235,7 @@ function App() {
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/tickets" element={<SupportTickets />} />
                 <Route path="inquiries" element={<AdminInquiries />} />
+                <Route path="blog" element={<AdminBlog />} />
               </Route>
 
               {/* Catch-all 404 → redirect to home */}
