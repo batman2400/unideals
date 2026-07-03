@@ -166,6 +166,9 @@ function AdminAllEvents() {
                     Start Time
                   </th>
                   <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Status
+                  </th>
+                  <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     RSVPs
                   </th>
                   <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
@@ -234,6 +237,22 @@ function AdminAllEvents() {
                         </span>
                         <span className="text-right md:text-left">
                           {event.start_time ? new Date(event.start_time).toLocaleString() : "-"}
+                        </span>
+                      </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm md:text-center">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Status
+                        </span>
+                        <span
+                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${
+                            event.status === 'approved'
+                              ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+                              : event.status === 'rejected'
+                                ? 'text-red-600 bg-red-50 border-red-200'
+                                : 'text-amber-600 bg-amber-50 border-amber-200'
+                          }`}
+                        >
+                          {event.status || 'pending'}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-center tabular-nums">

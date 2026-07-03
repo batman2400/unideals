@@ -19,6 +19,7 @@ export default function UniversityEvents() {
       const { data, error: fetchError } = await supabase
         .from("events")
         .select("*")
+        .eq("status", "approved")
         .gte("start_time", new Date().toISOString())
         .order("start_time", { ascending: true });
 

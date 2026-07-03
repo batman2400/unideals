@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { Navigate, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 import { supabase } from "../lib/supabaseClient";
 import { uploadEventImage } from "../lib/eventImageUpload";
 
 function CreateEvent() {
-  const { role, user, loading: roleLoading } = useRoleContext();
+  const { user, loading: roleLoading, isAuthenticated } = useRoleContext();
   const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
@@ -50,7 +50,7 @@ function CreateEvent() {
     };
   }, [selectedImageFile]);
 
-  // Show a loading state briefly while checking roles
+  // Show a loading state briefly while checking auth
   if (roleLoading) {
     return (
       <div className="flex items-center justify-center min-h-[60vh]">
@@ -59,20 +59,20 @@ function CreateEvent() {
     );
   }
 
-  // Strict role check: if student (or unauthenticated without a bypass), deny access
-  if (!role || role === "student") {
+  // Auth check: user must be logged in to submit an event
+  if (!isAuthenticated) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-16 text-center animate-fade-in">
-        <span className="material-symbols-outlined text-6xl text-error mb-4">block</span>
-        <h1 className="font-headline font-bold text-3xl text-on-background mb-2">Access Denied</h1>
+        <span className="material-symbols-outlined text-6xl text-primary mb-4">login</span>
+        <h1 className="font-headline font-bold text-3xl text-on-background mb-2">Sign In Required</h1>
         <p className="text-on-surface-variant mb-6">
-          You do not have permission to create events. Only Verified Brands and Admins can access this portal.
+          You need to be signed in to submit an event. Sign in or create an account to get started.
         </p>
         <button
-          onClick={() => navigate("/")}
+          onClick={() => window.dispatchEvent(new Event("open-auth-modal"))}
           className="px-6 py-2.5 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
         >
-          Return to Home
+          Sign In
         </button>
       </div>
     );
@@ -106,6 +106,7 @@ function CreateEvent() {
         ...formData,
         cover_image_url: finalImageUrl,
         organizer_id: user.id,
+        status: 'pending',
       };
 
       // Optional: convert end_time to null if empty
@@ -135,12 +136,12 @@ function CreateEvent() {
       setSelectedImageFile(null);
       setSelectedImagePreviewUrl("");
 
-      // Redirect back to the corresponding portal after a short delay
+      // Redirect to the events feed after a short delay
       setTimeout(() => {
         if (isMountedRef.current) {
-          navigate(role === 'admin' ? '/admin' : '/partner');
+          navigate('/events');
         }
-      }, 1500);
+      }, 2500);
 
     } catch (err) {
       console.error("Error creating event:", err);
@@ -154,11 +155,11 @@ function CreateEvent() {
     <div className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 animate-fade-in">
       <div className="mb-8">
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/events')}
           className="text-on-surface-variant/70 hover:text-on-background transition-colors cursor-pointer inline-flex items-center gap-1 mb-4 text-sm font-bold tracking-wider"
         >
           <span className="material-symbols-outlined text-[18px]">chevron_left</span>
-          {role === 'admin' ? 'Back to Admin Portal' : 'Back to Partner Portal'}
+          Back to Events
         </button>
         <h1 className="font-headline font-extrabold text-3xl tracking-tighter text-on-background">
           Create New Event
@@ -173,9 +174,12 @@ function CreateEvent() {
         <div className="lg:col-span-7 xl:col-span-8">
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-outline-variant/20">
         {success && (
-          <div className="mb-6 p-4 bg-primary/10 text-primary rounded-2xl flex items-center gap-3">
-            <span className="material-symbols-outlined">check_circle</span>
-            <p className="font-bold text-sm">Event successfully created and published!</p>
+          <div className="mb-6 p-5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-start gap-3">
+            <span className="material-symbols-outlined text-emerald-600 mt-0.5">check_circle</span>
+            <div>
+              <p className="font-bold text-sm mb-1">Event Submitted Successfully!</p>
+              <p className="text-xs text-emerald-700 leading-relaxed">Your event is currently under review and will appear on the public feed once approved by an admin. Redirecting to events...</p>
+            </div>
           </div>
         )}
         
