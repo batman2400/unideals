@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import ReactMarkdown from "react-markdown";
 import { supabase } from "../lib/supabaseClient";
 
 export default function BlogPost() {
@@ -42,16 +43,16 @@ export default function BlogPost() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background py-12">
+      <div className="min-h-screen bg-slate-50/50 py-12">
         <div className="max-w-3xl mx-auto px-4 animate-pulse">
-          <div className="h-6 w-32 bg-surface-container-low rounded-lg mb-8" />
-          <div className="w-full h-64 md:h-96 bg-surface-container-low rounded-3xl mb-8" />
-          <div className="h-10 w-3/4 bg-surface-container-low rounded-xl mb-4" />
-          <div className="h-6 w-1/4 bg-surface-container-low rounded-lg mb-12" />
+          <div className="h-6 w-32 bg-slate-200 rounded-lg mb-8" />
+          <div className="h-10 w-3/4 bg-slate-200 rounded-xl mb-4" />
+          <div className="h-6 w-1/4 bg-slate-200 rounded-lg mb-12" />
+          <div className="w-full h-64 md:h-96 bg-slate-200 rounded-3xl mb-8" />
           <div className="space-y-4">
-            <div className="h-4 w-full bg-surface-container-low rounded" />
-            <div className="h-4 w-full bg-surface-container-low rounded" />
-            <div className="h-4 w-5/6 bg-surface-container-low rounded" />
+            <div className="h-4 w-full bg-slate-200 rounded" />
+            <div className="h-4 w-full bg-slate-200 rounded" />
+            <div className="h-4 w-5/6 bg-slate-200 rounded" />
           </div>
         </div>
       </div>
@@ -62,11 +63,11 @@ export default function BlogPost() {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 text-center">
         <span className="material-symbols-outlined text-6xl text-error mb-4">error</span>
-        <h1 className="text-2xl font-headline font-black text-on-background mb-2">Article Not Found</h1>
-        <p className="text-on-surface-variant mb-6">{error}</p>
+        <h1 className="text-2xl font-headline font-black text-slate-900 mb-2">Article Not Found</h1>
+        <p className="text-slate-600 mb-6">{error}</p>
         <Link
           to="/blog"
-          className="px-6 py-3 bg-primary text-on-primary rounded-xl font-bold hover:opacity-90 transition-opacity"
+          className="px-6 py-3 bg-primary text-white rounded-xl font-bold hover:opacity-90 transition-opacity"
         >
           Back to Blog
         </Link>
@@ -75,75 +76,91 @@ export default function BlogPost() {
   }
 
   return (
-    <div className="min-h-screen bg-background pb-20">
+    <div className="min-h-screen bg-slate-50/50 pb-20">
       <article className="animate-fade-in">
-        {/* Cover Image Header */}
-        <div className="w-full h-56 sm:h-80 md:h-96 relative bg-surface-container-low">
+        
+        {/* Top Navigation Bar */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 pt-8 pb-4">
+          <Link
+            to="/blog"
+            className="inline-flex items-center gap-2 text-slate-600 hover:text-slate-900 font-medium transition-colors"
+          >
+            <span className="material-symbols-outlined text-[18px]">arrow_back</span>
+            Back to Blog
+          </Link>
+        </div>
+
+        {/* Article Header Zone */}
+        <header className="max-w-3xl mx-auto px-4 sm:px-6 pt-4 pb-6">
+          <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 mb-4 tracking-wide uppercase">
+            Student Guides
+          </span>
+          
+          <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-tight my-4 font-headline">
+            {post.title}
+          </h1>
+          
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600 mt-6">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+                <span className="material-symbols-outlined text-[16px] text-slate-500">person</span>
+              </div>
+              <span className="font-semibold text-slate-800">{post.author_name || "Uni Deals Team"}</span>
+            </div>
+            <span className="text-slate-300">•</span>
+            <span>{formatDate(post.created_at)}</span>
+            <span className="text-slate-300">•</span>
+            <span>3 min read</span>
+          </div>
+        </header>
+
+        {/* Hero Image Display */}
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 my-6 md:my-8">
           {post.cover_image_url ? (
             <img
               src={post.cover_image_url}
               alt={post.title}
-              className="w-full h-full object-cover"
+              className="w-full h-[280px] sm:h-[400px] md:h-[500px] object-cover rounded-2xl shadow-md border border-slate-100"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center bg-primary/5">
-              <span className="material-symbols-outlined text-6xl text-primary/20">image</span>
+            <div className="w-full h-[280px] sm:h-[400px] md:h-[500px] rounded-2xl shadow-md border border-slate-100 bg-slate-200 flex flex-col items-center justify-center text-slate-400">
+              <span className="material-symbols-outlined text-6xl mb-2">image</span>
+              <span className="text-sm font-medium">No cover image available</span>
             </div>
           )}
-          {/* Dark gradient overlay for back button contrast */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-transparent pointer-events-none" />
-          
-          <div className="absolute top-6 left-4 md:left-8 z-10 pointer-events-auto">
-            <Link
-              to="/blog"
-              className="flex items-center gap-2 px-4 py-2 bg-black/40 hover:bg-black/60 backdrop-blur-md text-white rounded-full font-bold text-sm transition-colors"
-            >
-              <span className="material-symbols-outlined text-[18px]">arrow_back</span>
-              Back to Blog
-            </Link>
-          </div>
         </div>
 
-        {/* Article Content Container */}
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 md:px-8 -mt-16 md:-mt-24 relative z-20">
-          <div className="bg-surface border border-outline-variant/10 rounded-3xl p-6 md:p-10 shadow-lg mb-12">
-            
-            {/* Header / Meta */}
-            <header className="mb-8 border-b border-outline-variant/10 pb-8 text-center md:text-left">
-              <h1 className="text-3xl md:text-4xl lg:text-5xl font-headline font-black text-on-background leading-tight mb-4">
-                {post.title}
-              </h1>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-sm font-bold text-on-surface-variant tracking-wide">
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px]">edit_note</span>
-                  {post.author_name}
-                </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-outline-variant/50"></span>
-                <span className="flex items-center gap-1">
-                  <span className="material-symbols-outlined text-[18px]">calendar_today</span>
-                  {formatDate(post.created_at)}
-                </span>
-              </div>
-            </header>
+        {/* Article Body (Typography Zone) */}
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 md:py-10">
+          <ReactMarkdown 
+            className="prose prose-lg md:prose-xl max-w-none prose-slate prose-headings:font-bold prose-headings:text-slate-900 prose-a:text-emerald-600 prose-ul:list-disc prose-ul:pl-6 prose-li:my-1 leading-relaxed space-y-6"
+          >
+            {post.content}
+          </ReactMarkdown>
 
-            {/* Prose Content */}
-            <div className="prose prose-sm sm:prose lg:prose-lg dark:prose-invert prose-headings:font-headline prose-headings:font-black prose-a:text-primary hover:prose-a:text-primary/80 prose-img:rounded-2xl max-w-none text-on-background/90 leading-relaxed space-y-6 whitespace-pre-wrap">
-              {post.content}
+          {/* Article Footer */}
+          <footer className="mt-16">
+            <hr className="my-10 border-slate-200" />
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <Link
+                to="/blog"
+                className="flex items-center gap-2 px-6 py-3 bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 rounded-xl font-bold transition-colors w-full sm:w-auto justify-center"
+              >
+                <span className="material-symbols-outlined text-[20px]">arrow_back</span>
+                Back to All Articles
+              </Link>
+              
+              <Link
+                to="/"
+                className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-primary to-emerald-600 text-white rounded-xl font-bold hover:shadow-lg hover:opacity-95 transition-all w-full sm:w-auto justify-center"
+              >
+                Explore All Student Deals
+                <span className="material-symbols-outlined text-[20px]">explore</span>
+              </Link>
             </div>
-
-          </div>
-
-          {/* Footer Back Button */}
-          <div className="flex justify-center">
-            <Link
-              to="/blog"
-              className="flex items-center gap-2 px-6 py-3 bg-surface-container-low hover:bg-surface-container text-on-background rounded-full font-bold transition-colors"
-            >
-              <span className="material-symbols-outlined text-[20px]">arrow_back</span>
-              More Articles
-            </Link>
-          </div>
+          </footer>
         </div>
+
       </article>
     </div>
   );
