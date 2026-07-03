@@ -165,7 +165,7 @@ function CreateEvent() {
           Create New Event
         </h1>
         <p className="text-on-surface-variant mt-2">
-          Publish an exclusive event to the UniDeals platform.
+          Submit your event for review. It will appear on the public feed once approved by an admin.
         </p>
       </div>
 
@@ -384,12 +384,12 @@ function CreateEvent() {
               {submitting ? (
                 <>
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Publishing...
+                  Submitting...
                 </>
               ) : (
                 <>
-                  <span className="material-symbols-outlined text-[18px]">publish</span>
-                  Publish Event
+                  <span className="material-symbols-outlined text-[18px]">send</span>
+                  Submit for Review
                 </>
               )}
             </button>

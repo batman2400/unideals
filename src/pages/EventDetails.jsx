@@ -161,7 +161,7 @@ export default function EventDetails() {
               </div>
               <div>
                 <p className="text-sm font-bold text-on-surface-variant uppercase tracking-wider mb-0.5">Who Can Attend</p>
-                <p className="text-on-background font-medium capitalize">{event.target_audience.replace(/_/g, ' ')}</p>
+                <p className="text-on-background font-medium capitalize">{(event.target_audience || 'all_students').replace(/_/g, ' ')}</p>
               </div>
             </div>
           </div>
