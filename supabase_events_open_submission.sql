@@ -27,10 +27,14 @@ END $$;
 -- Backfill: mark any existing events (created before this migration) as approved
 UPDATE public.events SET status = 'approved' WHERE status IS NULL;
 
--- ─── 2. Drop old RLS policies ────────────────────────────────
+-- ─── 2. Drop old AND new RLS policies (idempotent) ───────────
 DROP POLICY IF EXISTS "Allow authenticated users to read events" ON public.events;
 DROP POLICY IF EXISTS "Allow admins and partners to insert events" ON public.events;
 DROP POLICY IF EXISTS "Allow admins and partners to update events" ON public.events;
+DROP POLICY IF EXISTS "events_select_policy" ON public.events;
+DROP POLICY IF EXISTS "events_insert_policy" ON public.events;
+DROP POLICY IF EXISTS "events_update_policy" ON public.events;
+DROP POLICY IF EXISTS "events_delete_policy" ON public.events;
 
 -- ─── 3. Create new RLS policies ──────────────────────────────
 
@@ -77,6 +81,7 @@ USING (public.get_user_role() = 'admin');
 -- ─── 4. Update storage policies for event-images bucket ──────
 -- Allow any authenticated user to upload event images (was admin/partner only)
 DROP POLICY IF EXISTS "Event images uploadable by admins and partners" ON storage.objects;
+DROP POLICY IF EXISTS "Event images uploadable by authenticated users" ON storage.objects;
 
 CREATE POLICY "Event images uploadable by authenticated users" ON storage.objects
 FOR INSERT TO authenticated
