@@ -41,13 +41,22 @@ export default function UniversityEvents() {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-8 md:py-12 animate-fade-in">
-      <div className="mb-10">
-        <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background">
-          Upcoming Events
-        </h1>
-        <p className="text-on-surface-variant text-base mt-2 max-w-2xl">
-          Discover exclusive networking sessions, tech fests, and social gatherings on campus.
-        </p>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-10">
+        <div>
+          <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background">
+            Upcoming Events
+          </h1>
+          <p className="text-on-surface-variant text-base mt-2 max-w-2xl">
+            Discover exclusive networking sessions, tech fests, and social gatherings on campus.
+          </p>
+        </div>
+        <Link
+          to="/events/new"
+          className="inline-flex items-center justify-center gap-1.5 px-5 py-3 bg-primary text-on-primary hover:bg-primary/90 font-headline font-bold text-sm rounded-xl transition-all shadow-sm active:scale-[0.98] self-start sm:self-center"
+        >
+          <span className="material-symbols-outlined text-[20px]">add_circle</span>
+          Submit an Event
+        </Link>
       </div>
 
       {loading ? (
