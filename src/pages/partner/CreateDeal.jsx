@@ -381,14 +381,7 @@ function CreateDeal() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Form */}
         <div className="lg:col-span-8 bg-surface rounded-2xl border border-outline-variant/20 p-6 md:p-8 shadow-sm">
-          {error && (
-            <div className="mb-6 flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3">
-              <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">
-                error
-              </span>
-              <p className="text-error text-sm font-bold">{error}</p>
-            </div>
-          )}
+
 
           {successMessage && (
             <div className="mb-6 flex items-start gap-2 bg-primary-container/30 border border-primary/20 rounded-lg px-4 py-3">
@@ -648,6 +641,15 @@ function CreateDeal() {
                 )}
               </div>
             </div>
+
+            {error && (
+              <div className="mt-4 flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3">
+                <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">
+                  error
+                </span>
+                <p className="text-error text-sm font-bold">{error}</p>
+              </div>
+            )}
 
             <div className="pt-6 flex items-center justify-end">
               <button

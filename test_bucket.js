@@ -13,7 +13,7 @@ envFile.split('\n').forEach(line => {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function main() {
-  const { data, error } = await supabase.storage.getBucket('brand-logos');
+  const { data, error } = await supabase.storage.getBucket('deal-images');
   if (error) {
     console.error("Bucket Error:", error);
   } else {
