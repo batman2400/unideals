@@ -330,11 +330,6 @@ function AdminBrands() {
           <p className="text-emerald-700 text-sm font-bold">{message}</p>
         </div>
       )}
-      {error && !editingBrand && (
-        <div className="mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
-          <p className="text-error text-sm font-bold">{error}</p>
-        </div>
-      )}
 
       {showCreate && (
         <div className="mb-6 bg-surface rounded-2xl border border-primary/20 p-6 shadow-sm animate-slide-down">
@@ -484,6 +479,12 @@ function AdminBrands() {
               </div>
             </div>
 
+            {error && !editingBrand && (
+              <div className="mt-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+                <p className="text-error text-sm font-bold">{error}</p>
+              </div>
+            )}
+
             <div className="flex justify-end pt-2">
               <button
                 type="submit"
@@ -606,11 +607,6 @@ function AdminBrands() {
             </div>
             
             <div className="flex-1 overflow-y-auto px-6 py-6">
-              {error && (
-                <div className="mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
-                  <p className="text-error text-sm font-bold">{error}</p>
-                </div>
-              )}
               <form id="edit-brand-form" onSubmit={handleUpdate} className="space-y-6">
                 <div className="grid grid-cols-1 gap-5">
                   <div>
@@ -747,6 +743,12 @@ function AdminBrands() {
               </form>
             </div>
             
+            {error && (
+              <div className="mx-6 mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
+                <p className="text-error text-sm font-bold">{error}</p>
+              </div>
+            )}
+
             <div className="p-6 border-t border-outline-variant/10 bg-surface-container-low flex justify-between items-center gap-4">
               <button 
                 type="button"
