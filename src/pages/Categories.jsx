@@ -53,29 +53,6 @@ const OLD_TO_NEW = {
   Creative: "Learning",
 };
 
-// Demo images for fallback deals
-const demoImages = {
-  Fashion:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCzOvLNPgk03USFCKNu-GSzr9_dG9Cm3IPn04us2RsA5WNrpv7kXluz1pKVGDoWg25RiLBQB1fB29I5ZtSSxP-VRZO9pTj4_i7YzmJQGsB5rWtNPQYfBMSpYn8ecO1qkcOImTsFwhBvI9d_zwBCanWoMsWcoGglkPVREOwhsLl4333y_W6F-aBfjPfU0jhgJf8o-43sazueipq-nYtKuUCo56Hh3oQ1uWZJ6v_XJep8TPKq9lSRlBs9a7UD7DDWezf0kbdke4zHLvA",
-  "Food & Drink":
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuDvOrc_ZGFRba9R0_nKoRINZ5tRxNmW-4lIEr_V0GN6gXTnSu7DWgW5rQ4_n0v7d2cmf-H5R-SgaRn5RmvjhFlwbLM5UaZiogKwcUmnk3G4V6a27DcVlGWQMnbwd1mKvUY-y6DAVR9gpxHs9OYCv1EgUKpslQDiRzFMn1Ou0XmJN5NL88ScH4IYQmD-qmZzIgsGr-8rFCDl-9fqQMueV77q82InBqAHqrDWYRIdNQShFMx54sbJnELdQf2gvbkpzZ0HES91UohXj2A",
-  "Tech & Mobile":
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuCdG-2Jqc1sFEzIzRESXx8K8BItiMhQ7Fe3m2AwiW40ScLzJS5LQ56bEj7jshQCDva9eMVA3JrRls31IJeWBNFPDgcG34uqhvhI22s9ESRnEM9Sj4PrzhV6bT4iYZ_fNn89yaKc9JQ7vEujYUUEPKsmArVBU2fOiY7723xXXQqv1mafUPMNq6AEmiayO1B7SUoBrZ36-V_W_E9mrI_8zAN37_jT-EjpmU0mpdudzYqAiGr_HJIpgtCCHHK492hiHpyw442eXsFueEc",
-  "Beauty & Care":
-    "https://images.unsplash.com/photo-1596462502278-27bfdc403348?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  Learning:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBzrewh7Yaxx08JPFCRJjYZ5K9cxEFPyolBeyW8OBhUSI5x-xOOAo9x0RG4oPhNqX8GgKbLiBOnF8dV7M27keE7jCT7Gb1rS3VfkKgVPcA3bj7ZWZ3XPQHy8gFkElPs9lQq95eBonjtM0EUVHkz_SZ7cLVwqn5-H3WSDGf4Eu4kuHf9SpzmdT3GSnV97tcJJYYI6u83KKtolla22Lx0IuvDu7I4gP9ja9hrdmhbGjftDHpBwa_SQX_2k7rNKhnHjcUK9QIMLab3iMs",
-  "Travel & Auto":
-    "https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "Health & Fitness":
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuBlQ36ohtoAh9iCNqXOhzdY_i9C66nAuwPjEoY7ATPU7F6ORrkJ9RNozLPw-UlMH_AQ6347sUVdnofSpsAPDPcEDTbHI8kJ-sDd4U4-FL7KtVn0Vid0AKYeDKMnI3_zrZVee7dE003pYw1DkC4gX1Zu8gPPZpyP8zuwQXr8nMXfnT_uQQ8dElkjTXuO7k0Qc_YLrFAX7Ad1UFcbhm5fe5ZOEXLXSjyn2WLYkVCVBMx6LLOVrjorS4brUS3XyKYwP0blJjuevpgSx-Q",
-  Household:
-    "https://lh3.googleusercontent.com/aida-public/AB6AXuAZJkcufRYEZVBJQHpPPMMFRRa666JoWSP--59sPJn-M8ZQeeSSxdKIwlVoClxOXzXBkbWLnBjnSTeu3ZbVd9bwUZrllroLwKliU1H0NZAdsUaTJRWnKE0OtKjq0C6PLsuEeBBaxYg1twgDiskLcyPcjOZjP3IRopDylKF6eRD0uLoKbXdzTR630xOd9-btXTE0Odtm79tP7Gb7goFCqRbK7VMJG-8OxL_V4-SNH5DS_OliUk6NEnRVxzgpXA350ggKALFQL5WQOkg",
-  Finance:
-    "https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-  "Events & Tickets":
-    "https://images.unsplash.com/photo-1540039155732-d674d40da4dc?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
-};
 
 function Categories() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -99,29 +76,11 @@ function Categories() {
       acc[cat].push(deal);
     });
 
-    // Inject demo data for any empty official category
-    OFFICIAL_CATEGORIES.forEach((cat) => {
-      if (acc[cat].length === 0) {
-        acc[cat].push({
-          id: `demo-${cat}`,
-          title: `Premium ${cat} Brand`,
-          brand: `Partner Brand`,
-          discount: "Coming Soon",
-          type: "Online",
-          category: cat,
-          imageUrl: demoImages[cat],
-          description: `We're partnering with top brands to bring you the best ${cat} deals. Check back soon!`,
-          redemptionCode: "DEMO2026",
-          storeUrl: "#",
-        });
-      }
-    });
-
     return acc;
   }, [deals]);
 
-  // Use all official categories since demo data guarantees they're populated
-  const categoryNames = OFFICIAL_CATEGORIES;
+  // Only show categories that actually have deals
+  const categoryNames = OFFICIAL_CATEGORIES.filter(cat => grouped[cat] && grouped[cat].length > 0);
 
   // Decode the URL filter param — handles both encoded (%26) and raw (&)
   useEffect(() => {
