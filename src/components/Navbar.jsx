@@ -41,6 +41,7 @@ export default function Navbar({ onLogout, isLoggedIn }) {
             <Link
               key={link.path}
               to={link.path}
+              title={link.label}
               className={`relative font-headline font-bold text-base tracking-tight transition-colors duration-200 py-1 ${
                 active ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full" : "text-on-surface-variant hover:text-on-background"
               }`}

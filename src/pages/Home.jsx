@@ -3,6 +3,7 @@ import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
 import DealFeed from "../components/DealFeed";
 import FAQSchema from "../components/FAQSchema";
+import SiteNavigationSchema from "../components/SiteNavigationSchema";
 
 const categories = [
   { icon: "checkroom", label: "Fashion" },
@@ -36,6 +37,7 @@ function Home({ searchQuery, onSearchChange }) {
       </Helmet>
       
       <FAQSchema />
+      <SiteNavigationSchema />
 
       {/* SEO Optimized Headers */}
       <div className="sr-only">
