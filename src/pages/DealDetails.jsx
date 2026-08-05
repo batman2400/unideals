@@ -11,6 +11,7 @@
  */
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "../lib/supabaseClient";
 import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
@@ -701,6 +702,11 @@ function DealDetails() {
 
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
+      <Helmet>
+        <title>{brand} Student Discount in Sri Lanka | Uni Deals</title>
+        <meta name="description" content={`Get the latest ${brand} student discounts and promo codes. Save on ${brand} with your verified Sri Lankan university ID.`} />
+      </Helmet>
+
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-on-surface-variant/60 mb-8">
         <Link

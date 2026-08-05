@@ -134,7 +134,7 @@ function TermsOfService() {
           </h2>
           <p>
             For legal, compliance, or account concerns, contact the Uni Deals
-            team at support@unideals.lk.
+            team at unideals.lk@gmail.com.
           </p>
         </section>
       </div>

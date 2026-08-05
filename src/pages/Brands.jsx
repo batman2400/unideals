@@ -7,6 +7,7 @@
  */
 import { Link } from "react-router-dom";
 import { useMemo } from "react";
+import { Helmet } from "react-helmet-async";
 import { useDeals } from "../lib/useDeals";
 import DealsLoader from "../components/DealsLoader";
 
@@ -33,6 +34,10 @@ function Brands() {
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
+      <Helmet>
+        <title>Top Brand Student Discounts in Sri Lanka | Uni Deals</title>
+      </Helmet>
+      
       {/* Page Header */}
       <div className="mb-16">
         <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase mb-2 block">

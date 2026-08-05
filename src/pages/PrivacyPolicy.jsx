@@ -130,7 +130,7 @@ function PrivacyPolicy() {
             10. Contact
           </h2>
           <p>
-            For privacy questions or requests, contact: support@unideals.lk.
+            For privacy questions or requests, contact: unideals.lk@gmail.com.
           </p>
         </section>
       </div>

@@ -1,3 +1,19 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [
+    {
+      "source": "/blog/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|linkedinbot|skypeuripreview|pinterest|slackbot|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/og-proxy?slug=:slug"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/"
+    }
+  ]
 }

@@ -1,4 +1,5 @@
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
 import DealFeed from "../components/DealFeed";
 
@@ -20,6 +21,49 @@ function Home({ searchQuery, onSearchChange }) {
 
   return (
     <div className="w-full animate-fade-in">
+      <Helmet>
+        <script type="application/ld+json">
+          {`
+            {
+              "@context": "https://schema.org",
+              "@type": "FAQPage",
+              "mainEntity": [
+                {
+                  "@type": "Question",
+                  "name": "How do I get student discounts in Sri Lanka?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Simply sign up on Uni Deals with your university email or upload your student ID to verify your status and unlock exclusive local discounts."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Which brands offer student discounts in Sri Lanka?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Many top brands including SriLankan Airlines, Pizza Hut, Taco Bell, Singhagiri, and Cinnamon Grand Colombo offer exclusive deals for students."
+                  }
+                },
+                {
+                  "@type": "Question",
+                  "name": "Can I get laptop discounts for university?",
+                  "acceptedAnswer": {
+                    "@type": "Answer",
+                    "text": "Yes, verified students can access exclusive educational pricing on laptops and tech accessories from top retailers across Sri Lanka."
+                  }
+                }
+              ]
+            }
+          `}
+        </script>
+      </Helmet>
+
+      {/* SEO Optimized Headers */}
+      <div className="sr-only">
+        <h1>Exclusive Discounts & Perks for University Students in Sri Lanka</h1>
+        <h2>Save on tech, dining, fashion, and entertainment using your verified university email.</h2>
+      </div>
+
       <HeroSection searchQuery={searchQuery} onSearchChange={onSearchChange} />
       
       {/* Category Chips - Touch Swipeable Row */}
@@ -46,6 +90,14 @@ function Home({ searchQuery, onSearchChange }) {
       </div>
 
       <DealFeed searchQuery={searchQuery} />
+
+      {/* SEO Supported Campuses Section */}
+      <section className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-12 border-t border-outline-variant/20 mt-8">
+        <h3 className="text-lg font-headline font-bold text-on-surface mb-3">Supported Campuses</h3>
+        <p className="text-sm text-on-surface-variant max-w-3xl leading-relaxed">
+          Available for students at SLIIT, NSBM, University of Colombo, University of Moratuwa, KDU, CINEC, and more.
+        </p>
+      </section>
     </div>
   );
 }

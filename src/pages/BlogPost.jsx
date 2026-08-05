@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 
 export default function BlogPost() {
@@ -77,6 +78,10 @@ export default function BlogPost() {
 
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
+      <Helmet>
+        <title>{post.title} | Uni Deals Blog</title>
+        <meta name="description" content={post.excerpt || `Read ${post.title} on the Uni Deals Blog.`} />
+      </Helmet>
       <article className="animate-fade-in">
         
         {/* Top Navigation Bar */}

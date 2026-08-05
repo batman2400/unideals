@@ -10,6 +10,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
@@ -154,8 +155,22 @@ function Categories() {
       ? categoryNames
       : categoryNames.filter((category) => category === activeCategory);
 
+  const getCategoryTitle = () => {
+    switch (activeCategory) {
+      case "Tech & Mobile": return "Student Laptop & Tech Offers Sri Lanka | Uni Deals";
+      case "Food & Drink": return "Cheap Food & Restaurant Offers for Students in Colombo | Uni Deals";
+      case "Travel & Auto": return "University Student Flight & Travel Discounts | Uni Deals";
+      case "all": return "All Student Discounts by Category | Uni Deals";
+      default: return `${activeCategory} Student Discounts Sri Lanka | Uni Deals`;
+    }
+  };
+
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
+      <Helmet>
+        <title>{getCategoryTitle()}</title>
+      </Helmet>
+
       {/* Page Header */}
       <div className="mb-16">
         <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase mb-2 block">

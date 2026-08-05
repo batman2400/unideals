@@ -17,8 +17,8 @@ export default function Support() {
           <p className="text-on-surface-variant text-sm mb-4">
             Have a question or need assistance? Drop us an email and our support team will get back to you within 24 hours.
           </p>
-          <a href="mailto:support@unideals.lk" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
-            support@unideals.lk
+          <a href="mailto:unideals.lk@gmail.com" className="inline-flex items-center gap-2 text-primary font-bold hover:underline">
+            unideals.lk@gmail.com
             <span className="material-symbols-outlined text-sm">open_in_new</span>
           </a>
         </div>
