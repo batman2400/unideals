@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
 import DealFeed from "../components/DealFeed";
+import FAQSchema from "../components/FAQSchema";
 
 const categories = [
   { icon: "checkroom", label: "Fashion" },
@@ -22,41 +23,19 @@ function Home({ searchQuery, onSearchChange }) {
   return (
     <div className="w-full animate-fade-in">
       <Helmet>
-        <script type="application/ld+json">
-          {`
-            {
-              "@context": "https://schema.org",
-              "@type": "FAQPage",
-              "mainEntity": [
-                {
-                  "@type": "Question",
-                  "name": "How do I get student discounts in Sri Lanka?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Simply sign up on Uni Deals with your university email or upload your student ID to verify your status and unlock exclusive local discounts."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Which brands offer student discounts in Sri Lanka?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Many top brands including SriLankan Airlines, Pizza Hut, Taco Bell, Singhagiri, and Cinnamon Grand Colombo offer exclusive deals for students."
-                  }
-                },
-                {
-                  "@type": "Question",
-                  "name": "Can I get laptop discounts for university?",
-                  "acceptedAnswer": {
-                    "@type": "Answer",
-                    "text": "Yes, verified students can access exclusive educational pricing on laptops and tech accessories from top retailers across Sri Lanka."
-                  }
-                }
-              ]
-            }
-          `}
-        </script>
+        <title>Uni Deals | The Best Student Discounts & Offers in Sri Lanka</title>
+        <meta name="description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech accessories, and clothing using your verified university email." />
+        <meta name="keywords" content="student discounts in sri lanka, student offers in sri lanka, university deals colombo, kdu student offers, sliit discounts" />
+        <link rel="canonical" href="https://unideals.co/" />
+        
+        {/* Open Graph / Social Sharing */}
+        <meta property="og:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
+        <meta property="og:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://unideals.co/" />
       </Helmet>
+      
+      <FAQSchema />
 
       {/* SEO Optimized Headers */}
       <div className="sr-only">

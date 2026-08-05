@@ -59,6 +59,8 @@ const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const BrandPage = lazy(() => import("./pages/BrandPage"));
 
 function RouteSkeleton() {
   return (
@@ -184,7 +186,9 @@ function App() {
               />
               <Route path="/perks/:id" element={<DealDetails />} />
               <Route path="/categories" element={<Categories />} />
+              <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/brands" element={<Brands />} />
+              <Route path="/brand/:brandId" element={<BrandPage />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/saved" element={<SavedDeals />} />
