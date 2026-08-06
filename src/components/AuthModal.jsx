@@ -21,6 +21,21 @@ import { supabase } from "../lib/supabaseClient";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/**
+ * Server faults and rate limits say nothing about whether an account exists,
+ * so naming them is safe and stops an outage from looking like a typo.
+ * Anything else stays deliberately vague to prevent email enumeration.
+ */
+function describeAuthFailure(error, fallback) {
+  if (!error.status || error.status >= 500) {
+    return "We couldn't reach the server. Please check your connection and try again in a moment.";
+  }
+  if (error.status === 429) {
+    return "Too many attempts. Please wait a minute and try again.";
+  }
+  return fallback;
+}
+
 function validatePasswordStrength(password) {
   if (password.length < 8) return "Password must be at least 8 characters.";
   if (password.length > 72) return "Password must be 72 characters or fewer.";
@@ -125,7 +140,10 @@ function AuthModal({ isOpen, onClose }) {
           // Deliberately generic: a message like "User already registered"
           // lets an attacker enumerate which emails hold accounts.
           setAuthError(
-            "We couldn't create that account. Please check your details and try again.",
+            describeAuthFailure(
+              error,
+              "We couldn't create that account. Please check your details and try again.",
+            ),
           );
           return;
         }
@@ -144,7 +162,7 @@ function AuthModal({ isOpen, onClose }) {
           setAuthError(
             error.message === "Email not confirmed"
               ? "Please confirm your email address first. Check your inbox for the link."
-              : "Invalid email or password.",
+              : describeAuthFailure(error, "Invalid email or password."),
           );
           return;
         }
