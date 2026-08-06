@@ -321,15 +321,66 @@ function Profile({ isLoggedIn, user }) {
     grade: user?.user_metadata?.grade || "",
   });
   const [formData, setFormData] = useState({ ...profileData });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileError, setProfileError] = useState("");
+  const [profileSaved, setProfileSaved] = useState(false);
 
-  const handleSaveProfile = (e) => {
+  // Keep the displayed profile in sync with the session's metadata (e.g. after a
+  // token refresh), but never overwrite fields the user is actively editing.
+  useEffect(() => {
+    if (isEditing) return;
+    setProfileData({
+      fullName: fullName || "",
+      email: userEmail || "",
+      studentType: user?.user_metadata?.student_type || "university",
+      institution: user?.user_metadata?.institution || "",
+      department: user?.user_metadata?.department || "",
+      batch: user?.user_metadata?.batch || "",
+      grade: user?.user_metadata?.grade || "",
+    });
+  }, [user, fullName, userEmail, isEditing]);
+
+  const handleSaveProfile = async (e) => {
     e?.preventDefault();
-    setProfileData({ ...formData });
-    setIsEditing(false);
+    setProfileError("");
+    setProfileSaved(false);
+    setProfileSaving(true);
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        data: {
+          full_name: formData.fullName.trim(),
+          student_type: formData.studentType,
+          institution: formData.institution.trim(),
+          department: formData.studentType === 'university' ? formData.department.trim() : "",
+          batch: formData.studentType === 'university' ? formData.batch.trim() : "",
+          grade: formData.studentType === 'school' ? formData.grade.trim() : "",
+        },
+      });
+      if (error) throw error;
+      const meta = data?.user?.user_metadata ?? {};
+      setProfileData({
+        fullName: meta.full_name ?? formData.fullName,
+        email: data?.user?.email ?? profileData.email,
+        studentType: meta.student_type ?? formData.studentType,
+        institution: meta.institution ?? "",
+        department: meta.department ?? "",
+        batch: meta.batch ?? "",
+        grade: meta.grade ?? "",
+      });
+      setIsEditing(false);
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2500);
+    } catch (err) {
+      console.error("Failed to update profile:", err);
+      setProfileError(err.message || "Failed to save your profile.");
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const handleCancelEdit = () => {
     setFormData({ ...profileData });
+    setProfileError("");
     setIsEditing(false);
   };
 
@@ -340,6 +391,8 @@ function Profile({ isLoggedIn, user }) {
   const [brandFormData, setBrandFormData] = useState({});
   const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [brandSaving, setBrandSaving] = useState(false);
+  const [brandError, setBrandError] = useState("");
+  const [brandSaved, setBrandSaved] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -405,18 +458,35 @@ function Profile({ isLoggedIn, user }) {
   const handleSaveBrand = async (e) => {
     e.preventDefault();
     if (!activeBrand) return;
+    setBrandError("");
+    setBrandSaved(false);
+
+    if (!activeBrand.id) {
+      setBrandError("This account isn't linked to a brand record yet. Please contact support.");
+      return;
+    }
+
     setBrandSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('brands')
         .update(brandFormData)
-        .eq('id', activeBrand.id);
+        .eq('id', activeBrand.id)
+        .select();
       if (error) throw error;
-      setActiveBrand({ ...activeBrand, ...brandFormData });
-      setManagedBrands(prev => prev.map(b => b.id === activeBrand.id ? { ...b, ...brandFormData } : b));
+      // An empty result with no error means row-level security rejected the
+      // write, which PostgREST reports as a successful no-op.
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to edit this brand, or it no longer exists.");
+      }
+      setActiveBrand({ ...activeBrand, ...data[0] });
+      setManagedBrands(prev => prev.map(b => b.id === activeBrand.id ? { ...b, ...data[0] } : b));
       setIsEditingBrand(false);
+      setBrandSaved(true);
+      setTimeout(() => setBrandSaved(false), 2500);
     } catch (err) {
       console.error("Failed to update brand:", err);
+      setBrandError(err.message || "Failed to save brand profile.");
     } finally {
       setBrandSaving(false);
     }
@@ -674,7 +744,19 @@ function Profile({ isLoggedIn, user }) {
                 )}
                 {!isEditingBrand && (
                   <button 
-                    onClick={() => setIsEditingBrand(true)} 
+                    onClick={() => {
+                      setBrandFormData({
+                        name: activeBrand.name || "",
+                        category: activeBrand.category || "",
+                        description: activeBrand.description || "",
+                        website_url: activeBrand.website_url || "",
+                        instagram_handle: activeBrand.instagram_handle || "",
+                        tiktok_handle: activeBrand.tiktok_handle || "",
+                        location: activeBrand.location || ""
+                      });
+                      setBrandError("");
+                      setIsEditingBrand(true);
+                    }} 
                     className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
                   >
                     <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -717,13 +799,22 @@ function Profile({ isLoggedIn, user }) {
                   <button type="submit" disabled={brandSaving} className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50">
                     {brandSaving ? 'Saving...' : 'Save Changes'}
                   </button>
-                  <button type="button" onClick={() => setIsEditingBrand(false)} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
+                  <button type="button" onClick={() => { setIsEditingBrand(false); setBrandError(""); }} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
                     Cancel
                   </button>
                 </div>
+
+                {brandError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{brandError}</p>}
               </form>
             ) : (
               <div className="space-y-4 animate-fade-in">
+                {brandSaved && (
+                  <div className="flex items-center gap-2 text-primary bg-primary/10 p-2.5 rounded-lg">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    <p className="text-xs font-bold">Brand profile updated successfully.</p>
+                  </div>
+                )}
+                {brandError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{brandError}</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
                   <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Brand Name</p>
@@ -759,7 +850,7 @@ function Profile({ isLoggedIn, user }) {
               <h3 className="font-headline font-bold text-base text-on-background">Personal & Academic Details</h3>
               {!isEditing && (
                 <button 
-                  onClick={() => setIsEditing(true)} 
+                  onClick={() => { setFormData({ ...profileData }); setProfileError(""); setIsEditing(true); }} 
                   className="flex items-center gap-1.5 text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors"
                 >
                   <span className="material-symbols-outlined text-[16px]">edit</span>
@@ -827,16 +918,25 @@ function Profile({ isLoggedIn, user }) {
                 </div>
 
                 <div className="flex items-center gap-4 pt-2">
-                  <button type="submit" className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]">
-                    Save Changes
+                  <button type="submit" disabled={profileSaving} className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+                    {profileSaving ? 'Saving...' : 'Save Changes'}
                   </button>
                   <button type="button" onClick={handleCancelEdit} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
                     Cancel
                   </button>
                 </div>
+
+                {profileError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{profileError}</p>}
               </form>
             ) : (
               <div className="space-y-4 animate-fade-in">
+                {profileSaved && (
+                  <div className="flex items-center gap-2 text-primary bg-primary/10 p-2.5 rounded-lg">
+                    <span className="material-symbols-outlined text-sm">check_circle</span>
+                    <p className="text-xs font-bold">Profile updated successfully.</p>
+                  </div>
+                )}
+                {profileError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{profileError}</p>}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
                   <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Full Name</p>
