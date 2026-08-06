@@ -216,7 +216,9 @@ export function useSavedDealIds() {
         .eq("user_id", user.id);
 
       if (!cancelled) {
-        if (!error && data) {
+        if (error) {
+          console.error("Failed to load saved deals:", error);
+        } else if (data) {
           setSavedIds(new Set(data.map((r) => r.deal_id)));
         }
         setLoading(false);

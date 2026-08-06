@@ -72,6 +72,23 @@ function AdminOverview() {
 
         if (!active) return;
 
+        // Supabase reports failures on the response object rather than
+        // throwing, so without this the dashboard renders confident zeros.
+        const failed = [
+          dealsRes,
+          usersRes,
+          partnersRes,
+          verificationsRes,
+          confirmedRes,
+          recentEventsRes,
+        ].find((r) => r.error);
+
+        if (failed) {
+          console.error("Failed to load admin overview:", failed.error);
+          setError("Couldn't load platform metrics. Check your connection and try again.");
+          return;
+        }
+
         let activeDeals = 0;
         let scheduledDeals = 0;
         let expiredDeals = 0;

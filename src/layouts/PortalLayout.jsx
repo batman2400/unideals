@@ -11,28 +11,35 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
   const [partners, setPartners] = useState([]);
 
   useEffect(() => {
-    if (role === "admin" && portalType === "partner") {
-      supabase
-        .from("partner_profiles")
-        .select(
-          `
+    if (role !== "admin" || portalType !== "partner") return;
+
+    let active = true;
+
+    supabase
+      .from("partner_profiles")
+      .select(
+        `
           user_id,
           brand_name,
           brands ( name )
         `,
-        )
-        .then(({ data }) => {
-          if (data) {
-            const partnerList = data.map((p) => {
-              const brand = p.brands?.name || p.brand_name || "Unknown Brand";
-              return { id: p.user_id, name: brand };
-            });
-            setPartners(
-              partnerList.sort((a, b) => a.name.localeCompare(b.name)),
-            );
-          }
+      )
+      .then(({ data, error }) => {
+        if (!active) return;
+        if (error) {
+          console.error("Failed to load partner list for impersonation:", error);
+          return;
+        }
+        const partnerList = (data || []).map((p) => {
+          const brand = p.brands?.name || p.brand_name || "Unknown Brand";
+          return { id: p.user_id, name: brand };
         });
-    }
+        setPartners(partnerList.sort((a, b) => a.name.localeCompare(b.name)));
+      });
+
+    return () => {
+      active = false;
+    };
   }, [role, portalType]);
 
   const toggleSidebar = useCallback(() => {

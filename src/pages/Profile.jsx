@@ -17,6 +17,19 @@ import { Navigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useRoleContext } from "../lib/RoleContext";
 
+const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
+
+function validateImageUpload(file) {
+  if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
+    return "Please upload a JPEG, PNG, or WEBP image.";
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    return `That file is ${(file.size / 1024 / 1024).toFixed(1)}MB. The limit is 5MB.`;
+  }
+  return null;
+}
+
 function Profile({ isLoggedIn, user }) {
   const {
     isVerified,
@@ -32,30 +45,44 @@ function Profile({ isLoggedIn, user }) {
   );
   const [avatarUploading, setAvatarUploading] = useState(false);
 
+  const [avatarError, setAvatarError] = useState("");
+
   const handleAvatarUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+
+    setAvatarError("");
+    const validationError = validateImageUpload(file);
+    if (validationError) {
+      setAvatarError(validationError);
+      e.target.value = "";
+      return;
+    }
+
     setAvatarUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const filePath = `${user.id}/avatar.${ext}`;
+      // A fixed, extension-free path so re-uploading a different format
+      // replaces the old object instead of orphaning it.
+      const filePath = `${user.id}/avatar`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true });
+        .upload(filePath, file, { upsert: true, contentType: file.type });
       if (uploadError) throw uploadError;
       const {
         data: { publicUrl },
       } = supabase.storage.from("avatars").getPublicUrl(filePath);
-      const urlWithCacheBust = `${publicUrl}?t=${Date.now()}`;
       const { error: updateError } = await supabase.auth.updateUser({
-        data: { avatar_url: urlWithCacheBust },
+        data: { avatar_url: publicUrl },
       });
       if (updateError) throw updateError;
-      setAvatarUrl(urlWithCacheBust);
+      // Cache-bust for display only; the stored URL stays clean.
+      setAvatarUrl(`${publicUrl}?t=${Date.now()}`);
     } catch (err) {
       console.error("Avatar upload failed:", err);
+      setAvatarError(err.message || "Couldn't upload that image. Please try again.");
     } finally {
       setAvatarUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -118,10 +145,11 @@ function Profile({ isLoggedIn, user }) {
         .eq('user_id', user.id)
         .eq('status', 'pending')
         .limit(1);
-      
-      if (active && !error && data && data.length > 0) {
-        setHasPendingVerification(true);
-      }
+
+      if (!active || error) return;
+      // Must be able to clear, otherwise a rejected student stays locked in
+      // the "pending" state and can never resubmit.
+      setHasPendingVerification(data.length > 0);
     }
     fetchPendingVerification();
     return () => { active = false; };
@@ -166,20 +194,29 @@ function Profile({ isLoggedIn, user }) {
     
     setUniVerifying(true);
     try {
-      const { data, error } = await supabase.rpc("request_university_verification", {
-        target_email: normalized,
-      });
-      if (error) throw error;
+      // The code is generated and emailed by the edge function; it is never
+      // returned to the browser.
+      const { data, error } = await supabase.functions.invoke(
+        "send-verification-otp",
+        { body: { email: normalized } },
+      );
+
       if (data?.success) {
         setVerificationStep(2);
-        setResendCooldown(60); // 60 seconds cooldown
-        // Note: For beta testing, we could log the OTP here. 
-        console.log("OTP for testing:", data.otp);
-      } else {
-        setUniError(data?.error || "Failed to request verification.");
+        setResendCooldown(60);
+        return;
       }
+
+      // Non-2xx responses surface as an error with the raw Response attached,
+      // so the specific reason (rate limited, domain rejected) isn't lost.
+      let reason = data?.error;
+      if (!reason && error?.context?.json) {
+        reason = (await error.context.json().catch(() => null))?.error;
+      }
+      setUniError(reason || "Failed to send the verification code.");
     } catch (err) {
-      setUniError(err.message || "An error occurred.");
+      console.error("Verification request failed:", err);
+      setUniError("Couldn't send the verification code. Please try again.");
     } finally {
       setUniVerifying(false);
     }
@@ -234,42 +271,35 @@ function Profile({ isLoggedIn, user }) {
       return;
     }
 
-    // Check file type
-    const validTypes = ["image/jpeg", "image/png", "image/webp"];
-    if (!validTypes.includes(manualFile.type)) {
-      setManualError("Please upload a valid image file (JPEG, PNG, or WEBP).");
+    const validationError = validateImageUpload(manualFile);
+    if (validationError) {
+      setManualError(validationError);
       return;
     }
 
+    if (manualVerifying) return;
     setManualVerifying(true);
     
     try {
-      // 1. Upload file to Supabase Storage
+      // 1. Upload to a user-scoped folder in the private documents bucket
       const fileExt = manualFile.name.split('.').pop();
-      const fileName = `${user.id}_${Date.now()}.${fileExt}`;
-      const filePath = `${fileName}`;
-      
+      const filePath = `${user.id}/${Date.now()}.${fileExt}`;
+
       const { error: uploadError } = await supabase.storage
         .from('verification-documents')
-        .upload(filePath, manualFile);
-        
+        .upload(filePath, manualFile, { contentType: manualFile.type });
+
       if (uploadError) throw uploadError;
-      
-      // 2. Get public URL
-      const { data: publicUrlData } = supabase.storage
-        .from('verification-documents')
-        .getPublicUrl(filePath);
-        
-      const imageUrl = publicUrlData.publicUrl;
-      
-      // 3. Call RPC submit_manual_verification
+
+      // 2. Store the object path. The bucket is private, so admins mint a
+      //    short-lived signed URL at review time instead.
       const { data, error } = await supabase.rpc("submit_manual_verification", {
         inst_type: manualInstType,
         inst_name: manualInstName.trim(),
         course: manualCourse.trim(),
         student_id: manualStudentId.trim(),
         email: user?.email || "unknown@example.com",
-        image_url: imageUrl
+        image_url: filePath
       });
       
       if (error) throw error;
@@ -295,19 +325,12 @@ function Profile({ isLoggedIn, user }) {
       .split("@")[0]
       .replace(/[._]/g, " ")
       .replace(/\b\w/g, (c) => c.toUpperCase());
-  const initials = fullName
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2);
   const memberSince = user?.created_at
     ? new Date(user.created_at).toLocaleDateString("en-US", {
         month: "long",
         year: "numeric",
       })
     : "—";
-  const studentRef = user?.id ? user.id.slice(0, 8).toUpperCase() : "—";
 
   // ── Profile Editing ───────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
@@ -324,6 +347,20 @@ function Profile({ isLoggedIn, user }) {
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState("");
   const [profileSaved, setProfileSaved] = useState(false);
+
+  // Success banners auto-dismiss; the timers must not outlive the component.
+  const successTimersRef = useRef([]);
+  useEffect(
+    () => () => {
+      successTimersRef.current.forEach(clearTimeout);
+    },
+    [],
+  );
+
+  const flashSaved = (setter) => {
+    setter(true);
+    successTimersRef.current.push(setTimeout(() => setter(false), 2500));
+  };
 
   // Keep the displayed profile in sync with the session's metadata (e.g. after a
   // token refresh), but never overwrite fields the user is actively editing.
@@ -368,8 +405,7 @@ function Profile({ isLoggedIn, user }) {
         grade: meta.grade ?? "",
       });
       setIsEditing(false);
-      setProfileSaved(true);
-      setTimeout(() => setProfileSaved(false), 2500);
+      flashSaved(setProfileSaved);
     } catch (err) {
       console.error("Failed to update profile:", err);
       setProfileError(err.message || "Failed to save your profile.");
@@ -399,12 +435,20 @@ function Profile({ isLoggedIn, user }) {
     async function fetchPartnerData() {
       if (!user || (role !== 'partner' && role !== 'admin')) return;
       
-      const { data: accessData } = await supabase
+      const { data: accessData, error: accessError } = await supabase
         .from('partner_profiles')
         .select('brand_id, brand_name, brands(*)')
         .eq('user_id', user.id);
-        
-      if (active && accessData && accessData.length > 0) {
+
+      if (!active) return;
+
+      if (accessError) {
+        console.error("Failed to load partner brand:", accessError);
+        setBrandError("Couldn't load your brand profile. Check your connection and refresh.");
+        return;
+      }
+
+      if (accessData && accessData.length > 0) {
         const brands = accessData.map(a => {
           if (a.brands) return a.brands;
           return {
@@ -439,17 +483,21 @@ function Profile({ isLoggedIn, user }) {
   useEffect(() => {
     let active = true;
     async function fetchActiveDeals() {
-      if (!user || !activeBrand) return;
-      const { count } = await supabase
+      if (!user || !activeBrand?.id) return;
+      // Keyed on brand_id like the rest of the app; the denormalized `brand`
+      // text goes stale the moment a brand is renamed.
+      const { count, error } = await supabase
         .from('deals')
         .select('*', { count: 'exact', head: true })
-        .eq('partner_id', user.id)
-        .eq('brand', activeBrand.name)
-        .eq('status', 'active');
-      
-      if (active && count !== null) {
-        setActiveDealsCount(count);
+        .eq('brand_id', activeBrand.id)
+        .in('status', ['active', 'approved']);
+
+      if (!active) return;
+      if (error) {
+        console.error("Failed to count active deals:", error);
+        return;
       }
+      setActiveDealsCount(count ?? 0);
     }
     fetchActiveDeals();
     return () => { active = false; };
@@ -482,11 +530,14 @@ function Profile({ isLoggedIn, user }) {
       setActiveBrand({ ...activeBrand, ...data[0] });
       setManagedBrands(prev => prev.map(b => b.id === activeBrand.id ? { ...b, ...data[0] } : b));
       setIsEditingBrand(false);
-      setBrandSaved(true);
-      setTimeout(() => setBrandSaved(false), 2500);
+      flashSaved(setBrandSaved);
     } catch (err) {
       console.error("Failed to update brand:", err);
-      setBrandError(err.message || "Failed to save brand profile.");
+      setBrandError(
+        err?.code === "23505" || /duplicate key/i.test(err?.message ?? "")
+          ? "That brand name is already taken. Please choose another."
+          : err.message || "Failed to save brand profile.",
+      );
     } finally {
       setBrandSaving(false);
     }
@@ -515,10 +566,7 @@ function Profile({ isLoggedIn, user }) {
   };
 
   // ── Settings form state ─────────────────────────────
-  const [settingsEmail, setSettingsEmail] = useState(userEmail);
   const [settingsPassword, setSettingsPassword] = useState("");
-  const [notifyDeals, setNotifyDeals] = useState(true);
-  const [notifyNewsletter, setNotifyNewsletter] = useState(false);
   const [settingsSaved, setSettingsSaved] = useState(false);
 
   const [settingsSaving, setSettingsSaving] = useState(false);
@@ -527,12 +575,15 @@ function Profile({ isLoggedIn, user }) {
   const handleSettingsSave = async (e) => {
     e.preventDefault();
     setSettingsError("");
+
+    if (settingsPassword && settingsPassword.length < 8) {
+      setSettingsError("Password must be at least 8 characters.");
+      return;
+    }
+
     setSettingsSaving(true);
     try {
       const updates = {};
-      if (settingsEmail && settingsEmail !== userEmail) {
-        updates.email = settingsEmail;
-      }
       if (settingsPassword) {
         updates.password = settingsPassword;
       }
@@ -540,9 +591,8 @@ function Profile({ isLoggedIn, user }) {
         const { error } = await supabase.auth.updateUser(updates);
         if (error) throw error;
       }
-      setSettingsSaved(true);
       setSettingsPassword("");
-      setTimeout(() => setSettingsSaved(false), 2500);
+      flashSaved(setSettingsSaved);
     } catch (err) {
       setSettingsError(err.message || "Failed to save settings.");
     } finally {
@@ -551,6 +601,25 @@ function Profile({ isLoggedIn, user }) {
   };
 
   if (!isLoggedIn) return <Navigate to="/" replace />;
+
+  // Without this, partners and admins briefly render the student card while
+  // the role resolves.
+  if (verificationLoading) {
+    return (
+      <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 md:py-12">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
+          <div className="w-full lg:w-80 flex-shrink-0 space-y-4">
+            <div className="h-24 w-24 rounded-full skeleton-shimmer mx-auto lg:mx-0" />
+            <div className="h-40 w-full rounded-2xl skeleton-shimmer" />
+          </div>
+          <div className="flex-1 w-full space-y-6">
+            <div className="h-56 w-full rounded-2xl skeleton-shimmer" />
+            <div className="h-40 w-full rounded-2xl skeleton-shimmer" />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 md:py-12 animate-fade-in">
@@ -575,7 +644,13 @@ function Profile({ isLoggedIn, user }) {
             </div>
           </div>
         </div>
-        
+
+        {avatarError && (
+          <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg max-w-[16rem]">
+            {avatarError}
+          </p>
+        )}
+
         <div>
           <h1 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
             {profileData.fullName?.split(' ')[0] || "Student"}
@@ -711,7 +786,15 @@ function Profile({ isLoggedIn, user }) {
               </div>
             </div>
           </div>
-        ) : role === 'partner' && activeBrand ? (
+        ) : role === 'partner' && !activeBrand ? (
+          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">Brand Profile</h3>
+            <p className="text-on-surface-variant text-sm">
+              {brandError ||
+                "This partner account isn't linked to a brand yet. Please contact support so we can connect it."}
+            </p>
+          </div>
+        ) : role === 'partner' ? (
           <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
             <div className="flex items-center justify-between mb-6">
               <h3 className="font-headline font-bold text-base text-on-background">Brand Profile</h3>

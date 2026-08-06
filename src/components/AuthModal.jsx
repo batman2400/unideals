@@ -16,8 +16,20 @@
  *   - isOpen     : boolean — controls visibility
  *   - onClose    : function — called to close the modal
  */
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+
+function validatePasswordStrength(password) {
+  if (password.length < 8) return "Password must be at least 8 characters.";
+  if (password.length > 72) return "Password must be 72 characters or fewer.";
+  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
+    return "Password must include both uppercase and lowercase letters.";
+  }
+  if (!/[0-9]/.test(password)) return "Password must include at least one number.";
+  return null;
+}
 
 function AuthModal({ isOpen, onClose }) {
   // Toggle between "login" and "signup" tabs
@@ -34,6 +46,7 @@ function AuthModal({ isOpen, onClose }) {
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const inFlightRef = useRef(false);
 
   // Reset form when switching tabs
   const switchTab = (tab) => {
@@ -60,14 +73,15 @@ function AuthModal({ isOpen, onClose }) {
       newErrors.username = "Username must be at least 3 characters.";
     }
 
-    if (!normalizedEmail.includes("@")) {
-      newErrors.email = "Please enter a valid email address (must contain @).";
-    } else if (normalizedEmail.length < 3) {
-      newErrors.email = "Email is too short.";
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      newErrors.email = "Please enter a valid email address.";
     }
 
-    if (password.length < 6) {
-      newErrors.password = "Password must be at least 6 characters.";
+    if (activeTab === "signup") {
+      const passwordError = validatePasswordStrength(password);
+      if (passwordError) newErrors.password = passwordError;
+    } else if (password.length === 0) {
+      newErrors.password = "Please enter your password.";
     }
 
     setErrors(newErrors);
@@ -77,12 +91,18 @@ function AuthModal({ isOpen, onClose }) {
   // ── Form Submission → Supabase Auth ───────────────────
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // A ref closes the double-click window that `disabled={loading}` leaves
+    // open, since setLoading only takes effect on re-render.
+    if (inFlightRef.current) return;
+
     setAuthError("");
 
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!validate()) return;
 
+    inFlightRef.current = true;
     setLoading(true);
 
     try {
@@ -101,14 +121,17 @@ function AuthModal({ isOpen, onClose }) {
         });
 
         if (error) {
-          setAuthError(error.message);
-          setLoading(false);
+          console.error("Signup failed:", error);
+          // Deliberately generic: a message like "User already registered"
+          // lets an attacker enumerate which emails hold accounts.
+          setAuthError(
+            "We couldn't create that account. Please check your details and try again.",
+          );
           return;
         }
 
         // Show confirmation message (Supabase sends verification email)
         setSignupSuccess(true);
-        setLoading(false);
       } else {
         // ── Login ────────────────────────────────────────
         const { error } = await supabase.auth.signInWithPassword({
@@ -117,8 +140,12 @@ function AuthModal({ isOpen, onClose }) {
         });
 
         if (error) {
-          setAuthError(error.message);
-          setLoading(false);
+          console.error("Login failed:", error);
+          setAuthError(
+            error.message === "Email not confirmed"
+              ? "Please confirm your email address first. Check your inbox for the link."
+              : "Invalid email or password.",
+          );
           return;
         }
 
@@ -129,11 +156,13 @@ function AuthModal({ isOpen, onClose }) {
         setPassword("");
         setErrors({});
         setAuthError("");
-        setLoading(false);
         onClose();
       }
     } catch (err) {
+      console.error("Unexpected auth error:", err);
       setAuthError("An unexpected error occurred. Please try again.");
+    } finally {
+      inFlightRef.current = false;
       setLoading(false);
     }
   };
@@ -302,7 +331,8 @@ function AuthModal({ isOpen, onClose }) {
                     Email
                   </label>
                   <input
-                    type="text"
+                    type="email"
+                    autoComplete="email"
                     placeholder="you@email.com"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -341,6 +371,7 @@ function AuthModal({ isOpen, onClose }) {
                   </label>
                   <input
                     type="password"
+                    autoComplete={activeTab === "signup" ? "new-password" : "current-password"}
                     placeholder="••••••••"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
@@ -351,6 +382,11 @@ function AuthModal({ isOpen, onClose }) {
                         : "border-outline-variant/20"
                     }`}
                   />
+                  {activeTab === "signup" && !errors.password && (
+                    <p className="text-[11px] text-on-surface-variant/70 mt-1.5">
+                      At least 8 characters, with upper and lower case letters and a number.
+                    </p>
+                  )}
                   {errors.password && (
                     <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
                       <span className="material-symbols-outlined text-xs">

@@ -191,17 +191,35 @@ function App() {
               <Route path="/brand/:brandId" element={<BrandPage />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
-              <Route path="/saved" element={<SavedDeals />} />
+              <Route
+                path="/saved"
+                element={
+                  <ProtectedRoute>
+                    <SavedDeals />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/events" element={<UniversityEvents />} />
               <Route path="/events/:id" element={<EventDetails />} />
-              <Route path="/events/new" element={<CreateEvent />} />
+              <Route
+                path="/events/new"
+                element={
+                  <ProtectedRoute>
+                    <CreateEvent />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/blog" element={<Blog />} />
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/support" element={<Support />} />
               <Route path="/contact" element={<Contact />} />
               <Route
                 path="/profile"
-                element={<Profile isLoggedIn={isLoggedIn} user={user} />}
+                element={
+                  <ProtectedRoute>
+                    <Profile isLoggedIn={isLoggedIn} user={user} />
+                  </ProtectedRoute>
+                }
               />
 
               <Route

@@ -65,7 +65,17 @@ function AdminAllDeals() {
     }
 
     // Parallel fetch for timing data to support dynamic time states
-    const { data: timingData } = await supabase.from('deals').select('id, start_time, end_time');
+    const { data: timingData, error: timingError } = await supabase
+      .from('deals')
+      .select('id, start_time, end_time, status');
+
+    if (timingError) {
+      console.error("Failed to load deal timing data:", timingError);
+      setError("Couldn't load deal schedules, so status filters may be inaccurate. Please refresh.");
+      setLoading(false);
+      return;
+    }
+
     const timingMap = new Map((timingData || []).map(t => [t.id, t]));
 
     let processedDeals = (data || []).map(d => {

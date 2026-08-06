@@ -54,8 +54,13 @@ function PartnerDeals() {
   );
 
   useEffect(() => {
-    if (roleLoading || !user?.id) return;
-    if (role !== "partner" && role !== "admin") return;
+    if (roleLoading) return;
+
+    if (!user?.id || (role !== "partner" && role !== "admin")) {
+      setError("You don't have access to the partner portal.");
+      setLoading(false);
+      return;
+    }
 
     setError("");
 

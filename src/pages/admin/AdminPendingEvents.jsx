@@ -58,24 +58,29 @@ function AdminPendingEvents() {
 
   const handleAction = useCallback(
     async (id, action) => {
-      setActingEventId(id);
-      setError("");
+      if (actingEventId) return;
+
+      const update = { status: action === "approve" ? "approved" : "rejected" };
 
       if (action === "reject") {
         const reason = window.prompt(
           "Optional: Provide a reason for rejection (or press Cancel to abort):"
         );
         // User pressed Cancel on the prompt
-        if (reason === null) {
-          setActingEventId(null);
-          return;
-        }
+        if (reason === null) return;
+        update.rejection_reason = reason.trim() || null;
+      } else if (
+        !window.confirm("Approve this event? It will go live on the public feed immediately.")
+      ) {
+        return;
       }
 
-      const newStatus = action === "approve" ? "approved" : "rejected";
+      setActingEventId(id);
+      setError("");
+
       const { error: updateError } = await supabase
         .from("events")
-        .update({ status: newStatus })
+        .update(update)
         .eq("id", id);
 
       if (!isMountedRef.current) return;
@@ -93,7 +98,7 @@ function AdminPendingEvents() {
           : "Event rejected and removed from queue.",
       );
     },
-    [showMessage],
+    [actingEventId, showMessage],
   );
 
   const formatDateTime = (dateString) => {

@@ -24,8 +24,13 @@ function PartnerOverview() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (roleLoading || !user?.id) return;
-    if (role !== "partner" && role !== "admin") return;
+    if (roleLoading) return;
+
+    if (!user?.id || (role !== "partner" && role !== "admin")) {
+      setError("You don't have access to the partner portal.");
+      setLoading(false);
+      return;
+    }
 
     setError("");
 
@@ -79,6 +84,14 @@ function PartnerOverview() {
       ]);
 
       if (!active) return;
+
+      const failed = [dealsRes, scansRes, confirmedRes, eventsRes].find((r) => r.error);
+      if (failed) {
+        console.error("Failed to load partner overview:", failed.error);
+        setError("Couldn't load your dashboard. Check your connection and try again.");
+        setLoading(false);
+        return;
+      }
 
       setDeals(dealsRes.data || []);
       setStats({

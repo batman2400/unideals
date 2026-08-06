@@ -69,10 +69,17 @@ function AdminUsers() {
 
   const fetchBrands = useCallback(async () => {
     if (role !== "admin") return;
-    const { data } = await supabase
+    const { data, error: brandsError } = await supabase
       .from("brands")
       .select("id, name")
       .order("name");
+
+    if (brandsError) {
+      console.error("Failed to load brands:", brandsError);
+      setError("Couldn't load the brand list. Promotion is unavailable until this loads.");
+      return;
+    }
+
     setBrands(data || []);
   }, [role]);
 
@@ -92,7 +99,17 @@ function AdminUsers() {
   const handlePromote = useCallback(
     async (e) => {
       e.preventDefault();
-      if (!promoteEmail.trim() || !promoteBrandId) return;
+      if (!promoteEmail.trim() || !promoteBrandId || promoting) return;
+
+      const brandName =
+        brands.find((b) => b.id === promoteBrandId)?.name || "the selected brand";
+      if (
+        !window.confirm(
+          `Grant partner access for ${brandName} to ${promoteEmail.trim()}? They will be able to create deals and scan redemptions.`,
+        )
+      ) {
+        return;
+      }
 
       setPromoting(true);
       setError("");
@@ -120,7 +137,7 @@ function AdminUsers() {
       showMsg(`Promoted ${promoteEmail} to partner.`);
       fetchUsers();
     },
-    [promoteEmail, promoteBrandId, showMsg, fetchUsers],
+    [promoteEmail, promoteBrandId, promoting, brands, showMsg, fetchUsers],
   );
 
   const handleDemote = useCallback(

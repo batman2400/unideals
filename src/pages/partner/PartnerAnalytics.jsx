@@ -24,8 +24,13 @@ function PartnerAnalytics() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (roleLoading || !user?.id) return;
-    if (role !== "partner" && role !== "admin") return;
+    if (roleLoading) return;
+
+    if (!user?.id || (role !== "partner" && role !== "admin")) {
+      setError("You don't have access to the partner portal.");
+      setLoading(false);
+      return;
+    }
 
     setError("");
 
@@ -45,6 +50,14 @@ function PartnerAnalytics() {
       const { brandName, error: brandError } =
         await getPartnerBrand(targetUserId);
       if (!active) return;
+
+      if (brandError) {
+        console.error("Failed to resolve partner brand:", brandError);
+        setError("Couldn't load your brand profile. Check your connection and try again.");
+        setLoading(false);
+        return;
+      }
+
       setPartnerBrand(brandName || "");
 
       // Try to use the new partner_deal_stats RPC
@@ -69,6 +82,14 @@ function PartnerAnalytics() {
         ]);
 
         if (!active) return;
+
+        const failed = [scansRes, confirmedRes].find((r) => r.error);
+        if (failed) {
+          console.error("Analytics fallback failed:", statsError, failed.error);
+          setError("Couldn't load your analytics. Check your connection and try again.");
+          setLoading(false);
+          return;
+        }
 
         setTotals({
           totalScans: scansRes.count ?? 0,

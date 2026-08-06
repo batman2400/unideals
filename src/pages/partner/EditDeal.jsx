@@ -64,6 +64,7 @@ function EditDeal() {
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
   const isMountedRef = useRef(true);
+  const inFlightRef = useRef(false);
 
   useEffect(() => {
     return () => {
@@ -241,6 +242,11 @@ function EditDeal() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // A ref closes the double-click window that `disabled={saving}` leaves
+    // open, since setSaving only takes effect on re-render.
+    if (inFlightRef.current) return;
+
     setError("");
     setSuccessMessage("");
 
@@ -276,6 +282,7 @@ function EditDeal() {
       return;
     }
 
+    inFlightRef.current = true;
     setSaving(true);
 
     try {
@@ -343,6 +350,7 @@ function EditDeal() {
         );
       }
     } finally {
+      inFlightRef.current = false;
       if (!isMountedRef.current) return;
       setSaving(false);
     }

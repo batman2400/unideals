@@ -121,19 +121,22 @@ function InStoreTicketDisplay({
   );
   const totalSeconds = 10 * 60;
 
+  // secondsLeft is deliberately not a dependency: including it tore down and
+  // recreated the interval on every tick.
   useEffect(() => {
-    if (alreadyRedeemed || secondsLeft <= 0) return;
-    const tick = () => {
+    if (alreadyRedeemed) return;
+
+    const id = setInterval(() => {
       const remaining = Math.max(
         0,
         Math.round((expiresAt.getTime() - Date.now()) / 1000),
       );
       setSecondsLeft(remaining);
       if (remaining <= 0) clearInterval(id);
-    };
-    const id = setInterval(tick, 1000);
+    }, 1000);
+
     return () => clearInterval(id);
-  }, [expiresAt, alreadyRedeemed, secondsLeft]);
+  }, [expiresAt, alreadyRedeemed]);
 
   useEffect(() => {
     if (alreadyRedeemed) return;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function AdminInquiries() {
@@ -6,9 +6,15 @@ export default function AdminInquiries() {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("new"); // "new" or "all"
   const [error, setError] = useState(null);
+  const [actingId, setActingId] = useState(null);
+  const activeRef = useRef(true);
 
   useEffect(() => {
+    activeRef.current = true;
     fetchInquiries();
+    return () => {
+      activeRef.current = false;
+    };
   }, [filter]);
 
   const fetchInquiries = async () => {
@@ -24,37 +30,44 @@ export default function AdminInquiries() {
       const { data, error: fetchError } = await query;
       if (fetchError) throw fetchError;
 
+      if (!activeRef.current) return;
       setInquiries(data || []);
     } catch (err) {
       console.error("Error fetching inquiries:", err);
-      setError("Failed to load inquiries.");
+      if (activeRef.current) setError("Failed to load inquiries.");
     } finally {
-      setLoading(false);
+      if (activeRef.current) setLoading(false);
     }
   };
 
   const updateStatus = async (id, newStatus) => {
+    if (actingId) return;
+    setActingId(id);
+    setError(null);
+
     try {
       const { error: updateError } = await supabase
         .from("inquiries")
         .update({ status: newStatus })
         .eq("id", id);
-      
+
       if (updateError) throw updateError;
-      
-      // Update local state to remove or update the item
+
+      if (!activeRef.current) return;
+
+      // Functional updates so concurrent status changes can't clobber each other.
       if (filter === "new" && newStatus !== "new") {
-        setInquiries(inquiries.filter((inq) => inq.id !== id));
+        setInquiries((prev) => prev.filter((inq) => inq.id !== id));
       } else {
-        setInquiries(
-          inquiries.map((inq) =>
-            inq.id === id ? { ...inq, status: newStatus } : inq
-          )
+        setInquiries((prev) =>
+          prev.map((inq) => (inq.id === id ? { ...inq, status: newStatus } : inq))
         );
       }
     } catch (err) {
       console.error("Error updating status:", err);
-      alert("Failed to update status. Please try again.");
+      if (activeRef.current) setError("Failed to update status. Please try again.");
+    } finally {
+      if (activeRef.current) setActingId(null);
     }
   };
 
@@ -226,7 +239,8 @@ export default function AdminInquiries() {
                   {inquiry.status === "new" && (
                     <button
                       onClick={() => updateStatus(inquiry.id, "read")}
-                      className="h-10 px-4 bg-surface-container text-on-background font-bold text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors"
+                      disabled={actingId === inquiry.id}
+                      className="h-10 px-4 bg-surface-container text-on-background font-bold text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-high transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="material-symbols-outlined text-[18px]">mark_email_read</span>
                       Mark Read
@@ -236,7 +250,8 @@ export default function AdminInquiries() {
                   {inquiry.status !== "archived" && (
                     <button
                       onClick={() => updateStatus(inquiry.id, "archived")}
-                      className="h-10 px-4 bg-surface-container text-on-background font-bold text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-high hover:text-error transition-colors"
+                      disabled={actingId === inquiry.id}
+                      className="h-10 px-4 bg-surface-container text-on-background font-bold text-sm rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-high hover:text-error transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       <span className="material-symbols-outlined text-[18px]">archive</span>
                       Archive

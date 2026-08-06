@@ -10,7 +10,12 @@ export default async function handler(req, res) {
       },
     });
 
-    const posts = await postRes.json();
+    if (!postRes.ok) {
+      throw new Error(`Upstream responded ${postRes.status}`);
+    }
+
+    const payload = await postRes.json();
+    const posts = Array.isArray(payload) ? payload : [];
     const siteUrl = "https://unideals-nine.vercel.app";
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

@@ -3,12 +3,27 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
 
+const PROOF_BUCKET = "verification-documents";
+const SIGNED_URL_TTL_SECONDS = 300;
+
+/**
+ * Rows created before the bucket was made private stored a full public URL;
+ * newer rows store the object path. Accept both.
+ */
+function toStoragePath(value) {
+  if (!value) return null;
+  const marker = `/${PROOF_BUCKET}/`;
+  const index = value.indexOf(marker);
+  return index >= 0 ? value.slice(index + marker.length) : value;
+}
+
 function AdminVerifications() {
   const { role, loading: roleLoading } = useRoleContext();
   const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [proofUrls, setProofUrls] = useState({});
   const [actingVerificationId, setActingVerificationId] = useState(null);
   const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+  const [messageType, setMessageType] = useState("success");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const isMountedRef = useRef(true);
@@ -44,7 +59,28 @@ function AdminVerifications() {
         if (fetchError) {
           setError(fetchError.message || "Failed to load pending verifications.");
         } else {
-          setPendingVerifications(data || []);
+          const rows = data || [];
+          setPendingVerifications(rows);
+
+          // Identity documents live in a private bucket, so each proof needs a
+          // short-lived signed URL rather than a permanent public one.
+          const signed = await Promise.all(
+            rows.map(async (row) => {
+              const path = toStoragePath(row.proof_image_url);
+              if (!path) return [row.id, null];
+              const { data: signedData, error: signedError } = await supabase.storage
+                .from(PROOF_BUCKET)
+                .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
+              if (signedError) {
+                console.error("Could not sign proof document:", signedError);
+                return [row.id, null];
+              }
+              return [row.id, signedData?.signedUrl ?? null];
+            }),
+          );
+
+          if (!active) return;
+          setProofUrls(Object.fromEntries(signed));
         }
       } catch (err) {
         if (!active) return;
@@ -60,15 +96,17 @@ function AdminVerifications() {
     };
   }, [role, roleLoading]);
 
-  const handleApproveVerification = async (id, targetUserId, targetEmail) => {
-    if (role !== "admin") return;
+  const handleApproveVerification = async (id) => {
+    if (role !== "admin" || actingVerificationId) return;
+    if (!window.confirm("Approve this student and grant them verified status?")) return;
+
     setActingVerificationId(id);
     setError("");
 
+    // The RPC derives the target user from the request row itself, so no
+    // identity is passed from the browser.
     const { error: updateError } = await supabase.rpc("approve_manual_verification", {
       request_id: id,
-      target_user_id: targetUserId,
-      target_email: targetEmail
     });
 
     if (!isMountedRef.current) return;
@@ -85,7 +123,9 @@ function AdminVerifications() {
   };
 
   const handleRejectVerification = async (id) => {
-    if (role !== "admin") return;
+    if (role !== "admin" || actingVerificationId) return;
+    if (!window.confirm("Reject this verification request?")) return;
+
     setActingVerificationId(id);
     setError("");
 
@@ -148,8 +188,20 @@ function AdminVerifications() {
       </div>
 
       {message && (
-        <div className="mb-5 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3">
-          <p className="text-emerald-700 text-sm font-bold">{message}</p>
+        <div
+          className={`mb-5 rounded-xl px-4 py-3 border ${
+            messageType === "error"
+              ? "bg-error/10 border-error/20"
+              : "bg-emerald-50 border-emerald-200"
+          }`}
+        >
+          <p
+            className={`text-sm font-bold ${
+              messageType === "error" ? "text-error" : "text-emerald-700"
+            }`}
+          >
+            {message}
+          </p>
         </div>
       )}
 
@@ -172,25 +224,34 @@ function AdminVerifications() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
           {pendingVerifications.map((req) => {
             const isActing = actingVerificationId === req.id;
+            const proofUrl = proofUrls[req.id];
 
             return (
               <article
                 key={req.id}
                 className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm flex flex-col sm:flex-row"
               >
-                <a 
-                  href={req.proof_image_url} 
-                  target="_blank" 
-                  rel="noreferrer"
-                  className="w-full sm:w-48 bg-surface-container-low overflow-hidden block flex-shrink-0 border-r border-outline-variant/10 hover:opacity-90 transition-opacity"
-                  title="Click to view full image in new tab"
-                >
-                  <img
-                    src={req.proof_image_url}
-                    alt="Proof document"
-                    className="w-full h-full object-cover sm:min-h-[220px]"
-                  />
-                </a>
+                {proofUrl ? (
+                  <a
+                    href={proofUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-full sm:w-48 bg-surface-container-low overflow-hidden block flex-shrink-0 border-r border-outline-variant/10 hover:opacity-90 transition-opacity"
+                    title="Click to view full image in new tab"
+                  >
+                    <img
+                      src={proofUrl}
+                      alt="Proof document"
+                      className="w-full h-full object-cover sm:min-h-[220px]"
+                    />
+                  </a>
+                ) : (
+                  <div className="w-full sm:w-48 bg-surface-container-low flex-shrink-0 border-r border-outline-variant/10 flex items-center justify-center p-4 sm:min-h-[220px]">
+                    <p className="text-xs text-on-surface-variant text-center">
+                      Document unavailable
+                    </p>
+                  </div>
+                )}
 
                 <div className="p-5 md:p-6 flex-1 flex flex-col justify-between">
                   <div>
@@ -226,7 +287,7 @@ function AdminVerifications() {
 
                   <div className="flex flex-col sm:flex-row gap-3 mt-4">
                     <button
-                      onClick={() => handleApproveVerification(req.id, req.user_id, req.contact_email)}
+                      onClick={() => handleApproveVerification(req.id)}
                       disabled={isActing}
                       className="flex-1 inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                     >

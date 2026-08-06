@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function AdminBlog() {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [actingId, setActingId] = useState(null);
+  const activeRef = useRef(true);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -19,7 +21,11 @@ export default function AdminBlog() {
   });
 
   useEffect(() => {
+    activeRef.current = true;
     fetchPosts();
+    return () => {
+      activeRef.current = false;
+    };
   }, []);
 
   const fetchPosts = async () => {
@@ -31,12 +37,13 @@ export default function AdminBlog() {
         .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
+      if (!activeRef.current) return;
       setPosts(data || []);
     } catch (err) {
       console.error("Error fetching posts:", err);
-      setError("Failed to load blog posts.");
+      if (activeRef.current) setError("Failed to load blog posts.");
     } finally {
-      setLoading(false);
+      if (activeRef.current) setLoading(false);
     }
   };
 
@@ -58,27 +65,45 @@ export default function AdminBlog() {
   };
 
   const handleTogglePublish = async (post) => {
+    if (actingId) return;
+
+    const nextPublished = !post.is_published;
+    if (
+      nextPublished &&
+      !window.confirm(`Publish "${post.title}"? It will be visible to everyone.`)
+    ) {
+      return;
+    }
+
+    setActingId(post.id);
+    setError(null);
+
     try {
       const { error: updateError } = await supabase
         .from("posts")
-        .update({ is_published: !post.is_published })
+        .update({ is_published: nextPublished })
         .eq("id", post.id);
 
       if (updateError) throw updateError;
-      
+
+      if (!activeRef.current) return;
       setPosts((prev) =>
-        prev.map((p) =>
-          p.id === post.id ? { ...p, is_published: !post.is_published } : p
-        )
+        prev.map((p) => (p.id === post.id ? { ...p, is_published: nextPublished } : p))
       );
     } catch (err) {
       console.error("Error toggling publish status:", err);
-      alert("Failed to update status.");
+      if (activeRef.current) setError("Failed to update publish status.");
+    } finally {
+      if (activeRef.current) setActingId(null);
     }
   };
 
   const handleDelete = async (id) => {
+    if (actingId) return;
     if (!window.confirm("Are you sure you want to delete this article? This action cannot be undone.")) return;
+
+    setActingId(id);
+    setError(null);
 
     try {
       const { error: deleteError } = await supabase
@@ -87,10 +112,13 @@ export default function AdminBlog() {
         .eq("id", id);
 
       if (deleteError) throw deleteError;
+      if (!activeRef.current) return;
       setPosts((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error("Error deleting post:", err);
-      alert("Failed to delete post.");
+      if (activeRef.current) setError("Failed to delete post.");
+    } finally {
+      if (activeRef.current) setActingId(null);
     }
   };
 
@@ -205,7 +233,8 @@ export default function AdminBlog() {
                     <td className="px-6 py-4">
                       <button 
                         onClick={() => handleTogglePublish(post)}
-                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors ${
+                        disabled={actingId === post.id}
+                        className={`px-3 py-1.5 rounded-md text-[10px] font-bold uppercase tracking-wider inline-flex items-center gap-1.5 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                           post.is_published 
                             ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20" 
                             : "bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20"
@@ -218,7 +247,8 @@ export default function AdminBlog() {
                     <td className="px-6 py-4 text-right">
                       <button
                         onClick={() => handleDelete(post.id)}
-                        className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors"
+                        disabled={actingId === post.id}
+                        className="p-2 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                         title="Delete Post"
                       >
                         <span className="material-symbols-outlined text-[20px]">delete</span>

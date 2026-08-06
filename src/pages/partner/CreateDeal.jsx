@@ -30,6 +30,15 @@ const CATEGORY_OPTIONS = [
 ];
 const TYPE_OPTIONS = ["Online", "In-Store"];
 
+// Excludes characters that are easily confused when read off a screen.
+const CODE_ALPHABET = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+
+function generateRedemptionCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  const body = Array.from(bytes, (b) => CODE_ALPHABET[b % CODE_ALPHABET.length]).join("");
+  return `UD-${body}`;
+}
+
 const INITIAL_FORM = {
   title: "",
   brand: "",
@@ -64,6 +73,7 @@ function CreateDeal() {
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
   const [isDragging, setIsDragging] = useState(false);
   const isMountedRef = useRef(true);
+  const inFlightRef = useRef(false);
   const fileInputRef = useRef(null);
 
   useEffect(() => {
@@ -223,6 +233,11 @@ function CreateDeal() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+
+    // A ref closes the double-click window that `disabled={submitting}`
+    // leaves open, since setSubmitting only takes effect on re-render.
+    if (inFlightRef.current) return;
+
     setError("");
     setSuccessMessage("");
 
@@ -263,6 +278,7 @@ function CreateDeal() {
       return;
     }
 
+    inFlightRef.current = true;
     setSubmitting(true);
 
     try {
@@ -274,7 +290,7 @@ function CreateDeal() {
       }
 
       let effectiveImageUrl = "";
-      const generatedRedemptionCode = "UD-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+      const generatedRedemptionCode = generateRedemptionCode();
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
@@ -299,7 +315,7 @@ function CreateDeal() {
           `${formData.title.trim()} student offer.`,
         redemption_code: generatedRedemptionCode,
         partner_id: targetUserId,
-        status: "approved",
+        status: "pending",
         start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
         end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       };
@@ -319,7 +335,7 @@ function CreateDeal() {
       setOfferValue("");
       setSelectedImageFile(null);
       setSuccessMessage(
-        "Deal launched successfully. It is now active on the platform.",
+        "Deal submitted successfully. It will go live once an admin approves it.",
       );
     } catch (submitError) {
       if (!isMountedRef.current) return;
@@ -333,6 +349,7 @@ function CreateDeal() {
         );
       }
     } finally {
+      inFlightRef.current = false;
       if (!isMountedRef.current) return;
       setSubmitting(false);
     }
