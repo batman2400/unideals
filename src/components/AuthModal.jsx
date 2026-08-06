@@ -18,33 +18,13 @@
  */
 import { useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import {
+  PASSWORD_HINT,
+  describeAuthFailure,
+  validatePasswordStrength,
+} from "../lib/passwordPolicy";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-
-/**
- * Server faults and rate limits say nothing about whether an account exists,
- * so naming them is safe and stops an outage from looking like a typo.
- * Anything else stays deliberately vague to prevent email enumeration.
- */
-function describeAuthFailure(error, fallback) {
-  if (!error.status || error.status >= 500) {
-    return "We couldn't reach the server. Please check your connection and try again in a moment.";
-  }
-  if (error.status === 429) {
-    return "Too many attempts. Please wait a minute and try again.";
-  }
-  return fallback;
-}
-
-function validatePasswordStrength(password) {
-  if (password.length < 8) return "Password must be at least 8 characters.";
-  if (password.length > 72) return "Password must be 72 characters or fewer.";
-  if (!/[a-z]/.test(password) || !/[A-Z]/.test(password)) {
-    return "Password must include both uppercase and lowercase letters.";
-  }
-  if (!/[0-9]/.test(password)) return "Password must include at least one number.";
-  return null;
-}
 
 function AuthModal({ isOpen, onClose }) {
   // Toggle between "login" and "signup" tabs
@@ -61,6 +41,8 @@ function AuthModal({ isOpen, onClose }) {
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
   const inFlightRef = useRef(false);
 
   // Reset form when switching tabs
@@ -73,6 +55,62 @@ function AuthModal({ isOpen, onClose }) {
     setErrors({});
     setAuthError("");
     setSignupSuccess(false);
+    setShowForgot(false);
+    setResetSent(false);
+  };
+
+  const openForgot = () => {
+    setShowForgot(true);
+    setResetSent(false);
+    setPassword("");
+    setErrors({});
+    setAuthError("");
+  };
+
+  // ── Password Reset Request ────────────────────────────
+  const handleForgotSubmit = async (e) => {
+    e.preventDefault();
+    if (inFlightRef.current) return;
+
+    setAuthError("");
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!EMAIL_PATTERN.test(normalizedEmail)) {
+      setErrors({ email: "Please enter a valid email address." });
+      return;
+    }
+    setErrors({});
+
+    inFlightRef.current = true;
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(
+        normalizedEmail,
+        { redirectTo: `${window.location.origin}/reset-password` },
+      );
+
+      if (error) {
+        console.error("Password reset request failed:", error);
+        setAuthError(
+          describeAuthFailure(
+            error,
+            "We couldn't send that reset link. Please try again.",
+          ),
+        );
+        return;
+      }
+
+      // Shown regardless of whether the address has an account, so this
+      // screen cannot be used to discover which emails are registered.
+      setResetSent(true);
+    } catch (err) {
+      console.error("Unexpected password reset error:", err);
+      setAuthError("An unexpected error occurred. Please try again.");
+    } finally {
+      inFlightRef.current = false;
+      setLoading(false);
+    }
   };
 
   // ── Frontend Validation ───────────────────────────────
@@ -224,8 +262,105 @@ function AuthModal({ isOpen, onClose }) {
             </h2>
           </div>
 
-          {/* Signup success message */}
-          {signupSuccess ? (
+          {/* Password reset link sent */}
+          {resetSent ? (
+            <div className="text-center animate-modal-enter">
+              <div className="w-16 h-16 rounded-full bg-primary-container/40 flex items-center justify-center mx-auto mb-4">
+                <span className="material-symbols-outlined text-primary text-3xl">
+                  mark_email_read
+                </span>
+              </div>
+              <h3 className="font-headline font-bold text-lg text-on-background mb-2">
+                Check Your Email
+              </h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed mb-6">
+                If an account exists for{" "}
+                <span className="font-bold text-on-surface">{email}</span>,
+                we've sent a link to reset your password. The link expires in
+                one hour.
+              </p>
+              <button
+                onClick={() => switchTab("login")}
+                className="emerald-gradient text-on-primary py-3 px-8 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+              >
+                Back to Login
+              </button>
+            </div>
+          ) : showForgot ? (
+            <div className="animate-modal-enter">
+              <h3 className="font-headline font-bold text-lg text-on-background mb-2">
+                Reset Your Password
+              </h3>
+              <p className="text-on-surface-variant text-sm leading-relaxed mb-6">
+                Enter the email address you signed up with and we'll send you a
+                link to choose a new password.
+              </p>
+
+              {authError && (
+                <div className="flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3 mb-4">
+                  <span className="material-symbols-outlined text-error text-lg flex-shrink-0 mt-0.5">
+                    error
+                  </span>
+                  <p className="text-error text-sm font-bold">{authError}</p>
+                </div>
+              )}
+
+              <form className="flex flex-col gap-4" onSubmit={handleForgotSubmit}>
+                <div>
+                  <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    autoComplete="email"
+                    placeholder="you@email.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    autoFocus
+                    className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
+                      errors.email
+                        ? "border-error ring-1 ring-error/30"
+                        : "border-outline-variant/20"
+                    }`}
+                  />
+                  {errors.email && (
+                    <p className="text-error text-xs font-bold mt-1.5 flex items-center gap-1">
+                      <span className="material-symbols-outlined text-xs">
+                        error
+                      </span>
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="emerald-gradient text-on-primary py-3.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {loading ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+                      Sending Link...
+                    </>
+                  ) : (
+                    "Send Reset Link"
+                  )}
+                </button>
+              </form>
+
+              <p className="text-center text-xs text-on-surface-variant/50 mt-6">
+                Remembered it?{" "}
+                <button
+                  className="text-primary font-bold hover:underline"
+                  onClick={() => switchTab("login")}
+                >
+                  Back to login
+                </button>
+              </p>
+            </div>
+          ) : signupSuccess ? (
             <div className="text-center animate-modal-enter">
               <div className="w-16 h-16 rounded-full bg-primary-container/40 flex items-center justify-center mx-auto mb-4">
                 <span className="material-symbols-outlined text-primary text-3xl">
@@ -402,7 +537,7 @@ function AuthModal({ isOpen, onClose }) {
                   />
                   {activeTab === "signup" && !errors.password && (
                     <p className="text-[11px] text-on-surface-variant/70 mt-1.5">
-                      At least 8 characters, with upper and lower case letters and a number.
+                      {PASSWORD_HINT}
                     </p>
                   )}
                   {errors.password && (
@@ -412,6 +547,17 @@ function AuthModal({ isOpen, onClose }) {
                       </span>
                       {errors.password}
                     </p>
+                  )}
+                  {activeTab === "login" && (
+                    <div className="flex justify-end mt-2">
+                      <button
+                        type="button"
+                        onClick={openForgot}
+                        className="text-primary text-xs font-bold hover:underline"
+                      >
+                        Forgot password?
+                      </button>
+                    </div>
                   )}
                 </div>
 

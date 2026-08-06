@@ -16,6 +16,7 @@ import { useState, useEffect, useRef } from "react";
 import { Navigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useRoleContext } from "../lib/RoleContext";
+import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -576,9 +577,12 @@ function Profile({ isLoggedIn, user }) {
     e.preventDefault();
     setSettingsError("");
 
-    if (settingsPassword && settingsPassword.length < 8) {
-      setSettingsError("Password must be at least 8 characters.");
-      return;
+    if (settingsPassword) {
+      const strengthError = validatePasswordStrength(settingsPassword);
+      if (strengthError) {
+        setSettingsError(strengthError);
+        return;
+      }
     }
 
     setSettingsSaving(true);
@@ -1107,7 +1111,8 @@ function Profile({ isLoggedIn, user }) {
             <form onSubmit={handleSettingsSave} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Change Password</label>
-                <input type="password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
+                <input type="password" autoComplete="new-password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
+                <p className="text-[11px] text-on-surface-variant/70 mt-1.5">{PASSWORD_HINT}</p>
               </div>
               <button type="submit" disabled={settingsSaving} className="min-h-[44px] px-6 py-3 bg-primary/10 text-primary hover:bg-primary/20 font-bold text-sm rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
                 {settingsSaving ? "Saving..." : "Update Password"}

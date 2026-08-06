@@ -61,6 +61,7 @@ const BlogPost = lazy(() => import("./pages/BlogPost"));
 const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const BrandPage = lazy(() => import("./pages/BrandPage"));
+const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 
 function RouteSkeleton() {
   return (
@@ -213,6 +214,8 @@ function App() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/support" element={<Support />} />
               <Route path="/contact" element={<Contact />} />
+              {/* Public: the recovery link must open for signed-out users. */}
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route
                 path="/profile"
                 element={
