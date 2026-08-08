@@ -31,8 +31,16 @@ function DealFeed({ searchQuery = "" }) {
   if (loading || error) return <DealsLoader loading={loading} error={error} />;
 
   const isSearching = !!normalizedQuery;
-  const trendingDeals = filtered.slice(0, 6);
-  const allDeals = isSearching ? filtered : filtered.slice(6);
+  const TRENDING_LIMIT = 6;
+  const trendingDeals = filtered.slice(0, TRENDING_LIMIT);
+  // Only deals beyond the trending row — when there are ≤6 total, show all
+  // so "All Deals" is never an empty "No deals found" state.
+  const remainingDeals = filtered.slice(TRENDING_LIMIT);
+  const allDeals = isSearching
+    ? filtered
+    : remainingDeals.length > 0
+      ? remainingDeals
+      : filtered;
 
   return (
     <div className="max-w-[1440px] mx-auto pb-16">
