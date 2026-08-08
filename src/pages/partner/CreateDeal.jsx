@@ -376,7 +376,7 @@ function CreateDeal() {
             Partner Portal
           </span>
           <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background mb-2">
-            Create a New Deal Submission
+            Create a New Deal
           </h1>
           <p className="text-on-surface-variant text-sm md:text-base max-w-2xl">
             Complete all fields and launch your deal. It will be immediately

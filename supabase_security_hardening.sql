@@ -5,7 +5,7 @@
 -- the `send-verification-otp` edge function (see notes at end).
 --
 -- Sections:
---   1. Restore deal moderation (partners could self-approve)
+--   1. Deal insert (partners may auto-launch as approved; cannot flip status later)
 --   2. Constrain event submission (anyone could publish as anyone)
 --   3. Scope redemption codes to the owning brand
 --   4. Stop leaking the verification OTP; add brute-force limits
@@ -18,11 +18,12 @@
 BEGIN;
 
 -- ────────────────────────────────────────────────────────────
--- 1. Deal moderation
+-- 1. Deal auto-launch + status lock
 --
--- supabase_fix_deal_rls.sql widened the insert policy to allow
--- status IN ('pending','approved'), which meant no partner deal
--- ever reached the admin review queue.
+-- Brands/partners create deals that go live immediately
+-- (status = 'approved'). Events still require admin approval.
+-- Partners must not be able to change status after insert
+-- (e.g. flip a rejected deal back to approved).
 -- ────────────────────────────────────────────────────────────
 DROP POLICY IF EXISTS "Partners can insert own brand deals" ON public.deals;
 
@@ -33,11 +34,11 @@ CREATE POLICY "Partners can insert own brand deals"
     public.get_user_role() = 'partner'
     AND auth.uid() = partner_id
     AND brand_id = public.get_partner_brand_id(auth.uid())
-    AND status = 'pending'
+    AND status IN ('pending', 'approved')
   );
 
--- A partner must not be able to promote their own deal after insert
--- either. Enforced with a trigger rather than a policy subquery so the
+-- Partners cannot change deal status after insert.
+-- Enforced with a trigger rather than a policy subquery so the
 -- comparison against the previous value is deterministic.
 CREATE OR REPLACE FUNCTION public.enforce_deal_status_moderation()
 RETURNS TRIGGER
@@ -46,6 +47,13 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
+  -- Allow migrations / SQL Editor (no JWT session).
+  -- get_user_role() returns 'student' when auth.uid() is NULL,
+  -- which would otherwise silently undo admin backfills.
+  IF auth.uid() IS NULL THEN
+    RETURN NEW;
+  END IF;
+
   IF public.get_user_role() <> 'admin'
      AND NEW.status IS DISTINCT FROM OLD.status THEN
     NEW.status := OLD.status;

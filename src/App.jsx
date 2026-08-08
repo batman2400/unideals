@@ -45,7 +45,6 @@ const PartnerAnalytics = lazy(() => import("./pages/partner/PartnerAnalytics"));
 const CreateDeal = lazy(() => import("./pages/partner/CreateDeal"));
 const EditDeal = lazy(() => import("./pages/partner/EditDeal"));
 const AdminOverview = lazy(() => import("./pages/admin/AdminOverview"));
-const AdminPendingDeals = lazy(() => import("./pages/admin/AdminPendingDeals"));
 const AdminAllDeals = lazy(() => import("./pages/admin/AdminAllDeals"));
 const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
 const AdminBrands = lazy(() => import("./pages/admin/AdminBrands"));
@@ -250,7 +249,6 @@ function App() {
                 }
               >
                 <Route index element={<AdminOverview />} />
-                <Route path="pending" element={<AdminPendingDeals />} />
                 <Route path="deals" element={<AdminAllDeals />} />
                 <Route path="events" element={<AdminAllEvents />} />
                 <Route path="pending-events" element={<AdminPendingEvents />} />

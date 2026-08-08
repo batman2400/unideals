@@ -81,6 +81,7 @@ DECLARE
   normalized_email TEXT := lower(trim(target_email));
   target_user_id UUID;
   current_role TEXT;
+  resolved_brand_name TEXT;
 BEGIN
   IF public.get_user_role() <> 'admin' THEN
     RAISE EXCEPTION 'Only admins can promote users to partner.'
@@ -95,6 +96,16 @@ BEGIN
   IF target_brand_id IS NULL THEN
     RAISE EXCEPTION 'Brand ID is required.'
       USING ERRCODE = '22023';
+  END IF;
+
+  SELECT name
+  INTO resolved_brand_name
+  FROM public.brands
+  WHERE id = target_brand_id;
+
+  IF resolved_brand_name IS NULL THEN
+    RAISE EXCEPTION 'Brand not found.'
+      USING ERRCODE = 'P0002';
   END IF;
 
   SELECT id
@@ -124,10 +135,11 @@ BEGIN
     SET role = 'partner',
         user_email = (SELECT email FROM auth.users WHERE id = target_user_id);
 
-  INSERT INTO public.partner_profiles (user_id, brand_id)
-  VALUES (target_user_id, target_brand_id)
+  INSERT INTO public.partner_profiles (user_id, brand_id, brand_name)
+  VALUES (target_user_id, target_brand_id, resolved_brand_name)
   ON CONFLICT (user_id) DO UPDATE
     SET brand_id = EXCLUDED.brand_id,
+        brand_name = EXCLUDED.brand_name,
         updated_at = NOW();
 
   RETURN target_user_id;

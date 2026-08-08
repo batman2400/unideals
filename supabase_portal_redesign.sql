@@ -635,16 +635,17 @@ BEGIN
       au.email::TEXT AS email,
       COALESCE(ur.role::text, 'student') AS role,
       COALESCE(ur.is_verified, FALSE) AS is_verified,
-      pp.brand_name::TEXT AS brand_name,
+      COALESCE(b.name, pp.brand_name)::TEXT AS brand_name,
       au.created_at AS created_at,
       COUNT(*) OVER() AS total_count
     FROM auth.users au
     LEFT JOIN public.user_roles ur ON ur.user_id = au.id
     LEFT JOIN public.partner_profiles pp ON pp.user_id = au.id
+    LEFT JOIN public.brands b ON b.id = pp.brand_id
     WHERE (
       search_query = ''
       OR au.email ILIKE '%' || search_query || '%'
-      OR pp.brand_name ILIKE '%' || search_query || '%'
+      OR COALESCE(b.name, pp.brand_name) ILIKE '%' || search_query || '%'
     )
     AND (
       role_filter IS NULL
@@ -660,16 +661,17 @@ BEGIN
       au.email::TEXT AS email,
       COALESCE(ur.role::text, 'student') AS role,
       FALSE AS is_verified,
-      pp.brand_name::TEXT AS brand_name,
+      COALESCE(b.name, pp.brand_name)::TEXT AS brand_name,
       au.created_at AS created_at,
       COUNT(*) OVER() AS total_count
     FROM auth.users au
     LEFT JOIN public.user_roles ur ON ur.user_id = au.id
     LEFT JOIN public.partner_profiles pp ON pp.user_id = au.id
+    LEFT JOIN public.brands b ON b.id = pp.brand_id
     WHERE (
       search_query = ''
       OR au.email ILIKE '%' || search_query || '%'
-      OR pp.brand_name ILIKE '%' || search_query || '%'
+      OR COALESCE(b.name, pp.brand_name) ILIKE '%' || search_query || '%'
     )
     AND (
       role_filter IS NULL
