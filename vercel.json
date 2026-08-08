@@ -18,7 +18,20 @@
   ],
   "headers": [
     {
-      "source": "/(apple-touch-icon|apple-touch-icon-v3|apple-touch-icon-v4|apple-touch-icon-v5|icon-192|icon-192-v3|icon-192-v4|icon-192-v5|icon-512|icon-512-v3|icon-512-v4|icon-512-v5|icon-512-maskable|icon-512-maskable-v3|icon-512-maskable-v4|icon-512-maskable-v5|logo|logo-v3|logo-v4|logo-v5|favicon-16|favicon-16-v3|favicon-16-v4|favicon-16-v5|favicon-32|favicon-32-v3|favicon-32-v4|favicon-32-v5).png",
+      "source": "/favicon.ico",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=3600, must-revalidate"
+        },
+        {
+          "key": "Content-Type",
+          "value": "image/x-icon"
+        }
+      ]
+    },
+    {
+      "source": "/:file(apple-touch-icon.*|icon-.*|logo.*|favicon-.*).png",
       "headers": [
         {
           "key": "Cache-Control",
