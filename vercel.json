@@ -18,11 +18,11 @@
   ],
   "headers": [
     {
-      "source": "/(apple-touch-icon|icon-192|icon-512|icon-512-maskable|logo|favicon-16|favicon-32).png",
+      "source": "/(apple-touch-icon|apple-touch-icon-v3|icon-192|icon-192-v3|icon-512|icon-512-v3|icon-512-maskable|icon-512-maskable-v3|logo|logo-v3|favicon-16|favicon-16-v3|favicon-32|favicon-32-v3).png",
       "headers": [
         {
           "key": "Cache-Control",
-          "value": "public, max-age=86400, must-revalidate"
+          "value": "public, max-age=3600, must-revalidate"
         },
         {
           "key": "Content-Type",
