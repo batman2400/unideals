@@ -18,7 +18,7 @@
   ],
   "headers": [
     {
-      "source": "/(apple-touch-icon|apple-touch-icon-v3|icon-192|icon-192-v3|icon-512|icon-512-v3|icon-512-maskable|icon-512-maskable-v3|logo|logo-v3|favicon-16|favicon-16-v3|favicon-32|favicon-32-v3).png",
+      "source": "/(apple-touch-icon|apple-touch-icon-v3|apple-touch-icon-v4|icon-192|icon-192-v3|icon-192-v4|icon-512|icon-512-v3|icon-512-v4|icon-512-maskable|icon-512-maskable-v3|icon-512-maskable-v4|logo|logo-v3|logo-v4|favicon-16|favicon-16-v3|favicon-16-v4|favicon-32|favicon-32-v3|favicon-32-v4).png",
       "headers": [
         {
           "key": "Cache-Control",
