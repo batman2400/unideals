@@ -34,6 +34,8 @@ function Home({ searchQuery, onSearchChange }) {
         <meta property="og:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://unideals.co/" />
+        <meta property="og:image" content="https://www.unideals.co/icon-512.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
       </Helmet>
       
       <FAQSchema />

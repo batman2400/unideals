@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Uni Deals">
+  <rect width="512" height="512" fill="#ffffff"/>
+  <g fill="#111111" font-family="Arial Black, Arial, Helvetica, sans-serif" font-weight="900" text-anchor="middle">
+    <text x="210" y="340" font-size="280" transform="skewX(-12)">U</text>
+    <text x="340" y="340" font-size="280">D</text>
+  </g>
+</svg>
