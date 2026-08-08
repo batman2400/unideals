@@ -315,7 +315,7 @@ function CreateDeal() {
           `${formData.title.trim()} student offer.`,
         redemption_code: generatedRedemptionCode,
         partner_id: targetUserId,
-        status: "pending",
+        status: "approved",
         start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
         end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
       };
@@ -335,7 +335,7 @@ function CreateDeal() {
       setOfferValue("");
       setSelectedImageFile(null);
       setSuccessMessage(
-        "Deal submitted successfully. It will go live once an admin approves it.",
+        "Deal launched successfully! It is now live and visible to students.",
       );
     } catch (submitError) {
       if (!isMountedRef.current) return;
