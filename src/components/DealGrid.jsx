@@ -39,7 +39,7 @@ function DealGrid({
   }
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+    <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-4">
       {deals.map((deal, index) => (
         <div
           key={deal.id}
@@ -52,6 +52,7 @@ function DealGrid({
         >
           <DealCard
             deal={deal}
+            variant="grid"
             isSaved={savedIds ? savedIds.has(deal.id) : undefined}
             onToggleSave={onToggleSave}
             savedLoading={savedLoading}

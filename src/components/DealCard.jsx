@@ -1,49 +1,42 @@
 /**
- * DealCard Component
+ * DealCard — lifestyle, image-first deal card.
  *
- * A single deal card showing the deal image, brand name, discount,
- * description, and a "Claim Deal" link that navigates to the
- * DealDetails page via React Router.
+ * Variants:
+ *   - hero  : 4:5 full-bleed portrait with gradient overlay (trending row)
+ *   - grid  : 1:1 square image + brand / title / fulfillment pill below
  *
- * The badge clearly differentiates In-Store (with store icon + warm
- * amber accent) vs Online (with globe icon + emerald accent) at a glance.
- *
- * Props:
- *   - deal          : object — deal data
- *   - isSaved       : boolean|undefined — batch-provided saved state (from parent)
- *   - onToggleSave  : function(dealId)|undefined — batch toggle (from parent)
- *   - savedLoading  : boolean|undefined — batch loading state (from parent)
- *
- * When batch props are provided (via DealGrid ← useSavedDealIds),
- * the card uses them directly instead of querying the database individually.
- * This eliminates the N+1 query problem.
+ * No "Claim Code" CTA — the whole card links to deal details.
  */
 import { memo, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 
+/** Stable demo urgency until expiry lands in the API. */
+function getDaysLeft(id) {
+  const n = Number(id);
+  if (!Number.isFinite(n)) return 5;
+  return (Math.abs(n) % 14) + 1;
+}
+
 function DealCard({
   deal,
   isSaved: batchSaved,
   onToggleSave: batchToggle,
   savedLoading: batchLoading,
-  compactImage = false,
+  variant = "grid",
 }) {
-  const { id, title, type, discount, imageUrl, description } = deal;
-
+  const { id, title, brand, type, discount, imageUrl } = deal;
   const isInStore = type === "In-Store";
   const isDemo = typeof id === "string" && id.startsWith("demo-");
+  const isHero = variant === "hero";
+  const daysLeft = getDaysLeft(id);
+  const headline = discount || title;
 
-  // ── Determine if we're using batch mode or standalone mode ──
   const isBatchMode = batchSaved !== undefined;
-
-  // ── Standalone state (used only when batch props are NOT provided) ──
   const [localSaved, setLocalSaved] = useState(false);
   const [localLoading, setLocalLoading] = useState(!isBatchMode);
-  const [saveError, setSaveError] = useState("");
 
-  // Standalone: fetch saved state individually (only if no batch props)
   useEffect(() => {
     if (isBatchMode || isDemo) {
       setLocalLoading(false);
@@ -58,17 +51,13 @@ function DealCard({
         }
       })
       .catch(() => {
-        if (active) {
-          setSaveError("Could not verify saved state right now.");
-          setLocalLoading(false);
-        }
+        if (active) setLocalLoading(false);
       });
     return () => {
       active = false;
     };
   }, [id, isDemo, isBatchMode]);
 
-  // ── Resolve actual values ──
   const saved = isBatchMode ? !!batchSaved : localSaved;
   const loading = isBatchMode ? !!batchLoading : localLoading;
 
@@ -76,9 +65,7 @@ function DealCard({
     async (e) => {
       e.preventDefault();
       e.stopPropagation();
-      setSaveError("");
 
-      // Check login state
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -103,105 +90,122 @@ function DealCard({
         }
       } catch (err) {
         console.error("Error toggling save:", err);
-        setSaveError(
-          err?.message || "Could not update saved state. Please try again.",
-        );
         if (!isBatchMode) setLocalLoading(false);
       }
     },
     [id, isBatchMode, batchToggle, localSaved],
   );
 
-  return (
-    <div className="flex flex-col h-full group cursor-pointer relative transition-all duration-300 hover:-translate-y-1 hover:shadow-lg rounded-xl">
-      {/* Deal Image */}
+  if (isHero) {
+    return (
       <Link
         to={isDemo ? "#" : `/perks/${id}`}
-        className="block relative"
         onClick={isDemo ? (e) => e.preventDefault() : undefined}
+        className="group relative block w-full aspect-[4/5] overflow-hidden rounded-2xl bg-surface-container"
       >
-        <div 
-          className={`overflow-hidden rounded-xl relative bg-surface-container ${
-            compactImage ? "h-32 md:h-40 w-full" : "aspect-[16/10]"
-          }`}
-        >
-          {/* Save Button */}
-          {!isDemo && (
-            <button
-              onClick={handleToggleSave}
-              disabled={loading}
-              className={`absolute top-4 left-4 z-10 w-9 h-9 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-sm ${
-                loading ? "opacity-50 cursor-not-allowed" : "hover:scale-110"
-              } ${
-                saved
-                  ? "bg-primary text-on-primary"
-                  : "bg-surface/80 text-on-surface hover:bg-surface"
-              }`}
-            >
-              <span
-                className="material-symbols-outlined text-xl"
-                style={saved ? { fontVariationSettings: "'FILL' 1" } : {}}
-              >
-                bookmark
-              </span>
-            </button>
-          )}
+        <img
+          alt={title}
+          src={imageUrl}
+          loading="lazy"
+          decoding="async"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
 
-          <img
-            alt={title}
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src={imageUrl}
-            loading="lazy"
-            decoding="async"
-          />
-          {/* Type Badge — visually distinct per redemption method */}
-          <div className="absolute top-4 right-4">
+        {/* Top-left badges */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+          <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+            {isInStore ? "🏪 In-Store" : "🌐 Online"}
+          </span>
+          <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white backdrop-blur-sm">
+            ⌛ {daysLeft} {daysLeft === 1 ? "day" : "days"} left
+          </span>
+        </div>
+
+        {/* Top-right heart */}
+        {!isDemo && (
+          <button
+            type="button"
+            onClick={handleToggleSave}
+            disabled={loading}
+            aria-label={saved ? "Remove from saved" : "Save deal"}
+            className={`absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:scale-110 ${
+              loading ? "opacity-50" : ""
+            }`}
+          >
             <span
-              className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm ${
-                isInStore
-                  ? "bg-amber-50/90 text-amber-800 border border-amber-200/60"
-                  : "bg-primary-container/90 text-on-primary-container border border-primary/20"
-              }`}
+              className="material-symbols-outlined text-lg"
+              style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}
             >
-              <span className="material-symbols-outlined text-xs">
-                {isInStore ? "storefront" : "language"}
-              </span>
-              {isInStore ? "In-Store" : "Online"}
+              favorite
             </span>
-          </div>
+          </button>
+        )}
+
+        {/* Bottom gradient + copy */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[55%] bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 z-10 p-4">
+          <p className="mb-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-white/85">
+            {brand}
+          </p>
+          <h3 className="font-headline text-xl font-extrabold leading-tight tracking-tight text-white line-clamp-2 md:text-2xl">
+            {headline}
+          </h3>
         </div>
       </Link>
+    );
+  }
 
-      {/* Deal Info */}
-      <div className="pt-4 md:pt-5 flex-1 flex flex-col">
-        <div className="flex justify-between items-start mb-1.5 gap-2">
-          <h3 className="font-headline font-extrabold text-lg md:text-xl tracking-tight line-clamp-2 leading-tight">
-            {title}
-          </h3>
-          <span className="text-primary font-headline font-black text-base md:text-lg flex-shrink-0">
-            {discount}
-          </span>
-        </div>
-        <p className="text-on-surface-variant text-xs md:text-sm mb-3 md:mb-4 leading-relaxed line-clamp-2 flex-1">
-          {description}
-        </p>
-        {saveError && (
-          <p className="text-error text-xs font-bold mb-3">{saveError}</p>
-        )}
-        {isDemo ? (
-          <span className="block w-full py-2.5 rounded-lg border border-outline-variant/20 font-headline font-bold text-xs md:text-sm text-center text-on-surface-variant/50 cursor-default">
-            Coming Soon
-          </span>
-        ) : (
-          <Link
-            to={`/perks/${id}`}
-            className="block w-full py-2.5 rounded-lg border border-outline-variant/20 font-headline font-bold text-xs md:text-sm text-center hover:bg-primary hover:text-on-primary hover:border-primary transition-all active:scale-[0.98]"
+  // Grid / default — image-first, no claim button
+  return (
+    <Link
+      to={isDemo ? "#" : `/perks/${id}`}
+      onClick={isDemo ? (e) => e.preventDefault() : undefined}
+      className="group flex flex-col"
+    >
+      <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface-container">
+        <img
+          alt={title}
+          src={imageUrl}
+          loading="lazy"
+          decoding="async"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+        />
+        {!isDemo && (
+          <button
+            type="button"
+            onClick={handleToggleSave}
+            disabled={loading}
+            aria-label={saved ? "Remove from saved" : "Save deal"}
+            className={`absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-md shadow-sm transition hover:scale-110 ${
+              loading ? "opacity-50" : ""
+            } ${
+              saved
+                ? "bg-primary text-on-primary"
+                : "bg-white/85 text-on-surface"
+            }`}
           >
-            {isInStore ? "Show at Register" : "Claim Code"}
-          </Link>
+            <span
+              className="material-symbols-outlined text-lg"
+              style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}
+            >
+              favorite
+            </span>
+          </button>
         )}
       </div>
-    </div>
+
+      <div className="flex flex-col gap-1 pt-2.5">
+        <p className="text-[11px] font-semibold text-on-surface-variant truncate">
+          {brand}
+        </p>
+        <h3 className="font-headline text-sm font-bold leading-snug text-on-background line-clamp-2 md:text-[15px]">
+          {headline}
+        </h3>
+        <span className="mt-0.5 inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+          {isInStore ? "🏪 In-store" : "🌐 Online"}
+        </span>
+      </div>
+    </Link>
   );
 }
 
