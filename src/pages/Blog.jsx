@@ -38,22 +38,22 @@ export default function Blog() {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <section className="bg-surface-container-low border-b border-outline-variant/10 py-16 md:py-20 px-4">
-        <div className="max-w-6xl mx-auto text-center animate-slide-up">
-          <div className="w-16 h-16 mx-auto bg-primary/10 rounded-2xl flex items-center justify-center mb-6">
+      <section className="bg-surface-container-low border-b border-outline-variant/10 py-8 md:py-12 px-4">
+        <div className="max-w-6xl mx-auto text-center animate-slide-up flex flex-col items-center gap-4">
+          <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center">
             <span className="material-symbols-outlined text-3xl text-primary">newspaper</span>
           </div>
-          <h1 className="font-headline font-black text-4xl md:text-5xl text-on-background tracking-tight mb-4">
+          <h1 className="font-headline font-black text-4xl md:text-5xl text-on-background tracking-tight">
             Uni Deals <span className="text-primary">Blog</span>
           </h1>
-          <p className="text-on-surface-variant text-lg max-w-2xl mx-auto leading-relaxed">
+          <p className="text-on-surface-variant text-lg max-w-2xl leading-relaxed">
             Tips, guides, and student life hacks to help you make the most of your university experience.
           </p>
         </div>
       </section>
 
       {/* Content Grid */}
-      <section className="py-12 md:py-16 px-4">
+      <section className="pt-8 pb-12 md:pt-10 md:pb-16 px-4">
         <div className="max-w-6xl mx-auto">
           {error && (
             <div className="bg-error/10 text-error px-4 py-3 rounded-xl text-sm font-medium mb-8">
