@@ -1,11 +1,11 @@
-"""Build a maskable PWA icon with white full-bleed and larger UD mark."""
+"""Build a maskable PWA icon with white full-bleed and balanced UD size."""
 
 from PIL import Image
 
 SIZE = 512
-# Fit UD near the full safe-zone width so it reads large on Android home screens.
-TARGET_FRACTION = 0.88
-OUT_PATH = "public/icon-512-maskable-v10.png"
+# Between the too-small (~0.78) and too-big (0.88) versions.
+TARGET_FRACTION = 0.80
+OUT_PATH = "public/icon-512-maskable-v11.png"
 
 src = Image.open("public/icon-512-v9.png").convert("RGBA")
 w, h = src.size
