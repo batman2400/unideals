@@ -1,50 +1,57 @@
-"""Build a maskable PWA icon with white full-bleed and safe-zone padding."""
+"""Build a maskable PWA icon with white full-bleed and larger UD mark."""
 
 from PIL import Image
 
 SIZE = 512
-# Safe zone diameter is 80% of the icon. Keep content slightly inside that.
-CONTENT_DIAMETER = int(SIZE * 0.72)
+# Target: UD glyph box fills ~70% of canvas (comfortably inside 80% safe zone).
+TARGET_FRACTION = 0.78
 
 src = Image.open("public/icon-512-v9.png").convert("RGBA")
-# Source is black square + white circle + black UD.
-# For a white maskable icon: place the (scaled) mark on a white canvas.
-# The source's black corners would show as black triangles if pasted as-is,
-# so scale the full mark onto white — then flood-fill / replace outer black
-# with white by compositing only the circular content.
-
-# Simpler approach: scale source, then replace near-black background pixels
-# outside the white circle with white by starting from a white canvas and
-# keeping only non-black pixels from the scaled source... but UD is black.
-# Best: draw white canvas, paste scaled source with black treated as transparent.
-
-pixels = src.load()
 w, h = src.size
+pixels = src.load()
+
+# Isolate black UD inside the white circle; drop outer black square.
 transparent = Image.new("RGBA", (w, h), (0, 0, 0, 0))
 tp = transparent.load()
+black_coords = []
 for y in range(h):
     for x in range(w):
         r, g, b, a = pixels[x, y]
-        # Treat the outer black square as transparent; keep white circle + black UD
         if r < 30 and g < 30 and b < 30:
-            # Could be UD letter or corner — corners are outside the circle
             cx, cy = (w - 1) / 2, (h - 1) / 2
             dist = ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5
-            if dist > (min(w, h) / 2) - 1:
-                tp[x, y] = (0, 0, 0, 0)
-            else:
-                tp[x, y] = (r, g, b, a)  # black UD inside circle
-        else:
-            tp[x, y] = (r, g, b, a)
+            if dist <= (min(w, h) / 2) - 1:
+                tp[x, y] = (0, 0, 0, 255)
+                black_coords.append((x, y))
+        # white circle pixels intentionally discarded (canvas is already white)
 
-scaled = transparent.resize((CONTENT_DIAMETER, CONTENT_DIAMETER), Image.Resampling.LANCZOS)
+if not black_coords:
+    raise SystemExit("Could not find UD glyph pixels")
+
+xs = [p[0] for p in black_coords]
+ys = [p[1] for p in black_coords]
+min_x, max_x = min(xs), max(xs)
+min_y, max_y = min(ys), max(ys)
+# Small padding around glyph bbox so edges don't feel clipped when scaled
+pad = 8
+min_x = max(0, min_x - pad)
+min_y = max(0, min_y - pad)
+max_x = min(w - 1, max_x + pad)
+max_y = min(h - 1, max_y + pad)
+
+glyph = transparent.crop((min_x, min_y, max_x + 1, max_y + 1))
+gw, gh = glyph.size
+scale = (SIZE * TARGET_FRACTION) / max(gw, gh)
+new_w = max(1, int(round(gw * scale)))
+new_h = max(1, int(round(gh * scale)))
+scaled = glyph.resize((new_w, new_h), Image.Resampling.LANCZOS)
+
 out = Image.new("RGBA", (SIZE, SIZE), (255, 255, 255, 255))
-offset = ((SIZE - CONTENT_DIAMETER) // 2, (SIZE - CONTENT_DIAMETER) // 2)
+offset = ((SIZE - new_w) // 2, (SIZE - new_h) // 2)
 out.paste(scaled, offset, scaled)
 
 out_path = "public/icon-512-maskable-v9.png"
 out.convert("RGB").save(out_path, "PNG", optimize=True)
 print(f"Wrote {out_path}")
-print(f"Content diameter: {CONTENT_DIAMETER}px ({CONTENT_DIAMETER / SIZE * 100:.1f}% of canvas)")
-print(f"Safe zone diameter: {SIZE * 0.8:.0f}px")
-print(f"Padding from edge: {offset[0]}px each side")
+print(f"Glyph bbox: {gw}x{gh} -> {new_w}x{new_h} ({TARGET_FRACTION * 100:.0f}% of canvas)")
+print(f"Padding from edge: ~{(SIZE - max(new_w, new_h)) // 2}px")
