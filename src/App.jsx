@@ -135,6 +135,7 @@ function App() {
   // Derived auth state
   const isLoggedIn = !!session;
   const user = session?.user ?? null;
+  const isDealDetailsPage = /^\/perks\/[^/]+$/.test(location.pathname);
 
   // ── Logout Handler ───────────────────────────────────
   const handleLogout = async () => {
@@ -164,11 +165,17 @@ function App() {
         <Sidebar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
 
         {/* Page Content */}
-        <main className="flex-1 pt-16 md:pt-0 pb-16 min-w-0 flex flex-col">
+        <main
+          className={`flex-1 pt-16 md:pt-0 min-w-0 flex flex-col ${
+            isDealDetailsPage ? "pb-16 md:pb-0 lg:min-h-0 lg:overflow-hidden" : "pb-16"
+          }`}
+        >
         <Suspense fallback={<RouteSkeleton />}>
           <div
             key={`${location.pathname}${location.search}`}
-            className="animate-route-fade flex flex-col flex-1"
+            className={`animate-route-fade flex flex-col flex-1 ${
+              isDealDetailsPage ? "lg:min-h-0 lg:overflow-hidden" : ""
+            }`}
           >
             <Routes location={location}>
               <Route
@@ -270,8 +277,8 @@ function App() {
         </main>
       </div>
 
-      {/* Persistent Footer */}
-      <Footer />
+      {/* Persistent Footer — hidden on deal details so the split layout can fit the viewport */}
+      {!isDealDetailsPage && <Footer />}
 
       {/* Global Auth Modal */}
       <AuthModal

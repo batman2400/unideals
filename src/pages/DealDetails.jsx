@@ -1,13 +1,13 @@
 /**
  * DealDetails Page (/perks/:id)
  *
- * Displays a full detailed view of a single deal with dual-redemption UX:
+ * Lifestyle deal detail matching the home feed:
+ *   • Mobile  → full-bleed portrait hero + stacked content
+ *   • Desktop → sticky portrait image + info / redemption column
  *
- *   • In-Store  → QR code ticket with live 10-minute countdown timer
- *   • Online    → Copyable promo code + "Go to Store" affiliate button
- *
- * Uses useParams to grab the deal ID from the URL,
- * then fetches it from Supabase.
+ * Redemption UX unchanged:
+ *   • In-Store  → QR ticket with live 10-minute countdown
+ *   • Online    → Reveal / copy promo code + store link
  */
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -69,18 +69,18 @@ function InStoreRedemption({ dealId, brand }) {
     return (
       <div className="text-center">
         {ticketError && (
-          <div className="mb-4 bg-error/10 border border-error/20 rounded-xl px-4 py-3">
-            <p className="text-error text-sm font-bold">{ticketError}</p>
+          <div className="mb-4 rounded-xl border border-error/20 bg-error/10 px-4 py-3">
+            <p className="text-sm font-bold text-error">{ticketError}</p>
           </div>
         )}
         <button
           onClick={generateTicket}
           disabled={generating}
-          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2 disabled:opacity-70"
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl emerald-gradient py-3.5 text-base font-headline font-bold tracking-tight text-on-primary shadow-lg transition-all hover:shadow-xl active:scale-[0.98] disabled:opacity-70"
         >
           {generating ? (
             <>
-              <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
+              <div className="h-5 w-5 animate-spin rounded-full border-2 border-on-primary border-t-transparent" />
               Generating Ticket...
             </>
           ) : (
@@ -92,9 +92,9 @@ function InStoreRedemption({ dealId, brand }) {
             </>
           )}
         </button>
-        <p className="text-on-surface-variant/50 text-xs mt-3">
-          Generates a unique single-use ticket with a 10-minute timer. The
-          cashier will scan this QR code.
+        <p className="mt-3 text-xs text-on-surface-variant/60">
+          Unique single-use ticket with a 10-minute timer for the cashier to
+          scan.
         </p>
       </div>
     );
@@ -111,7 +111,6 @@ function InStoreRedemption({ dealId, brand }) {
   );
 }
 
-// ── Ticket Display with Server-Side Expiry Countdown ────
 function InStoreTicketDisplay({
   ticketCode,
   expiresAt,
@@ -125,8 +124,6 @@ function InStoreTicketDisplay({
   );
   const totalSeconds = 10 * 60;
 
-  // secondsLeft is deliberately not a dependency: including it tore down and
-  // recreated the interval on every tick.
   useEffect(() => {
     if (alreadyRedeemed) return;
 
@@ -160,11 +157,10 @@ function InStoreTicketDisplay({
             setAlreadyRedeemed(true);
             setSecondsLeft(0);
           }
-        }
+        },
       )
       .subscribe();
 
-    // Fallback polling every 3 seconds in case Realtime is not enabled
     const pollId = setInterval(async () => {
       try {
         const { data } = await supabase
@@ -172,7 +168,7 @@ function InStoreTicketDisplay({
           .select("redeemed_at")
           .eq("ticket_code", ticketCode)
           .single();
-          
+
         if (data && data.redeemed_at) {
           setAlreadyRedeemed(true);
           setSecondsLeft(0);
@@ -196,7 +192,7 @@ function InStoreTicketDisplay({
   return (
     <div className="animate-modal-enter">
       <div
-        className={`relative border-2 rounded-2xl overflow-hidden transition-colors ${
+        className={`relative overflow-hidden rounded-2xl border-2 transition-colors ${
           alreadyRedeemed
             ? "border-emerald-400 bg-emerald-50/50"
             : expired
@@ -204,149 +200,140 @@ function InStoreTicketDisplay({
               : "border-primary/30 bg-surface-container-low"
         }`}
       >
-        {/* Live indicator */}
         {!expired && !alreadyRedeemed && (
-          <div className="flex items-center justify-center gap-2 bg-primary/10 py-2.5 px-4">
+          <div className="flex items-center justify-center gap-2 bg-primary/10 px-4 py-2.5">
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-primary" />
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-primary" />
             </span>
-            <span className="text-primary text-xs font-headline font-bold tracking-wide uppercase">
+            <span className="font-headline text-xs font-bold uppercase tracking-wide text-primary">
               {alreadyActive ? "Active Ticket" : "Live Ticket"}
             </span>
           </div>
         )}
 
         {expired && !alreadyRedeemed && (
-          <div className="flex items-center justify-center gap-2 bg-error/10 py-2.5 px-4">
-            <span className="material-symbols-outlined text-error text-sm">
+          <div className="flex items-center justify-center gap-2 bg-error/10 px-4 py-2.5">
+            <span className="material-symbols-outlined text-sm text-error">
               timer_off
             </span>
-            <span className="text-error text-xs font-headline font-bold tracking-wide uppercase">
+            <span className="font-headline text-xs font-bold uppercase tracking-wide text-error">
               Ticket Expired
             </span>
           </div>
         )}
 
         {alreadyRedeemed && (
-          <div className="flex items-center justify-center gap-2 bg-emerald-50 py-2.5 px-4 border-b border-emerald-100/50">
-            <span className="material-symbols-outlined text-emerald-500 text-sm">
+          <div className="flex items-center justify-center gap-2 border-b border-emerald-100/50 bg-emerald-50 px-4 py-2.5">
+            <span className="material-symbols-outlined text-sm text-emerald-500">
               verified
             </span>
-            <span className="text-emerald-700 text-xs font-headline font-bold tracking-wide uppercase">
+            <span className="font-headline text-xs font-bold uppercase tracking-wide text-emerald-700">
               Redeemed Successfully
             </span>
           </div>
         )}
 
-        <div className="p-6 md:p-8 flex flex-col items-center">
-          {/* Ticket Code Display */}
-          <p className="text-[10px] font-bold tracking-[0.15em] text-on-surface-variant/60 uppercase mb-2">
+        <div className="flex flex-col items-center px-4 py-5 sm:p-6 md:p-8">
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.15em] text-on-surface-variant/60">
             Ticket Code
           </p>
           <p
-            className={`font-headline font-black text-xl tracking-[0.2em] mb-4 ${
-              alreadyRedeemed 
-                ? "text-emerald-600" 
-                : expired ? "text-on-surface-variant/40" : "text-primary"
+            className={`mb-4 max-w-full break-all text-center font-headline text-lg font-black tracking-[0.12em] sm:text-xl sm:tracking-[0.2em] ${
+              alreadyRedeemed
+                ? "text-emerald-600"
+                : expired
+                  ? "text-on-surface-variant/40"
+                  : "text-primary"
             }`}
           >
             {ticketCode}
           </p>
 
-          {/* QR Code */}
           {!alreadyRedeemed && (
             <div
-              className={`p-4 bg-white rounded-xl shadow-sm mb-5 transition-opacity ${
+              className={`mb-5 rounded-xl bg-white p-3 shadow-sm transition-opacity sm:p-4 ${
                 expired ? "opacity-30 grayscale" : ""
               }`}
             >
-              <QRCodeSVG
-                value={`unideals://ticket/${ticketCode}`}
-                size={180}
-                level="H"
-                fgColor={expired ? "#9e9c9c" : "#29695b"}
-                bgColor="#ffffff"
-                includeMargin={false}
-              />
+              <div className="h-[148px] w-[148px] sm:h-[180px] sm:w-[180px]">
+                <QRCodeSVG
+                  value={`unideals://ticket/${ticketCode}`}
+                  size={180}
+                  level="H"
+                  fgColor={expired ? "#9e9c9c" : "#29695b"}
+                  bgColor="#ffffff"
+                  includeMargin={false}
+                  style={{ width: "100%", height: "100%" }}
+                />
+              </div>
             </div>
           )}
 
-          {/* Countdown Timer or Success state */}
           {!alreadyRedeemed ? (
             <>
-              <div className="text-center mb-4">
-                <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              <div className="mb-4 text-center">
+                <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-on-surface-variant">
                   {expired ? "Time Expired" : "Time Remaining"}
                 </p>
-                <div className="flex items-center justify-center gap-1.5">
-                  <span
-                    className={`font-headline font-black text-4xl tabular-nums tracking-tight ${
-                      expired
-                        ? "text-error"
-                        : progress < 0.2
-                          ? "text-error animate-pulse"
-                          : "text-on-background"
-                    }`}
-                  >
-                    {String(minutes).padStart(2, "0")}:
-                    {String(seconds).padStart(2, "0")}
-                  </span>
-                </div>
+                <span
+                  className={`font-headline text-3xl font-black tabular-nums tracking-tight sm:text-4xl ${
+                    expired
+                      ? "text-error"
+                      : progress < 0.2
+                        ? "animate-pulse text-error"
+                        : "text-on-background"
+                  }`}
+                >
+                  {String(minutes).padStart(2, "0")}:
+                  {String(seconds).padStart(2, "0")}
+                </span>
               </div>
 
-              {/* Progress bar */}
-              <div className="w-full h-1.5 bg-surface-container rounded-full overflow-hidden mb-4">
+              <div className="mb-4 h-1.5 w-full overflow-hidden rounded-full bg-surface-container">
                 <div
                   className={`h-full rounded-full transition-all duration-1000 ease-linear ${
-                    expired
-                      ? "bg-error"
-                      : progress < 0.2
-                        ? "bg-error"
-                        : "emerald-gradient"
+                    expired || progress < 0.2 ? "bg-error" : "emerald-gradient"
                   }`}
                   style={{ width: `${Math.max(progress * 100, 0)}%` }}
                 />
               </div>
 
-              <p className="text-on-surface-variant text-sm text-center leading-relaxed">
+              <p className="text-center text-sm leading-relaxed text-on-surface-variant">
                 {expired ? (
                   <>This ticket has expired. Generate a new one to redeem.</>
                 ) : (
                   <>
-                    Present this QR code at any{" "}
+                    Present this QR at any{" "}
                     <span className="font-bold text-on-surface">{brand}</span>{" "}
-                    register. The cashier will scan it to apply your discount. This
-                    is a <span className="font-bold">single-use ticket</span> — it
-                    cannot be reused.
+                    register. Single-use only.
                   </>
                 )}
               </p>
             </>
           ) : (
-            <div className="text-center my-6 animate-scale-in">
-              <span 
-                className="material-symbols-outlined text-7xl text-emerald-500 mb-4 drop-shadow-sm" 
+            <div className="my-4 animate-scale-in text-center sm:my-6">
+              <span
+                className="material-symbols-outlined mb-3 text-6xl text-emerald-500 drop-shadow-sm sm:mb-4 sm:text-7xl"
                 style={{ fontVariationSettings: "'FILL' 1" }}
               >
                 check_circle
               </span>
-              <h3 className="font-headline font-black text-2xl text-emerald-800 mb-2">
-                You're all set!
+              <h3 className="mb-2 font-headline text-xl font-black text-emerald-800 sm:text-2xl">
+                You&apos;re all set!
               </h3>
-              <p className="text-emerald-700/80 text-sm">
-                The cashier has successfully scanned your ticket. Enjoy your {brand} discount!
+              <p className="text-sm text-emerald-700/80">
+                Enjoy your {brand} discount!
               </p>
             </div>
           )}
         </div>
       </div>
 
-      {/* Regenerate button when expired */}
       {expired && !alreadyRedeemed && (
         <button
           onClick={onRegenerate}
-          className="w-full mt-4 py-3 rounded-xl border border-outline-variant/20 font-headline font-bold text-sm text-on-surface-variant hover:bg-surface-container transition-all active:scale-[0.98]"
+          className="mt-4 min-h-[44px] w-full rounded-xl border border-outline-variant/20 py-3 font-headline text-sm font-bold text-on-surface-variant transition-all hover:bg-surface-container active:scale-[0.98]"
         >
           Generate New Ticket
         </button>
@@ -355,7 +342,6 @@ function InStoreTicketDisplay({
   );
 }
 
-// ── Online Redemption (Promo Code + Tracking) ───────────
 function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
@@ -407,73 +393,72 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
       <div className="text-center">
         <button
           onClick={handleReveal}
-          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl emerald-gradient py-3.5 text-base font-headline font-bold tracking-tight text-on-primary shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
         >
           <span className="material-symbols-outlined text-xl">visibility</span>
           Reveal Promo Code
         </button>
-        <p className="text-on-surface-variant/50 text-xs mt-3">
-          Click to reveal your exclusive promo code for {brand}.
+        <p className="mt-3 text-xs text-on-surface-variant/60">
+          Reveal your exclusive promo code for {brand}.
         </p>
       </div>
     );
   }
 
+  const hasStoreLink = storeUrl && storeUrl !== "#";
+
   return (
-    <div className="space-y-4 animate-modal-enter">
-      <div className="bg-surface-container-low border-2 border-dashed border-primary/30 rounded-2xl p-6 md:p-8 text-center">
-        <p className="text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-3 flex items-center justify-center gap-1.5">
-          <span className="material-symbols-outlined text-primary text-sm">
+    <div className="animate-modal-enter space-y-3 sm:space-y-4">
+      <div className="rounded-2xl border-2 border-dashed border-primary/30 bg-surface-container-low p-5 text-center sm:p-6 md:p-8">
+        <p className="mb-3 flex items-center justify-center gap-1.5 text-xs font-bold uppercase tracking-[0.15em] text-on-surface-variant">
+          <span className="material-symbols-outlined text-sm text-primary">
             confirmation_number
           </span>
           Your Promo Code
         </p>
-        <p className="font-headline font-black text-3xl md:text-4xl text-primary tracking-[0.15em] mb-4 select-all">
+        <p className="mb-5 max-w-full break-all font-mono text-2xl font-bold tracking-[0.12em] text-primary select-all sm:text-3xl md:text-4xl">
           {redemptionCode}
         </p>
 
         <button
           onClick={handleCopy}
-          className={`inline-flex items-center gap-2 px-6 py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight transition-all active:scale-[0.98] ${
+          className={`flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl py-3.5 font-headline text-base font-bold tracking-tight shadow-md transition-all hover:shadow-lg active:scale-[0.98] ${
             copied
-              ? "bg-primary text-on-primary shadow-md"
-              : "bg-surface-container border border-outline-variant/20 text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface"
+              ? "bg-primary text-on-primary"
+              : "emerald-gradient text-on-primary"
           }`}
         >
-          <span className="material-symbols-outlined text-lg">
+          <span className="material-symbols-outlined text-xl">
             {copied ? "check_circle" : "content_copy"}
           </span>
           {copied ? "Copied!" : "Copy to Clipboard"}
         </button>
       </div>
 
-      {storeUrl && storeUrl !== "#" ? (
+      {hasStoreLink ? (
         <a
           href={storeUrl}
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleClickThrough}
-          className="w-full emerald-gradient text-on-primary py-4 rounded-xl font-headline font-bold text-base tracking-tight shadow-lg hover:shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl border border-outline-variant/25 bg-surface py-3.5 font-headline text-sm font-bold tracking-tight text-on-surface transition-all hover:border-primary/30 hover:text-primary active:scale-[0.98]"
         >
-          <span className="material-symbols-outlined text-xl">open_in_new</span>
+          <span className="material-symbols-outlined text-lg">open_in_new</span>
           Go to {brand} Store
         </a>
       ) : (
-        <button
-          disabled
-          className="w-full bg-surface-container text-on-surface-variant/50 py-4 rounded-xl font-headline font-bold text-base tracking-tight cursor-not-allowed flex items-center justify-center gap-2"
-        >
-          <span className="material-symbols-outlined text-xl">link_off</span>
-          Store link unavailable
-        </button>
+        <p className="flex items-center justify-center gap-1.5 text-center text-xs text-on-surface-variant/50">
+          <span className="material-symbols-outlined text-sm">link_off</span>
+          Store link unavailable for this offer
+        </p>
       )}
 
-      <p className="text-on-surface-variant/50 text-xs text-center leading-relaxed">
+      <p className="text-center text-xs leading-relaxed text-on-surface-variant/60">
         Apply code{" "}
-        <span className="font-bold text-on-surface-variant">
+        <span className="break-all font-mono font-bold text-on-surface-variant">
           {redemptionCode}
         </span>{" "}
-        at checkout on {brand}'s website to receive your discount.
+        at checkout on {brand}&apos;s website.
       </p>
     </div>
   );
@@ -491,49 +476,49 @@ function VerificationWall({
       : "Sign in or create an account with a valid university email to unlock this redemption code.";
 
   return (
-    <div className="relative overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 shadow-[0_18px_55px_-35px_rgba(6,26,20,0.8)] animate-modal-enter">
+    <div className="relative animate-modal-enter overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 shadow-[0_18px_55px_-35px_rgba(6,26,20,0.8)] sm:p-6 md:p-8">
       <div
-        className="absolute -top-16 -right-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl"
+        className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-primary/10 blur-2xl"
         aria-hidden="true"
       />
       <div
-        className="absolute -bottom-16 -left-16 w-44 h-44 rounded-full bg-primary/10 blur-2xl"
+        className="absolute -bottom-16 -left-16 h-44 w-44 rounded-full bg-primary/10 blur-2xl"
         aria-hidden="true"
       />
 
-      <div className="relative z-10 space-y-5">
-        <div className="w-14 h-14 rounded-2xl bg-surface border border-primary/20 flex items-center justify-center shadow-sm">
-          <span className="material-symbols-outlined text-primary text-3xl">
+      <div className="relative z-10 space-y-4 sm:space-y-5">
+        <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-primary/20 bg-surface shadow-sm sm:h-14 sm:w-14">
+          <span className="material-symbols-outlined text-2xl text-primary sm:text-3xl">
             lock
           </span>
         </div>
 
         <div>
-          <p className="text-xs font-bold tracking-[0.15em] uppercase text-primary mb-2">
+          <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-primary">
             Verification Required
           </p>
-          <h3 className="font-headline font-extrabold text-2xl tracking-tight text-on-background mb-2">
-            Verify your university status to reveal this code
+          <h3 className="mb-2 font-headline text-xl font-extrabold tracking-tight text-on-background sm:text-2xl">
+            Verify to unlock this code
           </h3>
-          <p className="text-sm text-on-surface-variant leading-relaxed">
+          <p className="text-sm leading-relaxed text-on-surface-variant">
             {helperText}
           </p>
         </div>
 
-        <div className="rounded-xl border border-dashed border-outline-variant/25 bg-surface/60 backdrop-blur-sm px-4 py-5">
-          <p className="text-[11px] font-bold tracking-[0.18em] uppercase text-on-surface-variant/60 mb-2">
+        <div className="rounded-xl border border-dashed border-outline-variant/25 bg-surface/60 px-4 py-4 backdrop-blur-sm sm:py-5">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-on-surface-variant/60">
             Locked Redemption Code
           </p>
-          <p className="font-headline font-black text-2xl tracking-[0.22em] text-on-surface-variant/50 select-none">
+          <p className="select-none font-headline text-xl font-black tracking-[0.22em] text-on-surface-variant/50 sm:text-2xl">
             •••• •••• ••••
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row">
           {isAuthenticated ? (
             <Link
               to="/profile?tab=settings"
-              className="flex-1 emerald-gradient text-on-primary py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all text-center"
+              className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl emerald-gradient py-3 text-center font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
             >
               Update Profile Email
             </Link>
@@ -541,7 +526,7 @@ function VerificationWall({
             <button
               type="button"
               onClick={onOpenAuthModal}
-              className="flex-1 emerald-gradient text-on-primary py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+              className="min-h-[44px] flex-1 rounded-xl emerald-gradient py-3 font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
             >
               Sign In / Create Account
             </button>
@@ -550,10 +535,10 @@ function VerificationWall({
           <button
             type="button"
             onClick={onOpenAuthModal}
-            className="flex-1 border border-outline-variant/25 bg-surface text-on-surface-variant hover:text-on-surface hover:border-primary/25 py-3.5 rounded-xl font-headline font-bold text-sm tracking-tight transition-all"
+            className="min-h-[44px] flex-1 rounded-xl border border-outline-variant/25 bg-surface py-3 font-headline text-sm font-bold tracking-tight text-on-surface-variant transition-all hover:border-primary/25 hover:text-on-surface"
           >
             {isAuthenticated
-              ? "Re-register with University Email"
+              ? "Re-register with Uni Email"
               : "Already Verified? Sign In"}
           </button>
         </div>
@@ -562,7 +547,6 @@ function VerificationWall({
   );
 }
 
-// ── Main DealDetails Page ───────────────────────────────
 function DealDetails() {
   const { id } = useParams();
   const {
@@ -581,6 +565,7 @@ function DealDetails() {
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSave, setLoadingSave] = useState(true);
   const [saveError, setSaveError] = useState("");
+  const [brandLogoUrl, setBrandLogoUrl] = useState(null);
 
   const handleOpenAuthModal = useCallback(() => {
     window.dispatchEvent(new Event("open-auth-modal"));
@@ -608,6 +593,30 @@ function DealDetails() {
       active = false;
     };
   }, [id]);
+
+  useEffect(() => {
+    if (!deal?.brand) {
+      setBrandLogoUrl(null);
+      return;
+    }
+
+    let active = true;
+    supabase
+      .from("brands")
+      .select("logo_url")
+      .ilike("name", deal.brand)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (active) setBrandLogoUrl(data?.logo_url || null);
+      })
+      .catch(() => {
+        if (active) setBrandLogoUrl(null);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [deal?.brand]);
 
   const handleToggleSave = async (e) => {
     e.preventDefault();
@@ -641,54 +650,45 @@ function DealDetails() {
     }
   };
 
-  // Loading state
   if (loading) {
     return (
-      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 animate-fade-in">
+      <section className="mx-auto max-w-[1440px] animate-fade-in px-4 py-10 md:px-8 md:py-16">
         <DealsLoader loading={true} error={null} />
       </section>
     );
   }
 
-  // Error state
   if (error) {
     return (
-      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 animate-fade-in">
+      <section className="mx-auto max-w-[1440px] animate-fade-in px-4 py-10 md:px-8 md:py-16">
         <DealsLoader loading={false} error={error} />
       </section>
     );
   }
 
-  // 404 — deal not found
-  // NOTE: the HTTP status code for this route is forced to 404 at the edge
-  // by middleware.js for invalid/expired ids. `noindex` here is a defensive
-  // second signal for any crawler/bot that renders the page without
-  // respecting the transport-level status.
   if (!deal) {
     return (
-      <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center animate-fade-in">
+      <section className="mx-auto max-w-[1440px] animate-fade-in px-4 py-10 text-center md:px-8 md:py-16">
         <Helmet>
           <title>Deal Not Found | Uni Deals</title>
           <meta name="robots" content="noindex, nofollow" />
         </Helmet>
-        <div className="max-w-md mx-auto">
-          <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 mb-4 block">
+        <div className="mx-auto max-w-md">
+          <span className="material-symbols-outlined mb-4 block text-6xl text-on-surface-variant/30">
             search_off
           </span>
-          <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background mb-4">
+          <h1 className="mb-4 font-headline text-3xl font-extrabold tracking-tighter text-on-background md:text-4xl">
             Deal Not Found
           </h1>
-          <p className="text-on-surface-variant mb-8">
-            Sorry, we couldn't find a deal with that ID. It may have expired or
-            been removed.
+          <p className="mb-8 text-on-surface-variant">
+            Sorry, we couldn&apos;t find a deal with that ID. It may have expired
+            or been removed.
           </p>
           <Link
             to="/perks"
-            className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-8 py-3 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all"
+            className="inline-flex items-center gap-2 rounded-lg emerald-gradient px-8 py-3 font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
           >
-            <span className="material-symbols-outlined text-lg">
-              arrow_back
-            </span>
+            <span className="material-symbols-outlined text-lg">arrow_back</span>
             Browse All Perks
           </Link>
         </div>
@@ -714,6 +714,7 @@ function DealDetails() {
   const showVerificationWall = !canRevealRedemption;
   const hasRedemptionCode =
     typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
+  const headline = discount || title;
 
   const canonicalUrl = `${SITE_URL}/perks/${deal.id}`;
   const metaTitle = `${brand} Student Discount: ${discount} | Uni Deals`;
@@ -725,16 +726,43 @@ function DealDetails() {
   ).slice(0, 300);
   const ogImage = imageUrl || DEFAULT_OG_IMAGE;
 
+  const redemptionBlock = showVerificationWall ? (
+    <VerificationWall
+      isAuthenticated={isAuthenticated}
+      verificationLoading={roleLoading && isAuthenticated}
+      onOpenAuthModal={handleOpenAuthModal}
+    />
+  ) : isInStore || hasRedemptionCode ? (
+    isInStore ? (
+      <InStoreRedemption dealId={deal.id} brand={brand} />
+    ) : (
+      <OnlineRedemption
+        dealId={deal.id}
+        redemptionCode={redemptionCode}
+        brand={brand}
+        storeUrl={storeUrl}
+      />
+    )
+  ) : (
+    <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 text-sm text-on-surface-variant sm:p-6 md:p-8">
+      <p className="mb-2 font-headline font-bold text-on-surface">
+        Redemption code unavailable
+      </p>
+      <p>
+        This offer does not currently have a valid redemption code. Please try
+        again later or contact support.
+      </p>
+    </div>
+  );
+
+  const brandInitial = (brand || "?").trim().charAt(0).toUpperCase();
+
   return (
-    <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
+    <article className="animate-fade-in pb-8 lg:flex lg:h-[calc(100dvh-5rem)] lg:flex-col lg:overflow-hidden lg:pb-0">
       <Helmet>
         <title>{metaTitle}</title>
         <meta name="description" content={metaDescription} />
-        {/* Explicit canonical — prevents /perks/:id from being flagged as
-            duplicate content against query-string or trailing-slash variants. */}
         <link rel="canonical" href={canonicalUrl} />
-
-        {/* Open Graph */}
         <meta property="og:type" content="product" />
         <meta property="og:site_name" content="Uni Deals" />
         <meta property="og:title" content={metaTitle} />
@@ -742,8 +770,6 @@ function DealDetails() {
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={ogImage} />
         <meta property="og:image:alt" content={`${brand} — ${title}`} />
-
-        {/* Twitter Card */}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />
@@ -752,217 +778,175 @@ function DealDetails() {
 
       <DealOfferSchema deal={deal} canonicalUrl={canonicalUrl} />
 
-      {/* Breadcrumb */}
-      <nav className="flex items-center gap-2 text-sm text-on-surface-variant/60 mb-8">
-        <Link
-          to="/perks"
-          className="hover:text-primary transition-colors font-headline font-bold"
-        >
-          Perks
-        </Link>
-        <span className="material-symbols-outlined text-sm">chevron_right</span>
-        <span className="text-on-surface font-headline font-bold truncate">
-          {title}
-        </span>
-      </nav>
-
       {saveError && (
-        <div className="mb-6 rounded-lg border border-error/20 bg-error/10 px-4 py-3">
-          <p className="text-error text-sm font-bold">{saveError}</p>
+        <div className="mx-auto max-w-[1440px] px-4 pt-3 md:px-8">
+          <div className="rounded-lg border border-error/20 bg-error/10 px-4 py-3">
+            <p className="text-sm font-bold text-error">{saveError}</p>
+          </div>
         </div>
       )}
 
-      {/* Main content — stacks on mobile, side-by-side on desktop */}
-      <div className="flex flex-col lg:flex-row gap-8 lg:gap-16">
-        {/* ── Left: Hero Image ────────────────────────────── */}
-        <div className="w-full lg:w-1/2">
-          <div className="aspect-[4/3] overflow-hidden rounded-2xl relative bg-surface-container group">
-            <img
-              src={imageUrl}
-              alt={title}
-              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-              loading="lazy"
-              decoding="async"
-            />
-            {/* Save Button */}
-            <button
-              onClick={handleToggleSave}
-              disabled={loadingSave}
-              className={`absolute top-4 left-4 z-10 w-10 h-10 flex items-center justify-center rounded-full backdrop-blur-md transition-all shadow-md ${
-                loadingSave
-                  ? "opacity-50 cursor-not-allowed"
-                  : "hover:scale-110"
-              } ${
-                isSaved
-                  ? "bg-primary text-on-primary"
-                  : "bg-surface/80 text-on-surface hover:bg-surface"
-              }`}
+      <div className="mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-3 md:px-8 md:pt-4 lg:min-h-0 lg:pt-5">
+        {/* Breadcrumb + back — shared top row */}
+        <nav className="mb-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-2 text-sm text-on-surface-variant/60 lg:mb-4">
+          <div className="flex min-w-0 items-center gap-2">
+            <Link
+              to="/perks"
+              className="font-headline font-bold transition-colors hover:text-primary"
             >
-              <span
-                className="material-symbols-outlined text-2xl"
-                style={isSaved ? { fontVariationSettings: "'FILL' 1" } : {}}
-              >
-                bookmark
-              </span>
-            </button>
+              Perks
+            </Link>
+            <span className="material-symbols-outlined text-sm">
+              chevron_right
+            </span>
+            <span className="truncate font-headline font-bold text-on-surface">
+              {brand}
+            </span>
+          </div>
+          <Link
+            to="/perks"
+            className="inline-flex items-center gap-1 font-headline text-sm font-bold text-on-surface-variant/70 transition-colors hover:text-primary"
+          >
+            <span className="material-symbols-outlined text-sm">arrow_back</span>
+            Back to all deals
+          </Link>
+        </nav>
 
-            {/* Badges */}
-            <div className="absolute top-4 right-4 flex flex-col gap-2 items-end">
-              <span
-                className={`inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm ${
-                  isInStore
-                    ? "bg-amber-50/90 text-amber-800 border border-amber-200/60"
-                    : "bg-primary-container/90 text-on-primary-container border border-primary/20"
-                }`}
+        {/* Two-column stage — items-start so image keeps its natural height */}
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12 lg:items-start lg:gap-10 lg:pb-5">
+          {/* LEFT — natural-aspect hero (no crop / stretch) */}
+          <div className="min-w-0 lg:col-span-5">
+            <div className="relative h-fit w-full -mx-4 sm:mx-0">
+              <img
+                src={imageUrl}
+                alt={title}
+                className="h-auto w-full rounded-2xl object-contain"
+                loading="eager"
+                decoding="async"
+              />
+
+              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/80 px-3 py-1.5 text-[11px] font-bold text-on-surface shadow-sm backdrop-blur-md sm:left-4 sm:top-4">
+                {isInStore ? "🏪 In-Store" : "🌐 Online"}
+              </span>
+
+              <button
+                type="button"
+                onClick={handleToggleSave}
+                disabled={loadingSave}
+                aria-label={isSaved ? "Remove from saved" : "Save deal"}
+                className={`absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:scale-105 sm:right-4 sm:top-4 ${
+                  loadingSave ? "opacity-50" : ""
+                } ${isSaved ? "text-primary" : "text-on-surface-variant"}`}
               >
-                <span className="material-symbols-outlined text-xs">
-                  {isInStore ? "storefront" : "language"}
+                <span
+                  className="material-symbols-outlined text-xl"
+                  style={
+                    isSaved ? { fontVariationSettings: "'FILL' 1" } : undefined
+                  }
+                >
+                  favorite
                 </span>
-                {isInStore ? "In-Store" : "Online"}
-              </span>
-              <span className="bg-surface/80 backdrop-blur-sm text-on-surface text-[10px] font-bold uppercase tracking-widest px-3 py-1.5 rounded-full shadow-sm border border-outline-variant/10">
-                {category}
-              </span>
+              </button>
+
+              <div className="absolute bottom-3 left-3 z-10 h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-primary-container shadow-md sm:bottom-4 sm:left-4">
+                {brandLogoUrl ? (
+                  <img
+                    src={brandLogoUrl}
+                    alt={`${brand} logo`}
+                    className="h-full w-full object-cover"
+                  />
+                ) : (
+                  <span className="flex h-full w-full items-center justify-center font-headline text-sm font-black text-on-primary-container">
+                    {brandInitial}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT — flex column; T&C pinned with mt-auto when column is taller */}
+          <div className="flex min-h-0 min-w-0 flex-col lg:col-span-7 lg:overflow-y-auto">
+            <div className="mb-3 min-w-0">
+              <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+                {brand}
+              </p>
+              <h1 className="font-headline text-3xl font-extrabold tracking-tight text-on-background sm:text-4xl lg:text-[2.35rem] lg:leading-tight">
+                {headline}
+              </h1>
+              {title && title !== discount ? (
+                <p className="mt-1.5 text-base text-on-surface-variant lg:line-clamp-1">
+                  {title}
+                </p>
+              ) : null}
+            </div>
+
+            {category ? (
+              <div className="mb-3 flex flex-wrap gap-2">
+                <span className="inline-flex items-center rounded-full border border-outline-variant/20 bg-surface-container px-3 py-1 text-xs font-bold text-on-surface-variant">
+                  {category}
+                </span>
+              </div>
+            ) : null}
+
+            {description ? (
+              <p className="mb-4 text-sm leading-relaxed text-on-surface-variant sm:text-base lg:mb-3 lg:line-clamp-2 lg:text-sm">
+                {description}
+              </p>
+            ) : null}
+
+            <div className="mb-4 lg:mb-0">
+              <h2 className="mb-2 font-headline text-base font-extrabold tracking-tight text-on-background">
+                {isInStore ? "Redeem in store" : "Redeem online"}
+              </h2>
+              {redemptionBlock}
+            </div>
+
+            <div className="mt-auto rounded-xl border border-outline-variant/20 bg-surface-container-low p-3 shadow-sm lg:p-3.5">
+              <h3 className="mb-2 flex items-center gap-2 font-headline text-xs font-bold text-on-background sm:text-sm">
+                <span className="material-symbols-outlined text-base text-primary">
+                  gavel
+                </span>
+                Terms &amp; Conditions
+              </h3>
+              <ul className="space-y-1 text-xs leading-snug text-on-surface-variant sm:text-sm sm:leading-relaxed">
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-sm text-primary">
+                    check_circle
+                  </span>
+                  Valid student ID or university email required.
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-sm text-primary">
+                    check_circle
+                  </span>
+                  Cannot be combined with other promotions.
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-sm text-primary">
+                    check_circle
+                  </span>
+                  One redemption per verified student account.
+                </li>
+                {isInStore && (
+                  <li className="flex items-start gap-2">
+                    <span className="material-symbols-outlined mt-0.5 text-sm text-primary">
+                      check_circle
+                    </span>
+                    QR ticket expires 10 minutes after activation.
+                  </li>
+                )}
+                <li className="flex items-start gap-2">
+                  <span className="material-symbols-outlined mt-0.5 text-sm text-primary">
+                    check_circle
+                  </span>
+                  {brand} may modify or cancel this offer at any time.
+                </li>
+              </ul>
             </div>
           </div>
         </div>
-
-        {/* ── Right: Deal Info + Redemption ────────────────── */}
-        <div className="w-full lg:w-1/2 flex flex-col justify-center">
-          {/* Brand label */}
-          <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase mb-3 block">
-            {brand}
-          </span>
-
-          {/* Title + discount */}
-          <h1 className="font-headline font-extrabold text-4xl md:text-5xl tracking-tighter text-on-background mb-2">
-            {title}
-          </h1>
-          <div className="flex flex-wrap items-center gap-3 mb-6">
-            <span className="emerald-gradient text-on-primary text-lg md:text-xl font-headline font-black px-4 py-1.5 rounded-lg shadow-sm">
-              {discount}
-            </span>
-            <span
-              className={`inline-flex items-center gap-1 text-xs font-bold px-3 py-1.5 rounded-full ${
-                isInStore
-                  ? "bg-amber-50 text-amber-700 border border-amber-200/60"
-                  : "bg-primary-container/40 text-primary border border-primary/15"
-              }`}
-            >
-              <span className="material-symbols-outlined text-xs">
-                {isInStore ? "storefront" : "language"}
-              </span>
-              {isInStore ? "In-Store Redemption" : "Online Redemption"}
-            </span>
-          </div>
-
-          {/* Full description */}
-          <p className="text-on-surface-variant text-base md:text-lg leading-relaxed mb-8">
-            {description}
-          </p>
-
-          {/* ── Redemption Section ────────────────────────── */}
-          {showVerificationWall ? (
-            <VerificationWall
-              isAuthenticated={isAuthenticated}
-              verificationLoading={roleLoading && isAuthenticated}
-              onOpenAuthModal={handleOpenAuthModal}
-            />
-          ) : (
-            <>
-              {isInStore || hasRedemptionCode ? (
-                <>
-                  {isInStore ? (
-                    <InStoreRedemption dealId={deal.id} brand={brand} />
-                  ) : (
-                    <OnlineRedemption
-                      dealId={deal.id}
-                      redemptionCode={redemptionCode}
-                      brand={brand}
-                      storeUrl={storeUrl}
-                    />
-                  )}
-                </>
-              ) : (
-                <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8 text-sm text-on-surface-variant mb-8">
-                  <p className="font-headline font-bold text-on-surface mb-2">
-                    Redemption code unavailable
-                  </p>
-                  <p>
-                    This offer does not currently have a valid redemption code.
-                    Please try again later or contact support.
-                  </p>
-                </div>
-              )}
-            </>
-          )}
-
-          {/* Terms & Conditions */}
-          <div className="bg-surface-container-low rounded-xl p-5 md:p-6 mb-8 mt-8 border border-outline-variant/10">
-            <h3 className="font-headline font-bold text-sm text-on-background mb-3 flex items-center gap-2">
-              <span className="material-symbols-outlined text-primary text-lg">
-                gavel
-              </span>
-              Terms &amp; Conditions
-            </h3>
-            <ul className="text-on-surface-variant text-sm leading-relaxed space-y-2">
-              <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
-                  check_circle
-                </span>
-                Valid student ID or .edu email required for verification.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
-                  check_circle
-                </span>
-                Offer valid through the current academic semester.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
-                  check_circle
-                </span>
-                Cannot be combined with other promotions or discounts.
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
-                  check_circle
-                </span>
-                One redemption per verified student account.
-              </li>
-              {isInStore && (
-                <li className="flex items-start gap-2">
-                  <span className="material-symbols-outlined text-primary text-sm mt-0.5">
-                    check_circle
-                  </span>
-                  QR ticket expires 10 minutes after activation to prevent
-                  screenshot fraud.
-                </li>
-              )}
-              <li className="flex items-start gap-2">
-                <span className="material-symbols-outlined text-primary text-sm mt-0.5">
-                  check_circle
-                </span>
-                {brand} reserves the right to modify or cancel this offer at any
-                time.
-              </li>
-            </ul>
-          </div>
-
-
-          {/* Back link */}
-          <Link
-            to="/perks"
-            className="mt-6 inline-flex items-center gap-1 text-sm text-on-surface-variant/60 hover:text-primary font-headline font-bold transition-colors self-start"
-          >
-            <span className="material-symbols-outlined text-sm">
-              arrow_back
-            </span>
-            Back to all deals
-          </Link>
-        </div>
       </div>
-    </section>
+    </article>
   );
 }
 
