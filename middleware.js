@@ -1,33 +1,52 @@
 /**
- * Vercel Routing Middleware — /perks/:id validity guard
+ * Vercel Routing Middleware
  *
- * This is a Vite SPA (no server-side rendering), so every non-file route is
- * rewritten to index.html by vercel.json and would otherwise always respond
- * with HTTP 200 — even for a deal ID that doesn't exist. That is bad for SEO:
- * Googlebot has no signal to drop an expired/invalid /perks/:id URL from the
- * index, and it can look like a soft-404 or thin-content page.
+ * 1) Canonical host: any request on the default Vercel hostname
+ *    (*.vercel.app production alias) permanently redirects to
+ *    https://www.unideals.co so Bing/Google stop ranking the deploy URL
+ *    for branded searches like "unideals co".
  *
- * This middleware runs at the edge, before rewrites, and:
- *   1. Rejects non-numeric ids immediately (no DB round-trip needed).
- *   2. Confirms the id exists via the same `get_public_deal_by_id` RPC the
- *      client uses, over the Supabase REST API.
- *   3. Lets the request continue to the normal SPA rewrite (so React Router
- *      still renders the "Deal Not Found" UI), but forces the HTTP status of
- *      that response to 404 when the id is invalid/missing.
- *
- * On any transient error (missing env vars, Supabase timeout, etc.) it fails
- * OPEN — i.e. it does not 404 a page just because a health check hiccuped.
+ * 2) /perks/:id validity guard: invalid/missing deal IDs get a real
+ *    HTTP 404 instead of a soft SPA 200.
  */
 import { next } from "@vercel/functions";
 
+const CANONICAL_ORIGIN = "https://www.unideals.co";
+
+/** Production Vercel alias that Bing already indexed. */
+const VERCEL_PRODUCTION_HOSTS = new Set([
+  "unideals-nine.vercel.app",
+]);
+
 export const config = {
-  matcher: ["/perks/:id"],
+  matcher: [
+    "/",
+    "/((?!api/|_next/|.*\\..*).*)",
+  ],
 };
 
 export default async function middleware(request) {
-  const { pathname } = new URL(request.url);
-  const id = pathname.split("/")[2] ?? "";
+  const url = new URL(request.url);
+  const host = (request.headers.get("host") || url.host || "")
+    .split(":")[0]
+    .toLowerCase();
 
+  // ── Force preferred host off the public *.vercel.app production URL ──
+  // Only the stable production alias — not PR/preview deployment URLs.
+  if (VERCEL_PRODUCTION_HOSTS.has(host)) {
+    const target = new URL(
+      `${url.pathname}${url.search}`,
+      CANONICAL_ORIGIN,
+    );
+    return Response.redirect(target, 308);
+  }
+
+  // ── /perks/:id existence check ───────────────────────────────────────
+  if (!url.pathname.startsWith("/perks/")) {
+    return next();
+  }
+
+  const id = url.pathname.split("/")[2] ?? "";
   const numericId = Number(id);
   const isValidIdShape =
     id.length > 0 && Number.isInteger(numericId) && numericId > 0;
@@ -39,8 +58,6 @@ export default async function middleware(request) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
-  // Fail open if Supabase isn't reachable/configured — better a false
-  // "200 + not found UI" than incorrectly 404'ing every deal page.
   if (!supabaseUrl || !supabaseAnonKey) {
     return next();
   }

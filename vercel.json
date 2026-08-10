@@ -10,6 +10,12 @@
       "has": [{ "type": "host", "value": "unideals.co" }],
       "destination": "https://www.unideals.co/:path*",
       "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "unideals-nine.vercel.app" }],
+      "destination": "https://www.unideals.co/:path*",
+      "permanent": true
     }
   ],
   "rewrites": [
