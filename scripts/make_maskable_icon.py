@@ -3,8 +3,9 @@
 from PIL import Image
 
 SIZE = 512
-# Target: UD glyph box fills ~70% of canvas (comfortably inside 80% safe zone).
-TARGET_FRACTION = 0.78
+# Fit UD near the full safe-zone width so it reads large on Android home screens.
+TARGET_FRACTION = 0.88
+OUT_PATH = "public/icon-512-maskable-v10.png"
 
 src = Image.open("public/icon-512-v9.png").convert("RGBA")
 w, h = src.size
@@ -23,7 +24,6 @@ for y in range(h):
             if dist <= (min(w, h) / 2) - 1:
                 tp[x, y] = (0, 0, 0, 255)
                 black_coords.append((x, y))
-        # white circle pixels intentionally discarded (canvas is already white)
 
 if not black_coords:
     raise SystemExit("Could not find UD glyph pixels")
@@ -32,8 +32,7 @@ xs = [p[0] for p in black_coords]
 ys = [p[1] for p in black_coords]
 min_x, max_x = min(xs), max(xs)
 min_y, max_y = min(ys), max(ys)
-# Small padding around glyph bbox so edges don't feel clipped when scaled
-pad = 8
+pad = 4
 min_x = max(0, min_x - pad)
 min_y = max(0, min_y - pad)
 max_x = min(w - 1, max_x + pad)
@@ -50,8 +49,7 @@ out = Image.new("RGBA", (SIZE, SIZE), (255, 255, 255, 255))
 offset = ((SIZE - new_w) // 2, (SIZE - new_h) // 2)
 out.paste(scaled, offset, scaled)
 
-out_path = "public/icon-512-maskable-v9.png"
-out.convert("RGB").save(out_path, "PNG", optimize=True)
-print(f"Wrote {out_path}")
+out.convert("RGB").save(OUT_PATH, "PNG", optimize=True)
+print(f"Wrote {OUT_PATH}")
 print(f"Glyph bbox: {gw}x{gh} -> {new_w}x{new_h} ({TARGET_FRACTION * 100:.0f}% of canvas)")
 print(f"Padding from edge: ~{(SIZE - max(new_w, new_h)) // 2}px")
