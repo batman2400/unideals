@@ -23,7 +23,7 @@ const escapeHtml = (value) =>
     .replace(/'/g, "&#39;");
 
 const SITE_URL = "https://www.unideals.co";
-const DEFAULT_IMAGE = `${SITE_URL}/icon-512-v7.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 export default async function handler(req, res) {
   const { id } = req.query;

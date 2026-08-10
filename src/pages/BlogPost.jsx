@@ -6,7 +6,7 @@ import { supabase } from "../lib/supabaseClient";
 import { SITE_URL } from "../lib/seo";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v7.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -103,7 +103,7 @@ export default function BlogPost() {
     publisher: {
       "@type": "Organization",
       name: "Uni Deals",
-      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512-v7.png` },
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512-v9.png` },
     },
     ...(publishedIso ? { datePublished: publishedIso, dateModified: publishedIso } : {}),
     mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },

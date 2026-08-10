@@ -54,7 +54,7 @@ export default function Blog() {
           content="Tips, guides, and student life hacks to help Sri Lankan university students make the most of discounts and campus life."
         />
         <meta property="og:url" content={`${SITE_URL}/blog`} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v7.png`} />
+        <meta property="og:image" content={`${SITE_URL}/icon-512-v9.png`} />
       </Helmet>
 
       {/* Header */}

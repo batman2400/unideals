@@ -1,7 +1,7 @@
 import React from "react";
 
 const SITE_URL = "https://www.unideals.co";
-const FALLBACK_IMAGE = `${SITE_URL}/icon-512-v7.png`;
+const FALLBACK_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 /**
  * DealOfferSchema — schema.org Offer structured data for a single

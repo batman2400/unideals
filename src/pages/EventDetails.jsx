@@ -7,7 +7,7 @@ import { SITE_URL } from "../lib/seo";
 import EventSchema from "../components/EventSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
 
-const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v7.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 export default function EventDetails() {
   const { id } = useParams();

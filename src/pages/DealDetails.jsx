@@ -22,7 +22,7 @@ import DealOfferSchema from "../components/DealOfferSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
 
 const SITE_URL = "https://www.unideals.co";
-const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v7.png`;
+const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 function formatDealDate(value) {
   const date = new Date(value);

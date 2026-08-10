@@ -31,7 +31,7 @@ export default function EventSchema({ event, canonicalUrl }) {
       ? "https://schema.org/OfflineEventAttendanceMode"
       : "https://schema.org/OnlineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
-    image: [event.cover_image_url || `${SITE_URL}/icon-512-v7.png`],
+    image: [event.cover_image_url || `${SITE_URL}/icon-512-v9.png`],
     url: canonicalUrl,
     location,
     organizer: {
