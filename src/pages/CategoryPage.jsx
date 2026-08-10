@@ -98,7 +98,7 @@ export default function CategoryPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v5.png`} />
+        <meta property="og:image" content={`${SITE_URL}/icon-512-v7.png`} />
       </Helmet>
 
       {categoryName && (

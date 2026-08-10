@@ -64,7 +64,7 @@ export default function BrandPage() {
     ? `Get exclusive ${brandName} student discounts and promo codes in Sri Lanka with your verified university email. ${brandDeals.length} active offer${brandDeals.length !== 1 ? "s" : ""}.`
     : "Get exclusive student discounts and promo codes in Sri Lanka.";
   const hasDeals = brandDeals.length > 0;
-  const brandImage = brandDeals[0]?.imageUrl || `${SITE_URL}/icon-512-v5.png`;
+  const brandImage = brandDeals[0]?.imageUrl || `${SITE_URL}/icon-512-v7.png`;
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-16">

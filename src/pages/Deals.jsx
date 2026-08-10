@@ -127,7 +127,7 @@ function Deals({ searchQuery }) {
           content="Browse every exclusive student discount on Uni Deals — online promo codes and in-store deals across tech, food, fashion, and more in Sri Lanka."
         />
         <meta property="og:url" content={`${SITE_URL}/deals`} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v5.png`} />
+        <meta property="og:image" content={`${SITE_URL}/icon-512-v7.png`} />
       </Helmet>
 
       {/* Page Header */}

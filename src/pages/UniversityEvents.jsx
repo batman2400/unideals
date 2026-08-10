@@ -68,7 +68,7 @@ export default function UniversityEvents() {
           content="Discover university events, tech fests, networking sessions, and society gatherings across Sri Lanka."
         />
         <meta property="og:url" content={`${SITE_URL}/events`} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v5.png`} />
+        <meta property="og:image" content={`${SITE_URL}/icon-512-v7.png`} />
       </Helmet>
 
       {activeEvents.length > 0 && (

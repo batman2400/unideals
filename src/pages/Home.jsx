@@ -32,14 +32,11 @@ function Home({ searchQuery, onSearchChange }) {
         <meta property="og:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.unideals.co/" />
-        <meta property="og:image" content="https://www.unideals.co/icon-512-v5.png" />
+        <meta property="og:image" content="https://www.unideals.co/icon-512-v7.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
         <meta name="twitter:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
-        <meta name="twitter:image" content="https://www.unideals.co/icon-512-v5.png" />
-        <link rel="icon" type="image/png" sizes="48x48" href="https://www.unideals.co/favicon-48-v6.png" />
-        <link rel="icon" type="image/png" sizes="96x96" href="https://www.unideals.co/favicon-96-v6.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v5.png" />
+        <meta name="twitter:image" content="https://www.unideals.co/icon-512-v7.png" />
       </Helmet>
       
       <FAQSchema />
