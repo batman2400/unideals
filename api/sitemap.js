@@ -33,6 +33,26 @@ async function fetchTable(supabaseUrl, supabaseKey, query) {
   }
 }
 
+/** Deals are not readable via direct table SELECT for anon (RLS). */
+async function fetchPublicDeals(supabaseUrl, supabaseKey) {
+  try {
+    const res = await fetch(`${supabaseUrl}/rest/v1/rpc/get_public_deals`, {
+      method: "POST",
+      headers: {
+        apikey: supabaseKey,
+        Authorization: `Bearer ${supabaseKey}`,
+        "Content-Type": "application/json",
+      },
+      body: "{}",
+    });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
 function toIso(value, fallback) {
   const date = value ? new Date(value) : null;
   return date && !Number.isNaN(date.getTime()) ? date.toISOString() : fallback;
@@ -59,11 +79,7 @@ export default async function handler(req, res) {
   try {
     const [posts, deals, events] = await Promise.all([
       fetchTable(supabaseUrl, supabaseKey, "posts?select=slug,updated_at,created_at&is_published=eq.true"),
-      fetchTable(
-        supabaseUrl,
-        supabaseKey,
-        "deals?select=id,category,brand,created_at&status=eq.approved",
-      ),
+      fetchPublicDeals(supabaseUrl, supabaseKey),
       fetchTable(
         supabaseUrl,
         supabaseKey,
