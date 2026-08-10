@@ -16,7 +16,7 @@ export default async function handler(req, res) {
 
     const payload = await postRes.json();
     const posts = Array.isArray(payload) ? payload : [];
-    const siteUrl = "https://unideals-nine.vercel.app";
+    const siteUrl = "https://www.unideals.co";
 
     const sitemap = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">

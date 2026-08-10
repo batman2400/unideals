@@ -9,8 +9,8 @@ export default function SiteNavigationSchema() {
   "@graph": [
     {
       "@type": "WebSite",
-      "@id": "https://unideals.co/#website",
-      "url": "https://unideals.co/",
+      "@id": "https://www.unideals.co/#website",
+      "url": "https://www.unideals.co/",
       "name": "Uni Deals",
       "description": "Exclusive Student Discounts & Offers in Sri Lanka"
     },
@@ -21,25 +21,25 @@ export default function SiteNavigationSchema() {
           "@type": "SiteNavigationElement",
           "position": 1,
           "name": "Explore Deals",
-          "url": "https://unideals.co/"
+          "url": "https://www.unideals.co/"
         },
         {
           "@type": "SiteNavigationElement",
           "position": 2,
           "name": "Student Events",
-          "url": "https://unideals.co/events"
+          "url": "https://www.unideals.co/events"
         },
         {
           "@type": "SiteNavigationElement",
           "position": 3,
           "name": "Student Blog & Guides",
-          "url": "https://unideals.co/blog"
+          "url": "https://www.unideals.co/blog"
         },
         {
           "@type": "SiteNavigationElement",
           "position": 4,
           "name": "Saved Deals",
-          "url": "https://unideals.co/saved"
+          "url": "https://www.unideals.co/saved"
         }
       ]
     }

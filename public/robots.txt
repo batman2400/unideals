@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://unideals.co/sitemap.xml
+Sitemap: https://www.unideals.co/sitemap.xml

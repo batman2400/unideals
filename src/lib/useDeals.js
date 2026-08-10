@@ -28,6 +28,10 @@ function mapDeal(row) {
     description: row.description,
     redemptionCode: row.redemption_code,
     storeUrl: row.store_url,
+    // Optional — only present if the RPC's return set includes them.
+    // Used for JSON-LD validFrom/validThrough on the deal detail page.
+    startTime: row.start_time ?? null,
+    endTime: row.end_time ?? null,
   };
 }
 

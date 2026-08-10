@@ -25,13 +25,13 @@ function Home({ searchQuery, onSearchChange }) {
         <title>Uni Deals | The Best Student Discounts & Offers in Sri Lanka</title>
         <meta name="description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech accessories, and clothing using your verified university email." />
         <meta name="keywords" content="student discounts in sri lanka, student offers in sri lanka, university deals colombo, kdu student offers, sliit discounts" />
-        <link rel="canonical" href="https://unideals.co/" />
+        <link rel="canonical" href="https://www.unideals.co/" />
         
         {/* Open Graph / Social Sharing */}
         <meta property="og:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
         <meta property="og:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://unideals.co/" />
+        <meta property="og:url" content="https://www.unideals.co/" />
         <meta property="og:image" content="https://www.unideals.co/icon-512-v5.png" />
         <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48-v5.png" />
         <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96-v5.png" />

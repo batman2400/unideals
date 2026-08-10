@@ -1,4 +1,17 @@
 {
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "unideals.co" }],
+      "destination": "https://www.unideals.co/:path*",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/blog/:slug",
@@ -10,6 +23,17 @@
         }
       ],
       "destination": "/api/og-proxy?slug=:slug"
+    },
+    {
+      "source": "/perks/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(twitterbot|facebookexternalhit|linkedinbot|skypeuripreview|pinterest|slackbot|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/deal-og-proxy?id=:id"
     },
     {
       "source": "/((?!api/|.*\\..*).*)",

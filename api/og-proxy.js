@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     const rawImage =
       post && post.cover_image_url
         ? post.cover_image_url
-        : "https://unideals-nine.vercel.app/images/og-default.png";
+        : "https://www.unideals.co/images/og-default.png";
 
     const title = escapeHtml(rawTitle);
     const description = escapeHtml(rawDescription);

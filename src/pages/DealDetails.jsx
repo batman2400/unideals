@@ -17,6 +17,10 @@ import { supabase } from "../lib/supabaseClient";
 import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
 import DealsLoader from "../components/DealsLoader";
+import DealOfferSchema from "../components/DealOfferSchema";
+
+const SITE_URL = "https://www.unideals.co";
+const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v5.png`;
 
 // ── In-Store Redemption (Server-Generated Unique Ticket) ─
 function InStoreRedemption({ dealId, brand }) {
@@ -656,9 +660,17 @@ function DealDetails() {
   }
 
   // 404 — deal not found
+  // NOTE: the HTTP status code for this route is forced to 404 at the edge
+  // by middleware.js for invalid/expired ids. `noindex` here is a defensive
+  // second signal for any crawler/bot that renders the page without
+  // respecting the transport-level status.
   if (!deal) {
     return (
       <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center animate-fade-in">
+        <Helmet>
+          <title>Deal Not Found | Uni Deals</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className="max-w-md mx-auto">
           <span className="material-symbols-outlined text-6xl text-on-surface-variant/30 mb-4 block">
             search_off
@@ -703,12 +715,42 @@ function DealDetails() {
   const hasRedemptionCode =
     typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
 
+  const canonicalUrl = `${SITE_URL}/perks/${deal.id}`;
+  const metaTitle = `${brand} Student Discount: ${discount} | Uni Deals`;
+  const metaDescription = (
+    description ||
+    `Get the latest ${brand} student discount in Sri Lanka. Save ${discount} on ${brand} with your verified university email — redeem ${
+      isInStore ? "in-store" : "online"
+    } instantly on Uni Deals.`
+  ).slice(0, 300);
+  const ogImage = imageUrl || DEFAULT_OG_IMAGE;
+
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
       <Helmet>
-        <title>{brand} Student Discount in Sri Lanka | Uni Deals</title>
-        <meta name="description" content={`Get the latest ${brand} student discounts and promo codes. Save on ${brand} with your verified Sri Lankan university ID.`} />
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+        {/* Explicit canonical — prevents /perks/:id from being flagged as
+            duplicate content against query-string or trailing-slash variants. */}
+        <link rel="canonical" href={canonicalUrl} />
+
+        {/* Open Graph */}
+        <meta property="og:type" content="product" />
+        <meta property="og:site_name" content="Uni Deals" />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:alt" content={`${brand} — ${title}`} />
+
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={ogImage} />
       </Helmet>
+
+      <DealOfferSchema deal={deal} canonicalUrl={canonicalUrl} />
 
       {/* Breadcrumb */}
       <nav className="flex items-center gap-2 text-sm text-on-surface-variant/60 mb-8">

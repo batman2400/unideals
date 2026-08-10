@@ -7,10 +7,17 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
 
-    <title>Uni Deals</title>
+    <!--
+      This is the pre-hydration fallback (equivalent to a Next.js root
+      layout's default metadata/title template). Every route overrides
+      title/description/canonical client-side via react-helmet-async
+      (see src/pages/*.jsx), but this must stay accurate for crawlers or
+      social bots that don't execute JS.
+    -->
+    <title>Uni Deals | Student Discounts & Perks in Sri Lanka</title>
     <meta
       name="description"
-      content="A dedicated discount and perks platform for university students in Sri Lanka."
+      content="Uni Deals is Sri Lanka's student discount and perks platform. Unlock exclusive offers on food, tech, fashion, and more with your verified university email."
     />
     <meta name="theme-color" content="#29695b" />
     <meta name="application-name" content="Uni Deals" />
@@ -41,10 +48,10 @@
     <!-- Social preview -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Uni Deals" />
-    <meta property="og:title" content="Uni Deals" />
+    <meta property="og:title" content="Uni Deals | Student Discounts & Perks in Sri Lanka" />
     <meta
       property="og:description"
-      content="A dedicated discount and perks platform for university students in Sri Lanka."
+      content="Uni Deals is Sri Lanka's student discount and perks platform. Unlock exclusive offers on food, tech, fashion, and more with your verified university email."
     />
     <meta property="og:image" content="https://www.unideals.co/icon-512-v5.png" />
     <meta property="og:image:width" content="512" />
