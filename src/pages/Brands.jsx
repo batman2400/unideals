@@ -9,6 +9,7 @@ import { Link } from "react-router-dom";
 import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDeals } from "../lib/useDeals";
+import { slugify, SITE_URL } from "../lib/seo";
 import DealsLoader from "../components/DealsLoader";
 
 function Brands() {
@@ -36,6 +37,11 @@ function Brands() {
     <section className="max-w-[1440px] mx-auto px-8 py-16">
       <Helmet>
         <title>Top Brand Student Discounts in Sri Lanka | Uni Deals</title>
+        <meta
+          name="description"
+          content="Browse every partner brand offering exclusive student discounts on Uni Deals — from tech and fashion to food and fitness, all across Sri Lanka."
+        />
+        <link rel="canonical" href={`${SITE_URL}/brands`} />
       </Helmet>
       
       {/* Page Header */}
@@ -90,7 +96,7 @@ function Brands() {
                 </p>
 
                 <Link
-                  to={`/perks?brand=${encodeURIComponent(brand.name)}`}
+                  to={`/brand/${slugify(brand.name)}`}
                   className="inline-flex items-center gap-1 text-primary font-headline font-bold text-sm hover:gap-2 transition-all"
                 >
                   View Deals

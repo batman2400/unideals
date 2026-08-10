@@ -3,6 +3,10 @@ import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
+import { SITE_URL } from "../lib/seo";
+import BreadcrumbSchema from "../components/BreadcrumbSchema";
+
+const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v5.png`;
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -63,6 +67,10 @@ export default function BlogPost() {
   if (error || !post) {
     return (
       <div className="min-h-[80vh] flex flex-col items-center justify-center px-4 text-center">
+        <Helmet>
+          <title>Article Not Found | Uni Deals Blog</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <span className="material-symbols-outlined text-6xl text-error mb-4">error</span>
         <h1 className="text-2xl font-headline font-black text-slate-900 mb-2">Article Not Found</h1>
         <p className="text-slate-600 mb-6">{error}</p>
@@ -76,12 +84,56 @@ export default function BlogPost() {
     );
   }
 
+  const canonicalUrl = `${SITE_URL}/blog/${post.slug}`;
+  const metaTitle = `${post.title} | Uni Deals Blog`;
+  const metaDescription = post.excerpt || `Read ${post.title} on the Uni Deals Blog.`;
+  const ogImage = post.cover_image_url || DEFAULT_OG_IMAGE;
+  const publishedIso = post.created_at ? new Date(post.created_at).toISOString() : undefined;
+
+  const articleSchema = {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: post.title,
+    description: metaDescription,
+    image: [ogImage],
+    author: {
+      "@type": "Person",
+      name: post.author_name || "Uni Deals Team",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Uni Deals",
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512-v5.png` },
+    },
+    ...(publishedIso ? { datePublished: publishedIso, dateModified: publishedIso } : {}),
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
+  };
+
   return (
     <div className="min-h-screen bg-slate-50/50 pb-20">
       <Helmet>
-        <title>{post.title} | Uni Deals Blog</title>
-        <meta name="description" content={post.excerpt || `Read ${post.title} on the Uni Deals Blog.`} />
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Uni Deals" />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={ogImage} />
       </Helmet>
+      <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: `${SITE_URL}/` },
+          { name: "Blog", url: `${SITE_URL}/blog` },
+          { name: post.title, url: canonicalUrl },
+        ]}
+      />
       <article className="animate-fade-in">
         
         {/* Top Navigation Bar */}

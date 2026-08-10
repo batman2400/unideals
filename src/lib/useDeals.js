@@ -34,6 +34,7 @@ function mapDeal(row) {
     endTime: row.end_time ?? null,
     showStartDate: !!row.show_start_date,
     showEndDate: !!row.show_end_date,
+    isComingSoon: !!row.is_coming_soon,
   };
 }
 

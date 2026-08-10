@@ -1,6 +1,17 @@
+import { Helmet } from "react-helmet-async";
+import { SITE_URL } from "../lib/seo";
+
 function TermsOfService() {
   return (
     <section className="max-w-[920px] mx-auto px-4 sm:px-6 md:px-8 py-10 md:py-14 animate-fade-in">
+      <Helmet>
+        <title>Terms of Service | Uni Deals</title>
+        <meta
+          name="description"
+          content="Read the Uni Deals Terms of Service — the rules governing your use of Sri Lanka's student discount platform."
+        />
+        <link rel="canonical" href={`${SITE_URL}/terms`} />
+      </Helmet>
       <header className="mb-8 md:mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant/60 font-body font-semibold">
           Uni Deals Trust Center

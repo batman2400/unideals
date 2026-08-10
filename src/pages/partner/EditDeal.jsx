@@ -15,6 +15,7 @@ import {
   parseOfferLabel,
 } from "../../lib/dealOffer";
 import { uploadDealImage } from "../../lib/dealImageUpload";
+import { toDatetimeLocalValue } from "../../lib/comingSoon";
 
 const CATEGORY_OPTIONS = [
   "Fashion",
@@ -39,6 +40,10 @@ const INITIAL_FORM = {
   imageUrl: "",
   description: "",
   redemptionCode: "",
+  start_time: "",
+  end_time: "",
+  show_start_date: false,
+  show_end_date: false,
 };
 
 function EditDeal() {
@@ -155,7 +160,7 @@ function EditDeal() {
       const { data, error: fetchError } = await supabase
         .from("deals")
         .select(
-          "id, title, brand, discount, type, category, image_url, description, redemption_code",
+          "id, title, brand, discount, type, category, image_url, description, redemption_code, start_time, end_time, show_start_date, show_end_date",
         )
         .eq("id", dealId)
         .eq("brand_id", brandId)
@@ -184,6 +189,10 @@ function EditDeal() {
         imageUrl: data.image_url || "",
         description: data.description || "",
         redemptionCode: data.redemption_code || "",
+        start_time: toDatetimeLocalValue(data.start_time),
+        end_time: toDatetimeLocalValue(data.end_time),
+        show_start_date: !!data.show_start_date,
+        show_end_date: !!data.show_end_date,
       });
 
       const parsedOffer = parseOfferLabel(data.discount || "");
@@ -200,8 +209,13 @@ function EditDeal() {
   }, [id, role, roleError, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const onChange = (event) => {
-    const { name, value } = event.target;
-    const nextValue = name === "redemptionCode" ? value.toUpperCase() : value;
+    const { name, value, type, checked } = event.target;
+    const nextValue =
+      type === "checkbox"
+        ? checked
+        : name === "redemptionCode"
+          ? value.toUpperCase()
+          : value;
     setFormData((prev) => ({ ...prev, [name]: nextValue }));
   };
 
@@ -313,6 +327,14 @@ function EditDeal() {
           formData.description.trim() ||
           `${formData.title.trim()} student offer.`,
         redemption_code: normalizedRedemptionCode,
+        start_time: formData.start_time
+          ? new Date(formData.start_time).toISOString()
+          : new Date().toISOString(),
+        end_time: formData.end_time
+          ? new Date(formData.end_time).toISOString()
+          : null,
+        show_start_date: !!formData.show_start_date,
+        show_end_date: !!formData.show_end_date,
       };
 
       const { data, error: updateError } = await supabase
@@ -522,6 +544,63 @@ function EditDeal() {
                 </option>
               ))}
             </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              Start / Launch Date & Time
+            </label>
+            <input
+              type="datetime-local"
+              name="start_time"
+              value={formData.start_time}
+              onChange={onChange}
+              disabled={saving}
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            />
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              When the deal starts and students can redeem. Leave blank for now. Future date = Coming Soon until then.
+            </p>
+            <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                name="show_start_date"
+                checked={!!formData.show_start_date}
+                onChange={onChange}
+                disabled={saving}
+                className="mt-0.5 h-4 w-4 rounded border-outline-variant/40 text-primary focus:ring-primary/30"
+              />
+              <span className="text-sm text-on-surface">
+                Show start / launch date to students after it goes live
+              </span>
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+              End Date & Time (Optional)
+            </label>
+            <input
+              type="datetime-local"
+              name="end_time"
+              value={formData.end_time}
+              onChange={onChange}
+              disabled={saving}
+              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+            />
+            <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
+              <input
+                type="checkbox"
+                name="show_end_date"
+                checked={!!formData.show_end_date}
+                onChange={onChange}
+                disabled={saving}
+                className="mt-0.5 h-4 w-4 rounded border-outline-variant/40 text-primary focus:ring-primary/30"
+              />
+              <span className="text-sm text-on-surface">
+                Show end date to students
+              </span>
+            </label>
           </div>
 
           <div>

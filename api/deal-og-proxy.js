@@ -1,11 +1,11 @@
 /**
- * Server-rendered Open Graph proxy for /perks/:id
+ * Server-rendered Open Graph proxy for /deals/:id
  *
  * react-helmet-async only injects <title>/og:* tags into the DOM after
  * JavaScript executes. Social-preview crawlers (Facebook, Twitter/X,
  * WhatsApp, LinkedIn, Slack, ...) do not execute JavaScript, so they would
  * otherwise only ever see the static, generic tags from index.html for
- * every shared /perks/:id link.
+ * every shared /deals/:id link.
  *
  * vercel.json rewrites requests from those specific user agents to this
  * function (mirroring the existing /blog/:slug -> api/og-proxy.js rule),
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
       return res.send(notFoundHtml());
     }
 
-    const canonicalUrl = `${SITE_URL}/perks/${deal.id}`;
+    const canonicalUrl = `${SITE_URL}/deals/${deal.id}`;
     const title = escapeHtml(
       `${deal.brand} Student Discount: ${deal.discount} | Uni Deals`,
     );

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
+import { SITE_URL } from "../lib/seo";
 
 export default function Blog() {
   const [posts, setPosts] = useState([]);
@@ -37,6 +39,24 @@ export default function Blog() {
 
   return (
     <div className="min-h-screen bg-background">
+      <Helmet>
+        <title>Student Guides & Tips | Uni Deals Blog</title>
+        <meta
+          name="description"
+          content="Tips, guides, and student life hacks to help Sri Lankan university students make the most of discounts, campus life, and their student budget."
+        />
+        <link rel="canonical" href={`${SITE_URL}/blog`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Uni Deals" />
+        <meta property="og:title" content="Student Guides & Tips | Uni Deals Blog" />
+        <meta
+          property="og:description"
+          content="Tips, guides, and student life hacks to help Sri Lankan university students make the most of discounts and campus life."
+        />
+        <meta property="og:url" content={`${SITE_URL}/blog`} />
+        <meta property="og:image" content={`${SITE_URL}/icon-512-v5.png`} />
+      </Helmet>
+
       {/* Header */}
       <section className="bg-surface-container-low border-b border-outline-variant/10 py-8 md:py-12 px-4">
         <div className="max-w-6xl mx-auto text-center animate-slide-up flex flex-col items-center gap-4">

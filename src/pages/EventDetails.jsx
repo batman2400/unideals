@@ -1,6 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
+import { formatLaunchDate, isComingSoonEvent } from "../lib/comingSoon";
+import { SITE_URL } from "../lib/seo";
+import EventSchema from "../components/EventSchema";
+import BreadcrumbSchema from "../components/BreadcrumbSchema";
+
+const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v5.png`;
 
 export default function EventDetails() {
   const { id } = useParams();
@@ -63,6 +70,10 @@ export default function EventDetails() {
   if (error || !event) {
     return (
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-16 animate-fade-in text-center">
+        <Helmet>
+          <title>Event Not Found | Uni Deals</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <div className="bg-error/10 border border-error/20 rounded-3xl p-12 inline-block">
           <span className="material-symbols-outlined text-error text-5xl mb-4">event_busy</span>
           <h2 className="font-headline font-bold text-2xl text-on-background mb-2">Event Not Found</h2>
@@ -78,8 +89,43 @@ export default function EventDetails() {
     );
   }
 
+  const comingSoon = isComingSoonEvent(event);
+  const publishLabel = comingSoon ? formatLaunchDate(event.publish_at) : "";
+  const canonicalUrl = `${SITE_URL}/events/${event.id}`;
+  const metaTitle = `${event.title} | Uni Deals Events`;
+  const metaDescription = (
+    event.description ||
+    `Join ${event.title}, a student event in Sri Lanka${event.university_name ? ` hosted by ${event.university_name}` : ""}. Discover more student events on Uni Deals.`
+  ).slice(0, 300);
+  const ogImage = event.cover_image_url || DEFAULT_OG_IMAGE;
+
   return (
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12 animate-fade-in">
+      <Helmet>
+        <title>{metaTitle}</title>
+        <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="article" />
+        <meta property="og:site_name" content="Uni Deals" />
+        <meta property="og:title" content={metaTitle} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={ogImage} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={metaTitle} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={ogImage} />
+      </Helmet>
+
+      <EventSchema event={event} canonicalUrl={canonicalUrl} />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: `${SITE_URL}/` },
+          { name: "Events", url: `${SITE_URL}/events` },
+          { name: event.title, url: canonicalUrl },
+        ]}
+      />
+
       <button
         onClick={() => navigate('/events')}
         className="text-on-surface-variant/70 hover:text-on-background transition-colors cursor-pointer inline-flex items-center gap-1 mb-6 text-sm font-bold tracking-wider"
@@ -103,6 +149,12 @@ export default function EventDetails() {
               <span className="text-sm font-bold tracking-widest uppercase">No Image</span>
             </div>
           )}
+          {comingSoon && (
+            <div className="absolute top-4 left-4 bg-sky-600 text-white px-3 py-1.5 rounded-lg shadow-sm flex items-center gap-1.5">
+              <span className="material-symbols-outlined text-[14px]">schedule</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider">Coming Soon</span>
+            </div>
+          )}
         </div>
 
         {/* Right Side: Content */}
@@ -111,6 +163,11 @@ export default function EventDetails() {
             <span className="text-xs font-bold tracking-[0.2em] text-primary uppercase bg-primary/10 px-3 py-1.5 rounded-lg">
               {event.category || 'Event'}
             </span>
+            {comingSoon && (
+              <span className="text-xs font-bold tracking-[0.1em] text-sky-700 uppercase bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-lg">
+                Coming Soon
+              </span>
+            )}
             {event.university_name && (
               <span className="text-xs font-bold tracking-[0.1em] text-on-surface-variant uppercase bg-surface-container-high border border-outline-variant/20 px-3 py-1.5 rounded-lg flex items-center gap-1">
                 <span className="material-symbols-outlined text-[14px]">school</span>
@@ -128,6 +185,14 @@ export default function EventDetails() {
           <h1 className="font-headline font-extrabold text-3xl md:text-4xl text-on-background mb-4 leading-tight">
             {event.title}
           </h1>
+
+          {comingSoon && (
+            <div className="mb-6 rounded-xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-900">
+              {publishLabel
+                ? `This listing unlocks on ${publishLabel}. Registration opens then.`
+                : "This listing is not fully live yet. Registration opens at go-live."}
+            </div>
+          )}
 
           <div className="space-y-4 mb-8">
             <div className="flex items-start gap-3">
@@ -174,7 +239,12 @@ export default function EventDetails() {
           </div>
 
           <div className="mt-auto pt-6 border-t border-outline-variant/20">
-            {event.external_registration_url ? (
+            {comingSoon ? (
+              <div className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-sky-50 border border-sky-200 text-sky-800 font-bold rounded-xl cursor-not-allowed">
+                <span className="material-symbols-outlined text-[18px]">lock</span>
+                Registration unlocks at go-live
+              </div>
+            ) : event.external_registration_url ? (
               <a 
                 href={event.external_registration_url}
                 target="_blank"

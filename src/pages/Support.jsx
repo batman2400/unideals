@@ -1,6 +1,17 @@
+import { Helmet } from "react-helmet-async";
+import { SITE_URL } from "../lib/seo";
+
 export default function Support() {
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 animate-fade-in">
+      <Helmet>
+        <title>Help & Support | Uni Deals</title>
+        <meta
+          name="description"
+          content="Get help with student verification, redeeming deals, and your Uni Deals account. Contact our support team for assistance."
+        />
+        <link rel="canonical" href={`${SITE_URL}/support`} />
+      </Helmet>
       <div className="mb-8 text-center md:text-left">
         <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background">
           Help & Support

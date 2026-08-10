@@ -7,6 +7,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
 
@@ -17,6 +18,10 @@ const SESSION_WAIT_MS = 10000;
 function Shell({ children }) {
   return (
     <div className="max-w-md mx-auto px-4 md:px-8 py-10 md:py-16 animate-fade-in w-full">
+      <Helmet>
+        <title>Reset Password | Uni Deals</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
       <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-6 md:p-8 shadow-sm">
         {children}
       </div>

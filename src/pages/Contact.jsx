@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
+import { SITE_URL } from "../lib/seo";
 
 export default function Contact() {
   const [searchParams] = useSearchParams();
@@ -53,9 +55,21 @@ export default function Contact() {
     }
   };
 
+  const seoTags = (
+    <Helmet>
+      <title>Contact Us | Uni Deals</title>
+      <meta
+        name="description"
+        content="Get in touch with Uni Deals for support, brand partnerships, or event collaboration. We respond to all inquiries within 24-48 hours."
+      />
+      <link rel="canonical" href={`${SITE_URL}/contact`} />
+    </Helmet>
+  );
+
   if (isSuccess) {
     return (
       <div className="min-h-[80vh] flex items-center justify-center bg-background px-4">
+        {seoTags}
         <div className="max-w-md w-full bg-surface-container rounded-2xl p-8 text-center shadow-sm animate-fade-in">
           <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center mb-6">
             <span className="material-symbols-outlined text-3xl text-primary">check_circle</span>
@@ -82,6 +96,7 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-background py-12 md:py-20 px-4">
+      {seoTags}
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20">
         
         {/* Left Column: Typography & FAQ */}

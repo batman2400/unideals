@@ -2,7 +2,7 @@
  * DealGrid Component
  *
  * A reusable grid that renders a list of DealCards.
- * Used on the Perks page, Categories page, and anywhere
+ * Used on the Deals page, Categories page, and anywhere
  * you need a grid of deals.
  *
  * Props:

@@ -26,8 +26,8 @@ const slides = [
     headlineAccent: "Deals.",
     subtext:
       "Unlock hundreds of discounts across tech, food, fashion & more — exclusively for verified students.",
-    cta: "Browse All Perks",
-    link: "/perks",
+    cta: "Browse All Deals",
+    link: "/deals",
     icon: "school",
     gradient: "from-[#29695b] to-[#1a5c4f]",
     accentColor: "#afefdd",
@@ -41,7 +41,7 @@ const slides = [
     subtext:
       "New brands and deals added every week. Stay ahead of the curve with the latest offers.",
     cta: "See What's New",
-    link: "/perks",
+    link: "/deals",
     icon: "local_fire_department",
     gradient: "from-[#c7522a] to-[#e8734a]",
     accentColor: "#ffd4c4",
@@ -69,7 +69,7 @@ const slides = [
     subtext:
       "Flash your Uni Deals iD at partner stores for instant savings on coffee, fitness, fashion & more.",
     cta: "Find In-Store Deals",
-    link: "/perks",
+    link: "/deals",
     icon: "storefront",
     gradient: "from-[#7c4dab] to-[#a872d9]",
     accentColor: "#e4d4ff",
@@ -128,7 +128,8 @@ function HeroSection({ searchQuery, onSearchChange }) {
   }, [activeIndex]);
 
   const handleSearchSubmit = () => {
-    navigate("/perks");
+    const trimmed = searchQuery.trim();
+    navigate(trimmed ? `/deals?q=${encodeURIComponent(trimmed)}` : "/deals");
   };
 
   const currentSlide = slides[activeIndex];

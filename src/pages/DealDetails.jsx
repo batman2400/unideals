@@ -1,5 +1,5 @@
 /**
- * DealDetails Page (/perks/:id)
+ * DealDetails Page (/deals/:id)
  *
  * Lifestyle deal detail matching the home feed:
  *   • Mobile  → full-bleed portrait hero + stacked content
@@ -16,8 +16,10 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "../lib/supabaseClient";
 import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
+import { formatLaunchDate, isComingSoonDeal } from "../lib/comingSoon";
 import DealsLoader from "../components/DealsLoader";
 import DealOfferSchema from "../components/DealOfferSchema";
+import BreadcrumbSchema from "../components/BreadcrumbSchema";
 
 const SITE_URL = "https://www.unideals.co";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v5.png`;
@@ -697,11 +699,11 @@ function DealDetails() {
             or been removed.
           </p>
           <Link
-            to="/perks"
+            to="/deals"
             className="inline-flex items-center gap-2 rounded-lg emerald-gradient px-8 py-3 font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
           >
             <span className="material-symbols-outlined text-lg">arrow_back</span>
-            Browse All Perks
+            Browse All Deals
           </Link>
         </div>
       </section>
@@ -724,19 +726,21 @@ function DealDetails() {
     showEndDate,
   } = deal;
   const isInStore = type === "In-Store";
+  const comingSoon = isComingSoonDeal(deal);
   const isPrivilegedRole = role === "admin" || role === "partner";
   const canRevealRedemption =
     isPrivilegedRole || (isAuthenticated && isVerified);
-  const showVerificationWall = !canRevealRedemption;
+  const showVerificationWall = !comingSoon && !canRevealRedemption;
   const hasRedemptionCode =
     typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
   const headline = discount || title;
+  const launchLabel = comingSoon && startTime ? formatLaunchDate(startTime) : "";
   const visibleStartLabel =
-    showStartDate && startTime ? formatDealDate(startTime) : "";
+    !comingSoon && showStartDate && startTime ? formatDealDate(startTime) : "";
   const visibleEndLabel =
-    showEndDate && endTime ? formatDealDate(endTime) : "";
+    !comingSoon && showEndDate && endTime ? formatDealDate(endTime) : "";
 
-  const canonicalUrl = `${SITE_URL}/perks/${deal.id}`;
+  const canonicalUrl = `${SITE_URL}/deals/${deal.id}`;
   const metaTitle = `${brand} Student Discount: ${discount} | Uni Deals`;
   const metaDescription = (
     description ||
@@ -746,7 +750,19 @@ function DealDetails() {
   ).slice(0, 300);
   const ogImage = imageUrl || DEFAULT_OG_IMAGE;
 
-  const redemptionBlock = showVerificationWall ? (
+  const redemptionBlock = comingSoon ? (
+    <div className="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-sm text-sky-900 sm:p-6 md:p-8">
+      <p className="mb-2 inline-flex items-center gap-2 font-headline font-bold text-sky-800">
+        <span className="material-symbols-outlined text-xl">schedule</span>
+        Coming Soon
+      </p>
+      <p>
+        {launchLabel
+          ? `This offer launches on ${launchLabel}. Redemption unlocks at that time.`
+          : "This offer is not live yet. Redemption unlocks on the launch date."}
+      </p>
+    </div>
+  ) : showVerificationWall ? (
     <VerificationWall
       isAuthenticated={isAuthenticated}
       verificationLoading={roleLoading && isAuthenticated}
@@ -797,6 +813,13 @@ function DealDetails() {
       </Helmet>
 
       <DealOfferSchema deal={deal} canonicalUrl={canonicalUrl} />
+      <BreadcrumbSchema
+        items={[
+          { name: "Home", url: `${SITE_URL}/` },
+          { name: "Deals", url: `${SITE_URL}/deals` },
+          { name: brand || title, url: canonicalUrl },
+        ]}
+      />
 
       {saveError && (
         <div className="mx-auto max-w-[1440px] px-4 pt-3 md:px-8">
@@ -811,10 +834,10 @@ function DealDetails() {
         <nav className="mb-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-2 text-sm text-on-surface-variant/60 lg:mb-4">
           <div className="flex min-w-0 items-center gap-2">
             <Link
-              to="/perks"
+              to="/deals"
               className="font-headline font-bold transition-colors hover:text-primary"
             >
-              Perks
+              Deals
             </Link>
             <span className="material-symbols-outlined text-sm">
               chevron_right
@@ -824,7 +847,7 @@ function DealDetails() {
             </span>
           </div>
           <Link
-            to="/perks"
+            to="/deals"
             className="inline-flex items-center gap-1 font-headline text-sm font-bold text-on-surface-variant/70 transition-colors hover:text-primary"
           >
             <span className="material-symbols-outlined text-sm">arrow_back</span>
@@ -908,8 +931,16 @@ function DealDetails() {
               </div>
             ) : null}
 
-            {(visibleStartLabel || visibleEndLabel) && (
+            {(comingSoon || visibleStartLabel || visibleEndLabel) && (
               <div className="mb-3 flex flex-col gap-1.5 text-sm text-on-surface-variant">
+                {comingSoon && launchLabel ? (
+                  <p className="inline-flex items-center gap-1.5 text-sky-700">
+                    <span className="material-symbols-outlined text-base">
+                      rocket_launch
+                    </span>
+                    Launches {launchLabel}
+                  </p>
+                ) : null}
                 {visibleStartLabel ? (
                   <p className="inline-flex items-center gap-1.5">
                     <span className="material-symbols-outlined text-base text-primary">
@@ -937,7 +968,11 @@ function DealDetails() {
 
             <div className="mb-4 lg:mb-0">
               <h2 className="mb-2 font-headline text-base font-extrabold tracking-tight text-on-background">
-                {isInStore ? "Redeem in store" : "Redeem online"}
+                {comingSoon
+                  ? "Coming Soon"
+                  : isInStore
+                    ? "Redeem in store"
+                    : "Redeem online"}
               </h2>
               {redemptionBlock}
             </div>

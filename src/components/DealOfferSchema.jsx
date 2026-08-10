@@ -5,7 +5,7 @@ const FALLBACK_IMAGE = `${SITE_URL}/icon-512-v5.png`;
 
 /**
  * DealOfferSchema — schema.org Offer structured data for a single
- * /perks/:id deal page.
+ * /deals/:id deal page.
  *
  * Note: schema.org does not define a "DiscountOffer" type — `Offer` is the
  * correct, spec-compliant vocabulary for a merchant discount/promo code.

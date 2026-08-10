@@ -60,6 +60,11 @@ function AdminPendingEvents() {
     async (id, action) => {
       if (actingEventId) return;
 
+      const target = events.find((e) => e.id === id);
+      const publishAt = target?.publish_at ? new Date(target.publish_at) : null;
+      const isScheduled =
+        publishAt && !Number.isNaN(publishAt.getTime()) && publishAt > new Date();
+
       const update = { status: action === "approve" ? "approved" : "rejected" };
 
       if (action === "reject") {
@@ -70,7 +75,11 @@ function AdminPendingEvents() {
         if (reason === null) return;
         update.rejection_reason = reason.trim() || null;
       } else if (
-        !window.confirm("Approve this event? It will go live on the public feed immediately.")
+        !window.confirm(
+          isScheduled
+            ? `Approve this event? Students will see it as Coming Soon until ${publishAt.toLocaleString()}.`
+            : "Approve this event? It will go live on the public feed immediately.",
+        )
       ) {
         return;
       }
@@ -94,11 +103,13 @@ function AdminPendingEvents() {
       setActingEventId(null);
       showMessage(
         action === "approve"
-          ? "Event approved and now live on the public feed."
+          ? isScheduled
+            ? "Event approved. It will show as Coming Soon until the publish date."
+            : "Event approved and now live on the public feed."
           : "Event rejected and removed from queue.",
       );
     },
-    [actingEventId, showMessage],
+    [actingEventId, events, showMessage],
   );
 
   const formatDateTime = (dateString) => {
@@ -259,6 +270,17 @@ function AdminPendingEvents() {
                         </span>
                       )}
                     </div>
+                    {event.publish_at && (
+                      <div className="flex items-center gap-2 text-sm text-sky-700">
+                        <span className="material-symbols-outlined text-[16px]">rocket_launch</span>
+                        <span>
+                          Listing go-live: {formatDateTime(event.publish_at)}
+                          {new Date(event.publish_at) > new Date()
+                            ? " (Coming Soon)"
+                            : ""}
+                        </span>
+                      </div>
+                    )}
                     {event.location_name && (
                       <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                         <span className="material-symbols-outlined text-[16px]">location_on</span>

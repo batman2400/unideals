@@ -9,49 +9,18 @@
  * V1 — 10 official categories with URL-decoded filter support.
  */
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
+import { isComingSoonDeal } from "../lib/comingSoon";
+import { slugify, SITE_URL } from "../lib/seo";
+import {
+  OFFICIAL_CATEGORIES,
+  CATEGORY_META as categoryMeta,
+  OLD_TO_NEW_CATEGORY as OLD_TO_NEW,
+} from "../lib/categories";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
-
-// Official V1 category taxonomy
-const OFFICIAL_CATEGORIES = [
-  "Fashion",
-  "Food & Drink",
-  "Tech & Mobile",
-  "Beauty & Care",
-  "Learning",
-  "Travel & Auto",
-  "Health & Fitness",
-  "Household",
-  "Finance",
-  "Events & Tickets",
-];
-
-// Category metadata — icon + colour accent for each section header
-const categoryMeta = {
-  Fashion: { icon: "checkroom", color: "text-pink-500" },
-  "Food & Drink": { icon: "restaurant", color: "text-amber-600" },
-  "Tech & Mobile": { icon: "smartphone", color: "text-blue-500" },
-  "Beauty & Care": { icon: "spa", color: "text-rose-400" },
-  Learning: { icon: "school", color: "text-indigo-500" },
-  "Travel & Auto": { icon: "flight", color: "text-sky-500" },
-  "Health & Fitness": { icon: "fitness_center", color: "text-orange-500" },
-  Household: { icon: "home", color: "text-teal-500" },
-  Finance: { icon: "account_balance", color: "text-emerald-500" },
-  "Events & Tickets": { icon: "confirmation_number", color: "text-purple-500" },
-};
-
-// Migration map: old placeholder categories → new V1 names
-const OLD_TO_NEW = {
-  Tech: "Tech & Mobile",
-  Coffee: "Food & Drink",
-  Clothing: "Fashion",
-  Fitness: "Health & Fitness",
-  Home: "Household",
-  Creative: "Learning",
-};
 
 
 function Categories() {
@@ -69,8 +38,9 @@ function Categories() {
       acc[cat] = [];
     });
 
-    // Populate actual deals
+    // Populate live deals only — Coming Soon lives on Home / Deals tabs
     deals.forEach((deal) => {
+      if (isComingSoonDeal(deal)) return;
       const cat = OLD_TO_NEW[deal.category] || deal.category;
       if (!acc[cat]) acc[cat] = [];
       acc[cat].push(deal);
@@ -124,10 +94,21 @@ function Categories() {
     }
   };
 
+  const canonicalUrl =
+    activeCategory === "all"
+      ? `${SITE_URL}/categories`
+      : `${SITE_URL}/category/${slugify(activeCategory)}`;
+  const metaDescription =
+    activeCategory === "all"
+      ? "Browse every student discount in Sri Lanka organized by category — fashion, food, tech, travel, fitness, and more. Unlock offers with your verified university email."
+      : `Find the best ${activeCategory} student discounts and offers in Sri Lanka. Unlock exclusive deals with your verified university email.`;
+
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
       <Helmet>
         <title>{getCategoryTitle()}</title>
+        <meta name="description" content={metaDescription} />
+        <link rel="canonical" href={canonicalUrl} />
       </Helmet>
 
       {/* Page Header */}
@@ -192,23 +173,34 @@ function Categories() {
               )}
 
               {/* Section header */}
-              <div className="flex items-center gap-4 mb-10">
-                <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
-                  <span
-                    className={`material-symbols-outlined text-2xl ${meta.color}`}
-                  >
-                    {meta.icon}
+              <div className="flex items-center justify-between gap-4 mb-10">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-surface-container-low flex items-center justify-center">
+                    <span
+                      className={`material-symbols-outlined text-2xl ${meta.color}`}
+                    >
+                      {meta.icon}
+                    </span>
+                  </div>
+                  <div>
+                    <h2 className="font-headline font-extrabold text-3xl tracking-tight">
+                      {cat}
+                    </h2>
+                    <p className="text-on-surface-variant/60 text-sm">
+                      {grouped[cat].length} deal
+                      {grouped[cat].length !== 1 ? "s" : ""} available
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to={`/category/${slugify(cat)}`}
+                  className="hidden sm:inline-flex flex-shrink-0 items-center gap-1 text-primary font-headline font-bold text-sm hover:gap-2 transition-all"
+                >
+                  View full page
+                  <span className="material-symbols-outlined text-lg">
+                    arrow_forward
                   </span>
-                </div>
-                <div>
-                  <h2 className="font-headline font-extrabold text-3xl tracking-tight">
-                    {cat}
-                  </h2>
-                  <p className="text-on-surface-variant/60 text-sm">
-                    {grouped[cat].length} deal
-                    {grouped[cat].length !== 1 ? "s" : ""} available
-                  </p>
-                </div>
+                </Link>
               </div>
 
               <DealGrid

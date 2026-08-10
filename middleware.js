@@ -6,7 +6,7 @@
  *    https://www.unideals.co so Bing/Google stop ranking the deploy URL
  *    for branded searches like "unideals co".
  *
- * 2) /perks/:id validity guard: invalid/missing deal IDs get a real
+ * 2) /deals/:id validity guard: invalid/missing deal IDs get a real
  *    HTTP 404 instead of a soft SPA 200.
  */
 import { next } from "@vercel/functions";
@@ -41,8 +41,8 @@ export default async function middleware(request) {
     return Response.redirect(target, 308);
   }
 
-  // ── /perks/:id existence check ───────────────────────────────────────
-  if (!url.pathname.startsWith("/perks/")) {
+  // ── /deals/:id existence check ───────────────────────────────────────
+  if (!url.pathname.startsWith("/deals/")) {
     return next();
   }
 

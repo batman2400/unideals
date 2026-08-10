@@ -1,5 +1,17 @@
 import { Link, Navigate, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useRoleContext } from "../lib/RoleContext";
+
+// Every route behind ProtectedRoute is a personal dashboard or
+// role-gated tool (profile, saved deals, partner/admin panels, event
+// submission) — none of it is content search engines should index.
+function NoIndexTag() {
+  return (
+    <Helmet>
+      <meta name="robots" content="noindex, nofollow" />
+    </Helmet>
+  );
+}
 
 function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   const location = useLocation();
@@ -9,6 +21,7 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   if (loading) {
     return (
       <div className="min-h-[40vh] flex items-center justify-center px-4">
+        <NoIndexTag />
         <div className="flex items-center gap-3 text-on-surface-variant">
           <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
           <p className="text-sm font-headline font-bold">Checking access...</p>
@@ -24,6 +37,7 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   if (error) {
     return (
       <section className="max-w-[760px] mx-auto px-6 py-16">
+        <NoIndexTag />
         <div className="bg-error/10 border border-error/20 rounded-2xl p-6 md:p-8">
           <h2 className="font-headline font-extrabold text-2xl text-on-background tracking-tight mb-2">
             We could not verify your access
@@ -61,7 +75,12 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
     );
   }
 
-  return children;
+  return (
+    <>
+      <NoIndexTag />
+      {children}
+    </>
+  );
 }
 
 export default ProtectedRoute;

@@ -165,6 +165,9 @@ function AdminAllEvents() {
                   <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Start Time
                   </th>
+                  <th className="text-left px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
+                    Go-Live
+                  </th>
                   <th className="text-center px-4 py-3 text-[10px] font-bold tracking-[0.12em] text-on-surface-variant uppercase block md:table-cell">
                     Status
                   </th>
@@ -239,20 +242,38 @@ function AdminAllEvents() {
                           {event.start_time ? new Date(event.start_time).toLocaleString() : "-"}
                         </span>
                       </td>
+                      <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">
+                        <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
+                          Go-Live
+                        </span>
+                        <span className="text-right md:text-left">
+                          {event.publish_at
+                            ? new Date(event.publish_at).toLocaleString()
+                            : "-"}
+                        </span>
+                      </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm md:text-center">
                         <span className="md:hidden text-[10px] font-bold tracking-wider text-on-surface-variant uppercase">
                           Status
                         </span>
                         <span
                           className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${
-                            event.status === 'approved'
-                              ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                              : event.status === 'rejected'
-                                ? 'text-red-600 bg-red-50 border-red-200'
-                                : 'text-amber-600 bg-amber-50 border-amber-200'
+                            event.status === "approved" &&
+                            event.publish_at &&
+                            new Date(event.publish_at) > new Date()
+                              ? "text-sky-700 bg-sky-50 border-sky-200"
+                              : event.status === "approved"
+                                ? "text-emerald-600 bg-emerald-50 border-emerald-200"
+                                : event.status === "rejected"
+                                  ? "text-red-600 bg-red-50 border-red-200"
+                                  : "text-amber-600 bg-amber-50 border-amber-200"
                           }`}
                         >
-                          {event.status || 'pending'}
+                          {event.status === "approved" &&
+                          event.publish_at &&
+                          new Date(event.publish_at) > new Date()
+                            ? "coming soon"
+                            : event.status || "pending"}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-center tabular-nums">

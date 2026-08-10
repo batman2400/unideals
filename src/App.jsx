@@ -9,14 +9,14 @@
  *
  * Routes:
  *   /            → Home (hero, categories, deal feed)
- *   /perks       → All Deals with type filters
- *   /perks/:id   → Single deal details with redemption
+ *   /deals       → All Deals with type filters
+ *   /deals/:id   → Single deal details with redemption
  *   /categories  → Deals grouped by category
  *   /brands      → Partner directory
  *   /profile     → User dashboard & settings
  */
 import { lazy, Suspense, useState, useEffect } from "react";
-import { Routes, Route, Navigate, Outlet, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
 import Sidebar from "./components/Sidebar";
@@ -26,7 +26,7 @@ import AuthModal from "./components/AuthModal";
 import ProtectedRoute from "./components/ProtectedRoute";
 
 const Home = lazy(() => import("./pages/Home"));
-const Perks = lazy(() => import("./pages/Perks"));
+const Deals = lazy(() => import("./pages/Deals"));
 const DealDetails = lazy(() => import("./pages/DealDetails"));
 const Categories = lazy(() => import("./pages/Categories"));
 const Brands = lazy(() => import("./pages/Brands"));
@@ -61,6 +61,12 @@ const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const BrandPage = lazy(() => import("./pages/BrandPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+
+/** Legacy /perks/:id → /deals/:id, preserving the deal id. */
+function LegacyDealRedirect() {
+  const { id } = useParams();
+  return <Navigate to={`/deals/${id}`} replace />;
+}
 
 function RouteSkeleton() {
   return (
@@ -132,10 +138,17 @@ function App() {
     return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
   }, []);
 
+  // Reset window scroll on navigation (e.g. Home "View all" → /deals)
+  useEffect(() => {
+    window.scrollTo(0, 0);
+    document.documentElement.scrollTop = 0;
+    document.body.scrollTop = 0;
+  }, [location.pathname, location.search]);
+
   // Derived auth state
   const isLoggedIn = !!session;
   const user = session?.user ?? null;
-  const isDealDetailsPage = /^\/perks\/[^/]+$/.test(location.pathname);
+  const isDealDetailsPage = /^\/deals\/[^/]+$/.test(location.pathname);
 
   // ── Logout Handler ───────────────────────────────────
   const handleLogout = async () => {
@@ -188,10 +201,17 @@ function App() {
                 }
               />
               <Route
-                path="/perks"
-                element={<Perks searchQuery={searchQuery} />}
+                path="/deals"
+                element={<Deals searchQuery={searchQuery} />}
               />
-              <Route path="/perks/:id" element={<DealDetails />} />
+              <Route path="/deals/:id" element={<DealDetails />} />
+              {/* Legacy /perks URLs — permanent client-side fallback in case
+                  any old links/bookmarks slip past the vercel.json redirect. */}
+              <Route path="/perks" element={<Navigate to="/deals" replace />} />
+              <Route
+                path="/perks/:id"
+                element={<LegacyDealRedirect />}
+              />
               <Route path="/categories" element={<Categories />} />
               <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/brands" element={<Brands />} />

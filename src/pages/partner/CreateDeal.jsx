@@ -66,8 +66,23 @@ function CreateDeal() {
   const [offerType, setOfferType] = useState("percentage_off");
   const [offerValue, setOfferValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [submitStage, setSubmitStage] = useState("");
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
+
+  const withTimeout = (promise, ms, label) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        window.setTimeout(() => {
+          reject(
+            new Error(
+              `${label} timed out after ${Math.round(ms / 1000)}s. Check your connection and try again.`,
+            ),
+          );
+        }, ms);
+      }),
+    ]);
   const [partnerBrand, setPartnerBrand] = useState("");
   const [partnerBrandId, setPartnerBrandId] = useState(null);
   const [brandLoading, setBrandLoading] = useState(true);
@@ -252,6 +267,7 @@ function CreateDeal() {
 
     setError("");
     setSuccessMessage("");
+    setSubmitStage("");
 
     if (!user) {
       setError("You must be logged in to submit a deal.");
@@ -275,6 +291,11 @@ function CreateDeal() {
       return;
     }
 
+    if (!partnerBrand || !partnerBrandId) {
+      setError(PARTNER_BRAND_REQUIRED_MESSAGE);
+      return;
+    }
+
     if (!offerPreview) {
       setError("Please choose the offer details.");
       return;
@@ -294,24 +315,32 @@ function CreateDeal() {
     setSubmitting(true);
 
     try {
-      let effectiveBrand = partnerBrand;
-
-      if (!effectiveBrand || !partnerBrandId) {
-        setError(PARTNER_BRAND_REQUIRED_MESSAGE);
-        return;
-      }
-
-      let effectiveImageUrl = "";
+      const effectiveBrand = partnerBrand;
       const generatedRedemptionCode = generateRedemptionCode();
 
-      if (selectedImageFile) {
-        const { publicUrl } = await uploadDealImage({
+      setSubmitStage("Uploading image...");
+      const { publicUrl: effectiveImageUrl } = await withTimeout(
+        uploadDealImage({
           file: selectedImageFile,
           userId: targetUserId,
           brandName: effectiveBrand,
-        });
+        }),
+        45000,
+        "Image upload",
+      );
 
-        effectiveImageUrl = publicUrl;
+      const startIso = formData.start_time
+        ? new Date(formData.start_time).toISOString()
+        : new Date().toISOString();
+      const endIso = formData.end_time
+        ? new Date(formData.end_time).toISOString()
+        : null;
+
+      if (Number.isNaN(new Date(startIso).getTime())) {
+        throw new Error("Invalid start / launch date. Please pick a valid date.");
+      }
+      if (endIso && Number.isNaN(new Date(endIso).getTime())) {
+        throw new Error("Invalid end date. Please pick a valid date or leave it blank.");
       }
 
       const payload = {
@@ -328,15 +357,18 @@ function CreateDeal() {
         redemption_code: generatedRedemptionCode,
         partner_id: targetUserId,
         status: "approved",
-        start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
-        end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
+        start_time: startIso,
+        end_time: endIso,
         show_start_date: !!formData.show_start_date,
         show_end_date: !!formData.show_end_date,
       };
 
-      const { error: insertError } = await supabase
-        .from("deals")
-        .insert([payload]);
+      setSubmitStage("Saving deal...");
+      const { error: insertError } = await withTimeout(
+        supabase.from("deals").insert([payload]),
+        30000,
+        "Saving deal",
+      );
 
       if (!isMountedRef.current) return;
 
@@ -344,14 +376,20 @@ function CreateDeal() {
         throw insertError;
       }
 
+      const scheduledForLater =
+        !!formData.start_time && new Date(formData.start_time) > new Date();
+
       setFormData({ ...INITIAL_FORM, brand: effectiveBrand });
       setOfferType("percentage_off");
       setOfferValue("");
       setSelectedImageFile(null);
       setSuccessMessage(
-        "Deal launched successfully! It is now live and visible to students.",
+        scheduledForLater
+          ? "Deal created! Students will see it as Coming Soon until the start date."
+          : "Deal launched successfully! It is now live and visible to students.",
       );
     } catch (submitError) {
+      console.error("[CreateDeal] Submit failed:", submitError);
       if (!isMountedRef.current) return;
       if (submitError?.code === "23505") {
         setError(
@@ -366,6 +404,7 @@ function CreateDeal() {
       inFlightRef.current = false;
       if (!isMountedRef.current) return;
       setSubmitting(false);
+      setSubmitStage("");
     }
   };
 
@@ -386,6 +425,9 @@ function CreateDeal() {
       : null,
     showStartDate: !!formData.show_start_date,
     showEndDate: !!formData.show_end_date,
+    isComingSoon: !!(
+      formData.start_time && new Date(formData.start_time) > new Date()
+    ),
   };
 
   return (
@@ -567,10 +609,20 @@ function CreateDeal() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-5">
+            </div>
+
+            {/* Section 3: Launch schedule */}
+            <div>
+              <h2 className="font-headline font-bold text-lg text-on-background mb-4 pb-2 border-b border-outline-variant/10">
+                3. Launch Schedule
+              </h2>
+              <p className="text-sm text-on-surface-variant mb-4">
+                Set when students can redeem this deal. A future launch date shows the offer as Coming Soon until then.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div>
                   <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
-                    Start Date & Time
+                    Start / Launch Date & Time
                   </label>
                   <input
                     type="datetime-local"
@@ -581,7 +633,7 @@ function CreateDeal() {
                     className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                   />
                   <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
-                    Leave blank to activate immediately
+                    When the deal starts and students can redeem. Leave blank for now. Future date = Coming Soon until then.
                   </p>
                   <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
                     <input
@@ -593,7 +645,7 @@ function CreateDeal() {
                       className="mt-0.5 h-4 w-4 rounded border-outline-variant/40 text-primary focus:ring-primary/30"
                     />
                     <span className="text-sm text-on-surface">
-                      Show start date to students
+                      Show start / launch date to students after it goes live
                     </span>
                   </label>
                 </div>
@@ -626,10 +678,10 @@ function CreateDeal() {
               </div>
             </div>
 
-            {/* Section 3: Deal Image */}
+            {/* Section 4: Deal Image */}
             <div>
               <h2 className="font-headline font-bold text-lg text-on-background mb-4 pb-2 border-b border-outline-variant/10">
-                3. Deal Image
+                4. Deal Image
               </h2>
               <div
                 className={`relative border-2 border-dashed rounded-2xl p-8 text-center transition-all ${
@@ -730,7 +782,7 @@ function CreateDeal() {
                 {submitting ? (
                   <>
                     <div className="w-5 h-5 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                    Submitting...
+                    {submitStage || "Submitting..."}
                   </>
                 ) : (
                   <>

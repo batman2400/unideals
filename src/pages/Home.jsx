@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
-import DealFeed from "../components/DealFeed";
+import ExploreFeed from "../components/ExploreFeed";
 import FAQSchema from "../components/FAQSchema";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
 
@@ -33,6 +33,10 @@ function Home({ searchQuery, onSearchChange }) {
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.unideals.co/" />
         <meta property="og:image" content="https://www.unideals.co/icon-512-v5.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
+        <meta name="twitter:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
+        <meta name="twitter:image" content="https://www.unideals.co/icon-512-v5.png" />
         <link rel="icon" type="image/png" sizes="48x48" href="https://www.unideals.co/favicon-48-v6.png" />
         <link rel="icon" type="image/png" sizes="96x96" href="https://www.unideals.co/favicon-96-v6.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v5.png" />
@@ -71,7 +75,7 @@ function Home({ searchQuery, onSearchChange }) {
         </div>
       </div>
 
-      <DealFeed searchQuery={searchQuery} />
+      <ExploreFeed searchQuery={searchQuery} />
 
       {/* SEO Supported Campuses Section */}
       <section className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-12 border-t border-outline-variant/20 mt-8">

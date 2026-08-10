@@ -16,9 +16,23 @@
       "has": [{ "type": "host", "value": "unideals-nine.vercel.app" }],
       "destination": "https://www.unideals.co/:path*",
       "permanent": true
+    },
+    {
+      "source": "/perks",
+      "destination": "/deals",
+      "permanent": true
+    },
+    {
+      "source": "/perks/:id",
+      "destination": "/deals/:id",
+      "permanent": true
     }
   ],
   "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
     {
       "source": "/blog/:slug",
       "has": [
@@ -31,7 +45,7 @@
       "destination": "/api/og-proxy?slug=:slug"
     },
     {
-      "source": "/perks/:id",
+      "source": "/deals/:id",
       "has": [
         {
           "type": "header",

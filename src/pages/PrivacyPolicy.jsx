@@ -1,6 +1,17 @@
+import { Helmet } from "react-helmet-async";
+import { SITE_URL } from "../lib/seo";
+
 function PrivacyPolicy() {
   return (
     <section className="max-w-[920px] mx-auto px-4 sm:px-6 md:px-8 py-10 md:py-14 animate-fade-in">
+      <Helmet>
+        <title>Privacy Policy | Uni Deals</title>
+        <meta
+          name="description"
+          content="Learn how Uni Deals collects, uses, and protects your personal data on Sri Lanka's student discount platform."
+        />
+        <link rel="canonical" href={`${SITE_URL}/privacy`} />
+      </Helmet>
       <header className="mb-8 md:mb-10">
         <p className="text-xs uppercase tracking-[0.2em] text-on-surface-variant/60 font-body font-semibold">
           Uni Deals Trust Center

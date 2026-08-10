@@ -1,4 +1,10 @@
 User-agent: *
 Allow: /
+Disallow: /admin
+Disallow: /partner
+Disallow: /profile
+Disallow: /saved
+Disallow: /reset-password
+Disallow: /events/new
 
 Sitemap: https://www.unideals.co/sitemap.xml

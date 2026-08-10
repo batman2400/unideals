@@ -5,12 +5,14 @@
  *   - hero  : 4:5 full-bleed portrait with gradient overlay (trending row)
  *   - grid  : 1:1 square image + brand / title / fulfillment pill below
  *
- * No "Claim Code" CTA — the whole card links to deal details.
+ * Coming Soon uses a locked overlay (not a heavy blue banner) so live cards
+ * stay visually distinct.
  */
 import { memo, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
+import { formatLaunchRelative, isComingSoonDeal } from "../lib/comingSoon";
 
 /** Days remaining until endTime, or null when unavailable. */
 function getDaysLeft(endTime) {
@@ -20,6 +22,38 @@ function getDaysLeft(endTime) {
   const ms = end.getTime() - Date.now();
   if (ms <= 0) return 0;
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+function ComingSoonLock({ relativeLabel, compact = false }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[2] flex flex-col items-center justify-center px-3 text-center">
+      <div className="absolute inset-0 bg-black/40" />
+      <div className="relative flex flex-col items-center gap-1.5">
+        <span
+          className={`material-symbols-outlined text-white drop-shadow-md ${
+            compact ? "text-3xl" : "text-4xl"
+          }`}
+        >
+          lock_clock
+        </span>
+        <p
+          className={`font-headline font-extrabold tracking-tight text-white drop-shadow-md ${
+            compact ? "text-sm" : "text-base md:text-lg"
+          }`}
+        >
+          Coming Soon
+        </p>
+        {relativeLabel ? (
+          <span className="inline-flex items-center gap-1 rounded-full bg-black/60 px-2.5 py-1 text-[10px] font-semibold tracking-wide text-white/95 backdrop-blur-md">
+            <span className="material-symbols-outlined text-[12px]">
+              schedule
+            </span>
+            {relativeLabel}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  );
 }
 
 function DealCard({
@@ -38,11 +72,14 @@ function DealCard({
     imageUrl,
     endTime,
     showEndDate,
+    startTime,
   } = deal;
   const isInStore = type === "In-Store";
   const isDemo = typeof id === "string" && id.startsWith("demo-");
   const isHero = variant === "hero";
-  const daysLeft = showEndDate ? getDaysLeft(endTime) : null;
+  const comingSoon = isComingSoonDeal(deal);
+  const relativeLaunch = comingSoon ? formatLaunchRelative(startTime) : "";
+  const daysLeft = !comingSoon && showEndDate ? getDaysLeft(endTime) : null;
   const headline = discount || title;
 
   const isBatchMode = batchSaved !== undefined;
@@ -146,13 +183,17 @@ function DealCard({
   if (isHero) {
     return (
       <Link
-        to={isDemo ? "#" : `/perks/${id}`}
+        to={isDemo ? "#" : `/deals/${id}`}
         onClick={isDemo ? (e) => e.preventDefault() : undefined}
         className="group relative block w-full aspect-[4/5] overflow-hidden rounded-2xl bg-surface-container"
       >
         {imageOrPlaceholder}
 
-        {/* Top-left badges */}
+        {comingSoon && (
+          <ComingSoonLock relativeLabel={relativeLaunch} />
+        )}
+
+        {/* Top-left: type only — avoid stacking with coming-soon banners */}
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
           <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
             {isInStore ? "🏪 In-Store" : "🌐 Online"}
@@ -203,12 +244,15 @@ function DealCard({
   // Grid / default — image-first, no claim button
   return (
     <Link
-      to={isDemo ? "#" : `/perks/${id}`}
+      to={isDemo ? "#" : `/deals/${id}`}
       onClick={isDemo ? (e) => e.preventDefault() : undefined}
       className="group flex flex-col"
     >
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface-container">
         {imageOrPlaceholder}
+        {comingSoon && (
+          <ComingSoonLock relativeLabel={relativeLaunch} compact />
+        )}
         {!isDemo && (
           <button
             type="button"
@@ -244,6 +288,14 @@ function DealCard({
           <span className="inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
             {isInStore ? "🏪 In-store" : "🌐 Online"}
           </span>
+          {comingSoon && relativeLaunch && (
+            <span className="inline-flex self-start items-center gap-1 rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+              <span className="material-symbols-outlined text-[12px]">
+                schedule
+              </span>
+              {relativeLaunch}
+            </span>
+          )}
           {daysLeft !== null && (
             <span className="inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
               ⌛ {daysLeft === 0

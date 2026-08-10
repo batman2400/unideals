@@ -13,6 +13,7 @@ function CreateEvent() {
     description: "",
     start_time: "",
     end_time: "",
+    publish_at: "",
     location_name: "",
     category: "social",
     university_name: "",
@@ -107,6 +108,9 @@ function CreateEvent() {
         cover_image_url: finalImageUrl,
         organizer_id: user.id,
         status: 'pending',
+        publish_at: formData.publish_at
+          ? new Date(formData.publish_at).toISOString()
+          : new Date().toISOString(),
       };
 
       // Optional: convert end_time to null if empty
@@ -125,6 +129,7 @@ function CreateEvent() {
         description: "",
         start_time: "",
         end_time: "",
+        publish_at: "",
         location_name: "",
         category: "social",
         university_name: "",
@@ -252,7 +257,7 @@ function CreateEvent() {
           {/* Date and Time */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Start Date & Time</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Event Start Date & Time</label>
               <input
                 type="datetime-local"
                 name="start_time"
@@ -263,7 +268,7 @@ function CreateEvent() {
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">End Date & Time (Optional)</label>
+              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Event End Date & Time (Optional)</label>
               <input
                 type="datetime-local"
                 name="end_time"
@@ -272,6 +277,22 @@ function CreateEvent() {
                 className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+              Listing Go-Live / Publish At (Optional)
+            </label>
+            <input
+              type="datetime-local"
+              name="publish_at"
+              value={formData.publish_at}
+              onChange={handleChange}
+              className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            />
+            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+              Leave blank to publish when approved. A future date shows as Coming Soon until then.
+            </p>
           </div>
 
           {/* Location & Audience */}
