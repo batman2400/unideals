@@ -48,6 +48,8 @@ const INITIAL_FORM = {
   description: "",
   start_time: "",
   end_time: "",
+  show_start_date: false,
+  show_end_date: false,
 };
 
 function CreateDeal() {
@@ -75,25 +77,32 @@ function CreateDeal() {
   const isMountedRef = useRef(true);
   const inFlightRef = useRef(false);
   const fileInputRef = useRef(null);
+  const previewObjectUrlRef = useRef("");
 
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      if (previewObjectUrlRef.current) {
+        URL.revokeObjectURL(previewObjectUrlRef.current);
+        previewObjectUrlRef.current = "";
+      }
     };
   }, []);
 
   useEffect(() => {
+    if (previewObjectUrlRef.current) {
+      URL.revokeObjectURL(previewObjectUrlRef.current);
+      previewObjectUrlRef.current = "";
+    }
+
     if (!selectedImageFile) {
       setSelectedImagePreviewUrl("");
       return;
     }
 
     const objectUrl = URL.createObjectURL(selectedImageFile);
+    previewObjectUrlRef.current = objectUrl;
     setSelectedImagePreviewUrl(objectUrl);
-
-    return () => {
-      URL.revokeObjectURL(objectUrl);
-    };
   }, [selectedImageFile]);
 
   useEffect(() => {
@@ -175,8 +184,11 @@ function CreateDeal() {
   }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
 
   const onChange = (event) => {
-    const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = event.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "checkbox" ? checked : value,
+    }));
   };
 
   const onOfferTypeChange = (event) => {
@@ -318,6 +330,8 @@ function CreateDeal() {
         status: "approved",
         start_time: formData.start_time ? new Date(formData.start_time).toISOString() : new Date().toISOString(),
         end_time: formData.end_time ? new Date(formData.end_time).toISOString() : null,
+        show_start_date: !!formData.show_start_date,
+        show_end_date: !!formData.show_end_date,
       };
 
       const { error: insertError } = await supabase
@@ -362,10 +376,16 @@ function CreateDeal() {
     discount: offerPreview || "Discount value",
     type: formData.type || "Online",
     category: formData.category || "Fashion",
-    imageUrl:
-      selectedImagePreviewUrl ||
-      "https://images.unsplash.com/photo-1555680202-c86f0e12f086?w=800&auto=format&fit=crop&q=80",
+    imageUrl: selectedImagePreviewUrl || "",
     description: formData.description || "Deal description will appear here.",
+    startTime: formData.start_time
+      ? new Date(formData.start_time).toISOString()
+      : null,
+    endTime: formData.end_time
+      ? new Date(formData.end_time).toISOString()
+      : null,
+    showStartDate: !!formData.show_start_date,
+    showEndDate: !!formData.show_end_date,
   };
 
   return (
@@ -426,7 +446,7 @@ function CreateDeal() {
                     value={formData.title}
                     onChange={onChange}
                     disabled={submitting}
-                    placeholder="TechNova Pro"
+                    placeholder="Enter deal title"
                     className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                   />
                 </div>
@@ -563,6 +583,19 @@ function CreateDeal() {
                   <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
                     Leave blank to activate immediately
                   </p>
+                  <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="show_start_date"
+                      checked={!!formData.show_start_date}
+                      onChange={onChange}
+                      disabled={submitting}
+                      className="mt-0.5 h-4 w-4 rounded border-outline-variant/40 text-primary focus:ring-primary/30"
+                    />
+                    <span className="text-sm text-on-surface">
+                      Show start date to students
+                    </span>
+                  </label>
                 </div>
                 <div>
                   <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
@@ -576,6 +609,19 @@ function CreateDeal() {
                     disabled={submitting}
                     className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                   />
+                  <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      name="show_end_date"
+                      checked={!!formData.show_end_date}
+                      onChange={onChange}
+                      disabled={submitting}
+                      className="mt-0.5 h-4 w-4 rounded border-outline-variant/40 text-primary focus:ring-primary/30"
+                    />
+                    <span className="text-sm text-on-surface">
+                      Show end date to students
+                    </span>
+                  </label>
                 </div>
               </div>
             </div>
@@ -711,7 +757,10 @@ function CreateDeal() {
                   Preview
                 </span>
               </div>
-              <DealCard deal={mockDeal} />
+              <DealCard
+                key={selectedImagePreviewUrl || "no-image"}
+                deal={mockDeal}
+              />
             </div>
             <p className="text-xs text-on-surface-variant mt-4 text-center px-4 leading-relaxed">
               This is exactly how your deal will appear to students on the

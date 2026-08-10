@@ -26,6 +26,8 @@ export default function DealOfferSchema({ deal, canonicalUrl }) {
     storeUrl,
     startTime,
     endTime,
+    showStartDate,
+    showEndDate,
   } = deal;
 
   const isInStore = type === "In-Store";
@@ -66,8 +68,8 @@ export default function DealOfferSchema({ deal, canonicalUrl }) {
     ...(isInStore
       ? { availableAtOrFrom: { "@type": "Place", name: `${brand} Stores in Sri Lanka` } }
       : {}),
-    ...(startTime ? { validFrom: startTime } : {}),
-    ...(endTime ? { validThrough: endTime } : {}),
+    ...(showStartDate && startTime ? { validFrom: startTime } : {}),
+    ...(showEndDate && endTime ? { validThrough: endTime } : {}),
   };
 
   return <script type="application/ld+json">{JSON.stringify(schema)}</script>;

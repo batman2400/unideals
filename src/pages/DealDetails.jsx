@@ -22,6 +22,18 @@ import DealOfferSchema from "../components/DealOfferSchema";
 const SITE_URL = "https://www.unideals.co";
 const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v5.png`;
 
+function formatDealDate(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 // ── In-Store Redemption (Server-Generated Unique Ticket) ─
 function InStoreRedemption({ dealId, brand }) {
   const [ticket, setTicket] = useState(null);
@@ -706,6 +718,10 @@ function DealDetails() {
     description,
     redemptionCode,
     storeUrl,
+    startTime,
+    endTime,
+    showStartDate,
+    showEndDate,
   } = deal;
   const isInStore = type === "In-Store";
   const isPrivilegedRole = role === "admin" || role === "partner";
@@ -715,6 +731,10 @@ function DealDetails() {
   const hasRedemptionCode =
     typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
   const headline = discount || title;
+  const visibleStartLabel =
+    showStartDate && startTime ? formatDealDate(startTime) : "";
+  const visibleEndLabel =
+    showEndDate && endTime ? formatDealDate(endTime) : "";
 
   const canonicalUrl = `${SITE_URL}/perks/${deal.id}`;
   const metaTitle = `${brand} Student Discount: ${discount} | Uni Deals`;
@@ -887,6 +907,27 @@ function DealDetails() {
                 </span>
               </div>
             ) : null}
+
+            {(visibleStartLabel || visibleEndLabel) && (
+              <div className="mb-3 flex flex-col gap-1.5 text-sm text-on-surface-variant">
+                {visibleStartLabel ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base text-primary">
+                      event
+                    </span>
+                    Starts {visibleStartLabel}
+                  </p>
+                ) : null}
+                {visibleEndLabel ? (
+                  <p className="inline-flex items-center gap-1.5">
+                    <span className="material-symbols-outlined text-base text-primary">
+                      event_busy
+                    </span>
+                    Ends {visibleEndLabel}
+                  </p>
+                ) : null}
+              </div>
+            )}
 
             {description ? (
               <p className="mb-4 text-sm leading-relaxed text-on-surface-variant sm:text-base lg:mb-3 lg:line-clamp-2 lg:text-sm">

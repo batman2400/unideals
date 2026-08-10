@@ -12,11 +12,14 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 
-/** Stable demo urgency until expiry lands in the API. */
-function getDaysLeft(id) {
-  const n = Number(id);
-  if (!Number.isFinite(n)) return 5;
-  return (Math.abs(n) % 14) + 1;
+/** Days remaining until endTime, or null when unavailable. */
+function getDaysLeft(endTime) {
+  if (!endTime) return null;
+  const end = new Date(endTime);
+  if (Number.isNaN(end.getTime())) return null;
+  const ms = end.getTime() - Date.now();
+  if (ms <= 0) return 0;
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
 }
 
 function DealCard({
@@ -26,11 +29,20 @@ function DealCard({
   savedLoading: batchLoading,
   variant = "grid",
 }) {
-  const { id, title, brand, type, discount, imageUrl } = deal;
+  const {
+    id,
+    title,
+    brand,
+    type,
+    discount,
+    imageUrl,
+    endTime,
+    showEndDate,
+  } = deal;
   const isInStore = type === "In-Store";
   const isDemo = typeof id === "string" && id.startsWith("demo-");
   const isHero = variant === "hero";
-  const daysLeft = getDaysLeft(id);
+  const daysLeft = showEndDate ? getDaysLeft(endTime) : null;
   const headline = discount || title;
 
   const isBatchMode = batchSaved !== undefined;
@@ -96,6 +108,41 @@ function DealCard({
     [id, isBatchMode, batchToggle, localSaved],
   );
 
+  const imageLoading = isDemo ? "eager" : "lazy";
+  const hasImage = Boolean(imageUrl);
+
+  const imageOrPlaceholder = hasImage ? (
+    <img
+      alt={title}
+      src={imageUrl}
+      loading={imageLoading}
+      decoding="async"
+      className={
+        isHero
+          ? "absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+          : "h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+      }
+    />
+  ) : (
+    <div
+      className={
+        isHero
+          ? "absolute inset-0 flex flex-col items-center justify-center gap-2 bg-surface-container px-4 text-center"
+          : "flex h-full w-full flex-col items-center justify-center gap-2 bg-surface-container px-4 text-center"
+      }
+      aria-hidden={!isDemo}
+    >
+      <span className="material-symbols-outlined text-3xl text-on-surface-variant/60">
+        image
+      </span>
+      {isDemo && (
+        <p className="text-xs font-semibold text-on-surface-variant">
+          Upload an image to preview
+        </p>
+      )}
+    </div>
+  );
+
   if (isHero) {
     return (
       <Link
@@ -103,22 +150,20 @@ function DealCard({
         onClick={isDemo ? (e) => e.preventDefault() : undefined}
         className="group relative block w-full aspect-[4/5] overflow-hidden rounded-2xl bg-surface-container"
       >
-        <img
-          alt={title}
-          src={imageUrl}
-          loading="lazy"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {imageOrPlaceholder}
 
         {/* Top-left badges */}
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
           <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
             {isInStore ? "🏪 In-Store" : "🌐 Online"}
           </span>
-          <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white backdrop-blur-sm">
-            ⌛ {daysLeft} {daysLeft === 1 ? "day" : "days"} left
-          </span>
+          {daysLeft !== null && (
+            <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white backdrop-blur-sm">
+              ⌛ {daysLeft === 0
+                ? "Ends today"
+                : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+            </span>
+          )}
         </div>
 
         {/* Top-right heart */}
@@ -163,13 +208,7 @@ function DealCard({
       className="group flex flex-col"
     >
       <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface-container">
-        <img
-          alt={title}
-          src={imageUrl}
-          loading="lazy"
-          decoding="async"
-          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
-        />
+        {imageOrPlaceholder}
         {!isDemo && (
           <button
             type="button"
@@ -201,9 +240,18 @@ function DealCard({
         <h3 className="font-headline text-sm font-bold leading-snug text-on-background line-clamp-2 md:text-[15px]">
           {headline}
         </h3>
-        <span className="mt-0.5 inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
-          {isInStore ? "🏪 In-store" : "🌐 Online"}
-        </span>
+        <div className="mt-0.5 flex flex-wrap gap-1.5">
+          <span className="inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+            {isInStore ? "🏪 In-store" : "🌐 Online"}
+          </span>
+          {daysLeft !== null && (
+            <span className="inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+              ⌛ {daysLeft === 0
+                ? "Ends today"
+                : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+            </span>
+          )}
+        </div>
       </div>
     </Link>
   );

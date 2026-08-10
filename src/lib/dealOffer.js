@@ -31,17 +31,17 @@ export function getOfferValueLabel(offerType) {
 export function getOfferValuePlaceholder(offerType) {
   switch (offerType) {
     case "percentage_off":
-      return "10";
+      return "Enter percent, e.g. 10";
     case "flat_amount_off":
-      return "$15";
+      return "Enter amount, e.g. $15";
     case "free_trial":
-      return "1 Month";
+      return "Enter period, e.g. 1 Month";
     case "free_item":
-      return "Coffee";
+      return "Enter item or service";
     case "custom":
-      return "Student Bundle Pack";
+      return "Describe your offer";
     default:
-      return "Offer value";
+      return "Enter offer value";
   }
 }
 
