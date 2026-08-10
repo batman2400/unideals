@@ -50,9 +50,18 @@ export default function CategoryPage() {
     if (!categoryName) return [];
     return deals.filter((deal) => {
       const normalized = OLD_TO_NEW_CATEGORY[deal.category] || deal.category;
-      return normalized === categoryName && !isComingSoonDeal(deal);
+      return normalized === categoryName;
     });
   }, [deals, categoryName]);
+
+  const liveDeals = useMemo(
+    () => categoryDeals.filter((deal) => !isComingSoonDeal(deal)),
+    [categoryDeals],
+  );
+  const comingSoonDeals = useMemo(
+    () => categoryDeals.filter((deal) => isComingSoonDeal(deal)),
+    [categoryDeals],
+  );
 
   const canonicalUrl = `${SITE_URL}/category/${categoryId}`;
   const meta = CATEGORY_META[categoryName] || { icon: "category", color: "text-primary" };
@@ -84,7 +93,12 @@ export default function CategoryPage() {
   const description =
     (categoryName && CATEGORY_DESCRIPTIONS[categoryName]) ||
     `Find the best ${categoryName || ""} student discounts and offers in Sri Lanka. Unlock exclusive deals with your verified university email.`;
+  // Official taxonomy pages (and any category with real deals, live or
+  // scheduled) must stay indexable — empty live-only lists previously
+  // injected noindex and blocked Google (e.g. /category/food-drink).
+  const isOfficialCategory = Boolean(categoryName && CATEGORY_DESCRIPTIONS[categoryName]);
   const hasDeals = categoryDeals.length > 0;
+  const shouldIndex = isOfficialCategory || hasDeals;
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-16">
@@ -92,7 +106,7 @@ export default function CategoryPage() {
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonicalUrl} />
-        {!loading && !hasDeals && <meta name="robots" content="noindex, follow" />}
+        {!loading && !shouldIndex && <meta name="robots" content="noindex, follow" />}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Uni Deals" />
         <meta property="og:title" content={title} />
@@ -150,12 +164,31 @@ export default function CategoryPage() {
       {loading || error ? (
         <DealsLoader loading={loading} error={error} />
       ) : hasDeals ? (
-        <DealGrid
-          deals={categoryDeals}
-          savedIds={savedIds}
-          onToggleSave={toggleSave}
-          savedLoading={savedLoading}
-        />
+        <div className="space-y-10">
+          {liveDeals.length > 0 && (
+            <section>
+              <DealGrid
+                deals={liveDeals}
+                savedIds={savedIds}
+                onToggleSave={toggleSave}
+                savedLoading={savedLoading}
+              />
+            </section>
+          )}
+          {comingSoonDeals.length > 0 && (
+            <section>
+              <h2 className="font-headline font-bold text-xl mb-4 text-on-background">
+                Coming Soon
+              </h2>
+              <DealGrid
+                deals={comingSoonDeals}
+                savedIds={savedIds}
+                onToggleSave={toggleSave}
+                savedLoading={savedLoading}
+              />
+            </section>
+          )}
+        </div>
       ) : (
         <div className="rounded-2xl border border-outline-variant/15 bg-surface-container-low px-6 py-16 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/50 mb-3">

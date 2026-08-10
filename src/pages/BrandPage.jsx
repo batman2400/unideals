@@ -30,10 +30,17 @@ export default function BrandPage() {
 
   const brandDeals = useMemo(() => {
     if (!brandName) return [];
-    return deals.filter(
-      (deal) => deal.brand === brandName && !isComingSoonDeal(deal),
-    );
+    return deals.filter((deal) => deal.brand === brandName);
   }, [deals, brandName]);
+
+  const liveDeals = useMemo(
+    () => brandDeals.filter((deal) => !isComingSoonDeal(deal)),
+    [brandDeals],
+  );
+  const comingSoonDeals = useMemo(
+    () => brandDeals.filter((deal) => isComingSoonDeal(deal)),
+    [brandDeals],
+  );
 
   const canonicalUrl = `${SITE_URL}/brand/${brandId}`;
 
@@ -61,10 +68,11 @@ export default function BrandPage() {
     ? `${brandName} Student Discount in Sri Lanka | Uni Deals`
     : "Student Discount | Uni Deals";
   const description = brandName
-    ? `Get exclusive ${brandName} student discounts and promo codes in Sri Lanka with your verified university email. ${brandDeals.length} active offer${brandDeals.length !== 1 ? "s" : ""}.`
+    ? `Get exclusive ${brandName} student discounts and promo codes in Sri Lanka with your verified university email. ${brandDeals.length} offer${brandDeals.length !== 1 ? "s" : ""} available.`
     : "Get exclusive student discounts and promo codes in Sri Lanka.";
   const hasDeals = brandDeals.length > 0;
-  const brandImage = brandDeals[0]?.imageUrl || `${SITE_URL}/icon-512-v7.png`;
+  const brandImage =
+    brandDeals[0]?.imageUrl || brandDeals[0]?.image_url || `${SITE_URL}/icon-512-v7.png`;
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-16">
@@ -72,7 +80,7 @@ export default function BrandPage() {
         <title>{title}</title>
         <meta name="description" content={description} />
         <link rel="canonical" href={canonicalUrl} />
-        {!loading && !hasDeals && <meta name="robots" content="noindex, follow" />}
+        {/* Known brand pages stay indexable; only the not-found state above is noindex. */}
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="Uni Deals" />
         <meta property="og:title" content={title} />
@@ -122,12 +130,31 @@ export default function BrandPage() {
       {loading || error ? (
         <DealsLoader loading={loading} error={error} />
       ) : hasDeals ? (
-        <DealGrid
-          deals={brandDeals}
-          savedIds={savedIds}
-          onToggleSave={toggleSave}
-          savedLoading={savedLoading}
-        />
+        <div className="space-y-10">
+          {liveDeals.length > 0 && (
+            <section>
+              <DealGrid
+                deals={liveDeals}
+                savedIds={savedIds}
+                onToggleSave={toggleSave}
+                savedLoading={savedLoading}
+              />
+            </section>
+          )}
+          {comingSoonDeals.length > 0 && (
+            <section>
+              <h2 className="font-headline font-bold text-xl mb-4 text-on-background">
+                Coming Soon
+              </h2>
+              <DealGrid
+                deals={comingSoonDeals}
+                savedIds={savedIds}
+                onToggleSave={toggleSave}
+                savedLoading={savedLoading}
+              />
+            </section>
+          )}
+        </div>
       ) : (
         <div className="rounded-2xl border border-outline-variant/15 bg-surface-container-low px-6 py-16 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/50 mb-3">
