@@ -30,29 +30,19 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon-v9.png" />
 
     <!--
-      Favicons for browsers + Google Search.
-      Order matters: SVG (crisp) → PNG 48+ (Google's preferred) → ICO last.
-      /favicon.ico is rebuilt as 16/32/48 so the early browser probe is not
-      a tiny blurry single-size icon. Versioned filenames bust caches.
+      Google Search reads the homepage favicon only.
+      Put a stable solid square PNG (≥48px) FIRST — Google rejects/skips
+      many transparent circular icons and caches by URL (don't rename often).
+      Circular SVG comes after for modern browser tabs.
     -->
+    <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48.png" />
+    <link rel="icon" type="image/png" sizes="96x96" href="/google-favicon.png" />
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="48x48"
-      href="https://www.unideals.co/favicon-48-v9.png"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      sizes="96x96"
-      href="https://www.unideals.co/favicon-96-v9.png"
-    />
     <link rel="icon" type="image/png" sizes="192x192" href="/icon-192-v9.png" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
 
     <!-- Android / Chrome install -->
-    <link rel="manifest" href="/manifest.webmanifest?v=14" />
+    <link rel="manifest" href="/manifest.webmanifest?v=15" />
 
     <!-- Social preview -->
     <meta property="og:type" content="website" />
@@ -78,11 +68,11 @@
       "url": "https://www.unideals.co",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://www.unideals.co/icon-512-v9.png",
+        "url": "https://www.unideals.co/logo-512.png",
         "width": 512,
         "height": 512
       },
-      "image": "https://www.unideals.co/icon-512-v9.png",
+      "image": "https://www.unideals.co/logo-512.png",
       "description": "A dedicated discount and perks platform for university students in Sri Lanka."
     }
     </script>

@@ -110,23 +110,23 @@ function resize(src, tw, th) {
   return out;
 }
 
+function placeGlyph(glyphCrop, size, fillRatio) {
+  const maxGlyph = size * fillRatio;
+  const scale = Math.min(maxGlyph / glyphCrop.width, maxGlyph / glyphCrop.height);
+  const gw = Math.max(1, Math.round(glyphCrop.width * scale));
+  const gh = Math.max(1, Math.round(glyphCrop.height * scale));
+  const scaled = resize(glyphCrop, gw, gh);
+  const ox = Math.round((size - gw) / 2);
+  const oy = Math.round((size - gh) / 2);
+  return { scaled, gw, gh, ox, oy };
+}
+
 function makeCircularIcon(glyphCrop, size) {
   const out = new PNG({ width: size, height: size });
   const cx = (size - 1) / 2;
   const cy = (size - 1) / 2;
   const radius = size / 2;
-
-  // Leave ~18% padding inside the circle so UD isn't jammed to the rim
-  const maxGlyph = radius * 2 * 0.64;
-  const scale = Math.min(maxGlyph / glyphCrop.width, maxGlyph / glyphCrop.height);
-  const gw = Math.max(1, Math.round(glyphCrop.width * scale));
-  const gh = Math.max(1, Math.round(glyphCrop.height * scale));
-  const scaled = resize(glyphCrop, gw, gh);
-
-  // True geometric center of the canvas (no optical nudge — keeps
-  // the circular crop mathematically middle-aligned).
-  const ox = Math.round((size - gw) / 2);
-  const oy = Math.round((size - gh) / 2);
+  const { scaled, gw, gh, ox, oy } = placeGlyph(glyphCrop, radius * 2, 0.64);
 
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
@@ -168,6 +168,44 @@ function makeCircularIcon(glyphCrop, size) {
   return out;
 }
 
+/**
+ * Solid white square + black UD — Google Search favicon.
+ * Transparent circular icons often fail Google's favicon pipeline or look
+ * like a default globe; Google wants a stable square PNG ≥ 48px.
+ */
+function makeSolidSquareIcon(glyphCrop, size) {
+  const out = new PNG({ width: size, height: size });
+  const { scaled, gw, gh, ox, oy } = placeGlyph(glyphCrop, size, 0.72);
+
+  for (let y = 0; y < size; y++) {
+    for (let x = 0; x < size; x++) {
+      const i = (size * y + x) << 2;
+      let r = 255;
+      let g = 255;
+      let b = 255;
+
+      const gx = x - ox;
+      const gy = y - oy;
+      if (gx >= 0 && gy >= 0 && gx < gw && gy < gh) {
+        const gi = (gw * gy + gx) << 2;
+        const ga = scaled.data[gi + 3] / 255;
+        if (ga > 0) {
+          r = Math.round(scaled.data[gi] * ga + 255 * (1 - ga));
+          g = Math.round(scaled.data[gi + 1] * ga + 255 * (1 - ga));
+          b = Math.round(scaled.data[gi + 2] * ga + 255 * (1 - ga));
+        }
+      }
+
+      out.data[i] = r;
+      out.data[i + 1] = g;
+      out.data[i + 2] = b;
+      out.data[i + 3] = 255;
+    }
+  }
+
+  return out;
+}
+
 async function main() {
   if (!fs.existsSync(SOURCE)) throw new Error(`Missing ${SOURCE}`);
 
@@ -180,26 +218,37 @@ async function main() {
   console.log("source", src.width + "x" + src.height, "glyph bbox", bbox);
   const cropped = crop(src, bbox, 12);
 
-  const sizes = {};
+  const circular = {};
+  const solid = {};
   for (const size of [16, 32, 48, 96, 180, 192, 512]) {
-    sizes[size] = makeCircularIcon(cropped, size);
+    circular[size] = makeCircularIcon(cropped, size);
+    solid[size] = makeSolidSquareIcon(cropped, size);
   }
 
+  // Stable unversioned paths for Google Search (do not rename these).
   for (const [name, png] of [
-    [`favicon-16-${VERSION}.png`, sizes[16]],
-    [`favicon-32-${VERSION}.png`, sizes[32]],
-    [`favicon-48-${VERSION}.png`, sizes[48]],
-    [`favicon-96-${VERSION}.png`, sizes[96]],
-    [`icon-192-${VERSION}.png`, sizes[192]],
-    [`icon-512-${VERSION}.png`, sizes[512]],
-    [`apple-touch-icon-${VERSION}.png`, sizes[180]],
-    ["favicon-16.png", sizes[16]],
-    ["favicon-32.png", sizes[32]],
-    ["favicon-48.png", sizes[48]],
-    ["favicon-96.png", sizes[96]],
-    ["icon-192.png", sizes[192]],
-    ["icon-512.png", sizes[512]],
-    ["apple-touch-icon.png", sizes[180]],
+    ["favicon-48.png", solid[48]],
+    ["favicon-96.png", solid[96]],
+    ["google-favicon.png", solid[96]],
+    ["logo-512.png", solid[512]],
+  ]) {
+    writePng(path.join(PUBLIC, name), png);
+  }
+
+  // Versioned circular marks for browser tabs / PWA / Apple.
+  for (const [name, png] of [
+    [`favicon-16-${VERSION}.png`, circular[16]],
+    [`favicon-32-${VERSION}.png`, circular[32]],
+    [`favicon-48-${VERSION}.png`, circular[48]],
+    [`favicon-96-${VERSION}.png`, circular[96]],
+    [`icon-192-${VERSION}.png`, circular[192]],
+    [`icon-512-${VERSION}.png`, circular[512]],
+    [`apple-touch-icon-${VERSION}.png`, circular[180]],
+    ["favicon-16.png", circular[16]],
+    ["favicon-32.png", circular[32]],
+    ["icon-192.png", circular[192]],
+    ["icon-512.png", circular[512]],
+    ["apple-touch-icon.png", circular[180]],
   ]) {
     writePng(path.join(PUBLIC, name), png);
   }
@@ -208,7 +257,7 @@ async function main() {
   fs.mkdirSync(tmpDir, { recursive: true });
   const tmpFiles = [16, 32, 48].map((s) => {
     const f = path.join(tmpDir, `${s}.png`);
-    writePng(f, sizes[s]);
+    writePng(f, solid[s]);
     return f;
   });
   const icoBuf = await pngToIco(tmpFiles);
