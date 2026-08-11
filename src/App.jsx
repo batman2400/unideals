@@ -88,6 +88,7 @@ function App() {
   const location = useLocation();
   // ── Global UI State ──────────────────────────────────
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalError, setAuthModalError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
 
   // ── Supabase Auth State ──────────────────────────────
@@ -133,10 +134,38 @@ function App() {
 
   // ── Global Event Listener for Auth Modal ─────────────
   useEffect(() => {
-    const handleOpenAuth = () => setAuthModalOpen(true);
+    const handleOpenAuth = () => {
+      setAuthModalError("");
+      setAuthModalOpen(true);
+    };
     window.addEventListener("open-auth-modal", handleOpenAuth);
     return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
   }, []);
+
+  // Surface OAuth errors returned in the URL (e.g. user cancelled Google),
+  // then strip the query params so a refresh doesn't reopen the modal.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const error = params.get("error");
+    const description = params.get("error_description");
+
+    if (!error) return;
+
+    const friendly =
+      description?.replace(/\+/g, " ") ||
+      "Google sign-in was cancelled or failed. Please try again.";
+
+    setAuthModalError(friendly);
+    setAuthModalOpen(true);
+    console.error("[App] OAuth error:", error, description);
+
+    params.delete("error");
+    params.delete("error_description");
+    params.delete("error_code");
+    const cleaned = params.toString();
+    const nextUrl = `${location.pathname}${cleaned ? `?${cleaned}` : ""}${location.hash}`;
+    window.history.replaceState({}, document.title, nextUrl);
+  }, [location.pathname, location.search, location.hash]);
 
   // Reset window scroll on navigation (e.g. Home "View all" → /deals)
   useEffect(() => {
@@ -303,7 +332,11 @@ function App() {
       {/* Global Auth Modal */}
       <AuthModal
         isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
+        initialError={authModalError}
+        onClose={() => {
+          setAuthModalOpen(false);
+          setAuthModalError("");
+        }}
       />
     </div>
   );

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, Navigate, useLocation } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useRoleContext } from "../lib/RoleContext";
@@ -10,6 +11,46 @@ function NoIndexTag() {
     <Helmet>
       <meta name="robots" content="noindex, nofollow" />
     </Helmet>
+  );
+}
+
+function openAuthModal() {
+  window.dispatchEvent(new Event("open-auth-modal"));
+}
+
+function SignInRequired() {
+  useEffect(() => {
+    openAuthModal();
+  }, []);
+
+  return (
+    <section className="max-w-[760px] mx-auto px-6 py-16 text-center animate-fade-in">
+      <NoIndexTag />
+      <span className="material-symbols-outlined text-6xl text-primary mb-4">
+        login
+      </span>
+      <h1 className="font-headline font-bold text-3xl text-on-background mb-2">
+        Sign In Required
+      </h1>
+      <p className="text-on-surface-variant mb-6 max-w-md mx-auto">
+        You need to be signed in to access this. Sign in or create an account to
+        continue.
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-3">
+        <button
+          onClick={openAuthModal}
+          className="px-6 py-2.5 bg-primary text-on-primary font-headline font-bold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
+        >
+          Sign In
+        </button>
+        <Link
+          to="/"
+          className="px-6 py-2.5 rounded-xl border border-outline-variant/20 text-on-surface-variant font-headline font-bold hover:bg-surface-container-low transition-all"
+        >
+          Back to Home
+        </Link>
+      </div>
+    </section>
   );
 }
 
@@ -31,7 +72,7 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={redirectTo} replace state={{ from: location }} />;
+    return <SignInRequired />;
   }
 
   if (error) {

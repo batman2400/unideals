@@ -29,7 +29,8 @@ export async function uploadEventImage({ file, userId }) {
 
   const extension = extractExtension(file.name);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
-  const filePath = `events/${userId}/${Date.now()}-${randomSuffix}.${extension}`;
+  // Must be `{userId}/...` — storage RLS checks foldername(name)[1] = auth.uid()
+  const filePath = `${userId}/${Date.now()}-${randomSuffix}.${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(EVENT_IMAGES_BUCKET)

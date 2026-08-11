@@ -38,14 +38,33 @@ export default function Navbar({ onLogout, isLoggedIn }) {
       <div className="flex items-center gap-8">
         {navLinks.map((link) => {
           const active = isActive(link.path);
+          const requiresAuth = link.path === "/saved";
+          const className = `relative font-headline font-bold text-base tracking-tight transition-colors duration-200 py-1 ${
+            active
+              ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full"
+              : "text-on-surface-variant hover:text-on-background"
+          }`;
+
+          if (requiresAuth && !isLoggedIn) {
+            return (
+              <button
+                key={link.path}
+                type="button"
+                title={link.label}
+                onClick={handleOpenAuth}
+                className={className}
+              >
+                {link.label}
+              </button>
+            );
+          }
+
           return (
             <Link
               key={link.path}
               to={link.path}
               title={link.label}
-              className={`relative font-headline font-bold text-base tracking-tight transition-colors duration-200 py-1 ${
-                active ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full" : "text-on-surface-variant hover:text-on-background"
-              }`}
+              className={className}
             >
               {link.label}
             </Link>

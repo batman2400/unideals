@@ -88,6 +88,7 @@ ALTER TABLE public.events ADD COLUMN IF NOT EXISTS rejection_reason TEXT;
 
 DROP POLICY IF EXISTS "Event images uploadable by authenticated users" ON storage.objects;
 
+-- Upload path must be `{auth.uid()}/filename` (see src/lib/eventImageUpload.js).
 CREATE POLICY "Event images uploadable by owner" ON storage.objects
   FOR INSERT TO authenticated
   WITH CHECK (

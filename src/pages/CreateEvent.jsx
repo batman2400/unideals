@@ -93,12 +93,21 @@ function CreateEvent() {
     try {
       if (!user) throw new Error("You must be logged in to create an event.");
 
+      // Prefer the live auth uid so organizer_id always matches RLS (auth.uid()).
+      const {
+        data: { user: authUser },
+        error: authError,
+      } = await supabase.auth.getUser();
+      if (authError) throw authError;
+      const organizerId = authUser?.id || user.id;
+      if (!organizerId) throw new Error("You must be logged in to create an event.");
+
       let finalImageUrl = formData.cover_image_url;
 
       if (selectedImageFile) {
         const { publicUrl } = await uploadEventImage({
           file: selectedImageFile,
-          userId: user.id,
+          userId: organizerId,
         });
         finalImageUrl = publicUrl;
       }
@@ -106,8 +115,8 @@ function CreateEvent() {
       const eventData = {
         ...formData,
         cover_image_url: finalImageUrl,
-        organizer_id: user.id,
-        status: 'pending',
+        organizer_id: organizerId,
+        status: "pending",
         publish_at: formData.publish_at
           ? new Date(formData.publish_at).toISOString()
           : new Date().toISOString(),

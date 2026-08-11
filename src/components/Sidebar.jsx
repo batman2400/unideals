@@ -56,17 +56,17 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
     return location.pathname.startsWith(link.path);
   };
 
+  const authRequiredPaths = new Set(["/saved", "/profile"]);
+
   const NavItem = ({ link }) => {
     const active = isActive(link);
-    return (
-      <Link
-        to={link.path}
-        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all min-h-[44px] ${
-          active
-            ? "bg-primary-container/20 text-primary font-bold"
-            : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-background font-medium"
-        }`}
-      >
+    const className = `flex items-center gap-3 px-4 py-3 rounded-xl transition-all min-h-[44px] ${
+      active
+        ? "bg-primary-container/20 text-primary font-bold"
+        : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-background font-medium"
+    }`;
+    const icon = (
+      <>
         <span
           className={`material-symbols-outlined text-[22px] ${
             active ? "text-primary" : "text-on-surface-variant/70"
@@ -76,6 +76,24 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
           {link.icon}
         </span>
         <span className="text-sm tracking-tight">{link.label}</span>
+      </>
+    );
+
+    if (!isLoggedIn && authRequiredPaths.has(link.path)) {
+      return (
+        <button
+          type="button"
+          onClick={handleOpenAuth}
+          className={`w-full text-left ${className}`}
+        >
+          {icon}
+        </button>
+      );
+    }
+
+    return (
+      <Link to={link.path} className={className}>
+        {icon}
       </Link>
     );
   };
@@ -141,11 +159,9 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
 
         {/* Footer Area */}
         <div className="mt-auto p-4 border-t border-outline-variant/10 bg-surface-container-lowest/50 space-y-1 flex-shrink-0">
-          {footerLinks.map((link) => {
-            // Hide profile link if not logged in
-            if (link.path === "/profile" && !isLoggedIn) return null;
-            return <NavItem key={link.path} link={link} />;
-          })}
+          {footerLinks.map((link) => (
+            <NavItem key={link.path} link={link} />
+          ))}
 
           {isLoggedIn ? (
             <button

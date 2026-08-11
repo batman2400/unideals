@@ -42,7 +42,9 @@ function Profile({ isLoggedIn, user }) {
   // ── Avatar upload ───────────────────────────────────
   const fileInputRef = useRef(null);
   const [avatarUrl, setAvatarUrl] = useState(
-    user?.user_metadata?.avatar_url || null,
+    user?.user_metadata?.avatar_url ||
+      user?.user_metadata?.picture ||
+      null,
   );
   const [avatarUploading, setAvatarUploading] = useState(false);
 
@@ -322,6 +324,7 @@ function Profile({ isLoggedIn, user }) {
   const userEmail = user?.email ?? "user@example.com";
   const fullName =
     user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
     userEmail
       .split("@")[0]
       .replace(/[._]/g, " ")

@@ -5,6 +5,7 @@
  * Wired to Supabase Auth:
  *   - Login tab  → supabase.auth.signInWithPassword()
  *   - Sign Up tab → supabase.auth.signUp()
+ *   - Google      → supabase.auth.signInWithOAuth({ provider: "google" })
  *
  * Features:
  *   - Controlled form inputs via useState
@@ -15,8 +16,10 @@
  * Props:
  *   - isOpen     : boolean — controls visibility
  *   - onClose    : function — called to close the modal
+ *   - initialError : string — optional error to show when the modal opens
+ *                    (e.g. OAuth redirect failure)
  */
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import {
   PASSWORD_HINT,
@@ -26,7 +29,30 @@ import {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-function AuthModal({ isOpen, onClose }) {
+function GoogleMark({ className }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
+      <path
+        fill="#4285F4"
+        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
+      />
+      <path
+        fill="#34A853"
+        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+      />
+      <path
+        fill="#FBBC05"
+        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z"
+      />
+      <path
+        fill="#EA4335"
+        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+      />
+    </svg>
+  );
+}
+
+function AuthModal({ isOpen, onClose, initialError = "" }) {
   // Toggle between "login" and "signup" tabs
   const [activeTab, setActiveTab] = useState("login");
 
@@ -40,10 +66,20 @@ function AuthModal({ isOpen, onClose }) {
   const [errors, setErrors] = useState({});
   const [authError, setAuthError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [oauthLoading, setOauthLoading] = useState(false);
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [resetSent, setResetSent] = useState(false);
   const inFlightRef = useRef(false);
+
+  useEffect(() => {
+    if (isOpen && initialError) {
+      setAuthError(initialError);
+      setShowForgot(false);
+      setSignupSuccess(false);
+      setResetSent(false);
+    }
+  }, [isOpen, initialError]);
 
   // Reset form when switching tabs
   const switchTab = (tab) => {
@@ -57,6 +93,51 @@ function AuthModal({ isOpen, onClose }) {
     setSignupSuccess(false);
     setShowForgot(false);
     setResetSent(false);
+    setOauthLoading(false);
+  };
+
+  // ── Google OAuth ──────────────────────────────────────
+  const handleGoogleSignIn = async () => {
+    if (inFlightRef.current) return;
+
+    setAuthError("");
+    inFlightRef.current = true;
+    setOauthLoading(true);
+
+    try {
+      // Return to the page the user was on after Google redirects back.
+      // Supabase exchanges the code and sets the session via detectSessionInUrl.
+      const redirectTo = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo,
+          queryParams: {
+            // Always show the account picker so shared devices don't auto-pick.
+            prompt: "select_account",
+          },
+        },
+      });
+
+      if (error) {
+        console.error("Google sign-in failed:", error);
+        setAuthError(
+          describeAuthFailure(
+            error,
+            "Google sign-in didn't work. Please try again.",
+          ),
+        );
+        inFlightRef.current = false;
+        setOauthLoading(false);
+      }
+      // On success the browser redirects away — no need to reset loading.
+    } catch (err) {
+      console.error("Unexpected Google sign-in error:", err);
+      setAuthError("An unexpected error occurred. Please try again.");
+      inFlightRef.current = false;
+      setOauthLoading(false);
+    }
   };
 
   const openForgot = () => {
@@ -421,6 +502,33 @@ function AuthModal({ isOpen, onClose }) {
                 </div>
               )}
 
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading || oauthLoading}
+                className="w-full flex items-center justify-center gap-3 bg-surface border border-outline-variant/25 text-on-surface py-3.5 rounded-lg font-headline font-bold text-sm tracking-tight hover:bg-surface-container-low active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed mb-5"
+              >
+                {oauthLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-on-surface/40 border-t-transparent rounded-full animate-spin" />
+                    Redirecting to Google...
+                  </>
+                ) : (
+                  <>
+                    <GoogleMark className="w-5 h-5" />
+                    Continue with Google
+                  </>
+                )}
+              </button>
+
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-px flex-1 bg-outline-variant/20" />
+                <span className="text-[11px] font-bold tracking-[0.15em] uppercase text-on-surface-variant/50">
+                  or
+                </span>
+                <div className="h-px flex-1 bg-outline-variant/20" />
+              </div>
+
               {/* Form */}
               <form className="flex flex-col gap-4" onSubmit={handleSubmit}>
                 {activeTab === "signup" && (
@@ -563,7 +671,7 @@ function AuthModal({ isOpen, onClose }) {
 
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || oauthLoading}
                   className="emerald-gradient text-on-primary py-3.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all mt-2 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
