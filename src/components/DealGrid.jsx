@@ -21,6 +21,8 @@ function DealGrid({
   savedIds,
   onToggleSave,
   savedLoading,
+  emptyTitle = "No deals found",
+  emptyMessage = "Try adjusting your filters or search.",
 }) {
   if (!deals || deals.length === 0) {
     return (
@@ -29,10 +31,10 @@ function DealGrid({
           sentiment_dissatisfied
         </span>
         <p className="text-on-surface-variant/60 font-headline font-bold text-lg">
-          No deals found
+          {emptyTitle}
         </p>
         <p className="text-on-surface-variant/40 text-sm mt-1">
-          Try adjusting your filters or search.
+          {emptyMessage}
         </p>
       </div>
     );

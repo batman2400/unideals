@@ -101,6 +101,22 @@ function AdminPendingEvents() {
 
       setEvents((prev) => prev.filter((e) => e.id !== id));
       setActingEventId(null);
+
+      if (action === "approve" && target) {
+        const { error: mailError } = await supabase.functions.invoke(
+          "send-event-approved",
+          {
+            body: {
+              record: { ...target, status: "approved" },
+              old_record: { status: target.status },
+            },
+          },
+        );
+        if (mailError) {
+          console.error("Could not send event approval email:", mailError);
+        }
+      }
+
       showMessage(
         action === "approve"
           ? isScheduled

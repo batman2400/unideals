@@ -5,6 +5,7 @@ import { supabase } from "../lib/supabaseClient";
 import { formatLaunchDate, isComingSoonEvent } from "../lib/comingSoon";
 import { asHttpUrl } from "../lib/httpUrl";
 import { SITE_URL } from "../lib/seo";
+import { useRoleContext } from "../lib/RoleContext";
 import EventSchema from "../components/EventSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
 
@@ -13,27 +14,36 @@ const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 export default function EventDetails() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, role, loading: roleLoading } = useRoleContext();
   
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    if (roleLoading) return;
     fetchEvent();
-  }, [id]);
+  }, [id, roleLoading, user?.id, role]);
 
   const fetchEvent = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const { data, error: fetchError } = await supabase
-        .from("events")
-        .select("*")
-        .eq("id", id)
-        .single();
+      let query = supabase.from("events").select("*").eq("id", id);
+
+      if (role === "admin") {
+        // Admins can open any status by URL.
+      } else if (user?.id) {
+        query = query.or(`status.eq.approved,organizer_id.eq.${user.id}`);
+      } else {
+        query = query.eq("status", "approved");
+      }
+
+      const { data, error: fetchError } = await query.single();
 
       if (fetchError) throw fetchError;
+
       setEvent(data);
     } catch (err) {
       console.error("Error fetching event details:", err);
@@ -49,7 +59,7 @@ export default function EventDetails() {
     return new Date(dateString).toLocaleDateString('en-US', options);
   };
 
-  if (loading) {
+  if (loading || roleLoading) {
     return (
       <div className="max-w-4xl mx-auto px-4 md:px-8 py-8 md:py-12 animate-fade-in">
         <div className="animate-pulse space-y-8">

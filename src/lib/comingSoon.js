@@ -5,15 +5,18 @@
 export function isComingSoonDeal(deal) {
   if (!deal) return false;
   if (typeof deal.isComingSoon === "boolean") return deal.isComingSoon;
+  if (typeof deal.is_coming_soon === "boolean") return deal.is_coming_soon;
   const start = deal.startTime || deal.start_time;
   if (!start) return false;
   const t = new Date(start);
   return !Number.isNaN(t.getTime()) && t.getTime() > Date.now();
 }
 
-/** True when the deal's end time is in the past. */
+/** True when the deal has ended. Prefers RPC is_expired so hidden end dates still wall. */
 export function isExpiredDeal(deal) {
   if (!deal) return false;
+  if (typeof deal.isExpired === "boolean") return deal.isExpired;
+  if (typeof deal.is_expired === "boolean") return deal.is_expired;
   const end = deal.endTime || deal.end_time;
   if (!end) return false;
   const t = new Date(end);

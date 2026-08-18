@@ -46,6 +46,24 @@ export default function Contact() {
 
       if (submitError) throw submitError;
 
+      const { error: mailError } = await supabase.functions.invoke(
+        "send-inquiry-notification",
+        {
+          body: {
+            record: {
+              name: formData.name,
+              email: formData.email,
+              inquiry_type: formData.inquiry_type,
+              brand_name: showBrandField ? formData.brand_name : null,
+              message: formData.message,
+            },
+          },
+        },
+      );
+      if (mailError) {
+        console.error("Could not send inquiry notification:", mailError);
+      }
+
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting inquiry:", err);

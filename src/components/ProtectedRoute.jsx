@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Link, Navigate, useLocation } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useRoleContext } from "../lib/RoleContext";
 
@@ -55,7 +55,6 @@ function SignInRequired() {
 }
 
 function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
-  const location = useLocation();
   const { role, loading, error, isAuthenticated, refreshRole } =
     useRoleContext();
 
@@ -108,11 +107,32 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
 
   if (allowedRoles.length > 0 && !allowedRoles.includes(role)) {
     return (
-      <Navigate
-        to={redirectTo}
-        replace
-        state={{ from: location, unauthorized: true }}
-      />
+      <section className="max-w-[760px] mx-auto px-6 py-16 text-center animate-fade-in">
+        <NoIndexTag />
+        <span className="material-symbols-outlined text-6xl text-primary mb-4">
+          lock
+        </span>
+        <h1 className="font-headline font-bold text-3xl text-on-background mb-2">
+          Access denied
+        </h1>
+        <p className="text-on-surface-variant mb-6 max-w-md mx-auto">
+          Your account does not have permission to view this page.
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-3">
+          <Link
+            to="/profile"
+            className="px-6 py-2.5 bg-primary text-on-primary font-headline font-bold rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98]"
+          >
+            Go to Profile
+          </Link>
+          <Link
+            to={redirectTo}
+            className="px-6 py-2.5 rounded-xl border border-outline-variant/20 text-on-surface-variant font-headline font-bold hover:bg-surface-container-low transition-all"
+          >
+            Back to Home
+          </Link>
+        </div>
+      </section>
     );
   }
 

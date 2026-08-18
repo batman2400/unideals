@@ -360,25 +360,42 @@ function InStoreTicketDisplay({
 function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [revealError, setRevealError] = useState("");
+  const [revealing, setRevealing] = useState(false);
 
   const logEvent = useCallback(
     async (eventType) => {
-      try {
-        await supabase.rpc("log_online_code_event", {
-          target_deal_id: dealId,
-          target_event_type: eventType,
-        });
-      } catch {
-        // Silent fail for analytics
-      }
+      const { error } = await supabase.rpc("log_online_code_event", {
+        target_deal_id: dealId,
+        target_event_type: eventType,
+      });
+      return { error };
     },
     [dealId],
   );
 
-  const handleReveal = useCallback(() => {
+  const handleReveal = useCallback(async () => {
+    const code =
+      typeof redemptionCode === "string" ? redemptionCode.trim() : "";
+    if (!code) {
+      setRevealError("This offer does not currently have a valid redemption code.");
+      return;
+    }
+
+    setRevealing(true);
+    setRevealError("");
+    const { error } = await logEvent("reveal");
+    setRevealing(false);
+
+    if (error) {
+      setRevealError(
+        error.message || "This offer is not available to redeem right now.",
+      );
+      return;
+    }
+
     setRevealed(true);
-    logEvent("reveal");
-  }, [logEvent]);
+  }, [logEvent, redemptionCode]);
 
   const handleCopy = useCallback(async () => {
     try {
@@ -407,15 +424,21 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
     return (
       <div className="text-center">
         <button
+          type="button"
           onClick={handleReveal}
-          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl emerald-gradient py-3.5 text-base font-headline font-bold tracking-tight text-on-primary shadow-lg transition-all hover:shadow-xl active:scale-[0.98]"
+          disabled={revealing}
+          className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-xl emerald-gradient py-3.5 text-base font-headline font-bold tracking-tight text-on-primary shadow-lg transition-all hover:shadow-xl active:scale-[0.98] disabled:opacity-60"
         >
           <span className="material-symbols-outlined text-xl">visibility</span>
-          Reveal Promo Code
+          {revealing ? "Checking offer…" : "Reveal Promo Code"}
         </button>
-        <p className="mt-3 text-xs text-on-surface-variant/60">
-          Reveal your exclusive promo code for {brand}.
-        </p>
+        {revealError ? (
+          <p className="mt-3 text-xs font-semibold text-error">{revealError}</p>
+        ) : (
+          <p className="mt-3 text-xs text-on-surface-variant/60">
+            Reveal your exclusive promo code for {brand}.
+          </p>
+        )}
       </div>
     );
   }
@@ -541,24 +564,23 @@ function VerificationWall({
               {isPending ? "Verification pending" : "Go to verification"}
             </Link>
           ) : (
-            <button
-              type="button"
-              onClick={onOpenAuthModal}
-              className="min-h-[44px] flex-1 rounded-xl emerald-gradient py-3 font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
-            >
-              Sign In / Create Account
-            </button>
+            <>
+              <button
+                type="button"
+                onClick={onOpenAuthModal}
+                className="min-h-[44px] flex-1 rounded-xl emerald-gradient py-3 font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
+              >
+                Sign In / Create Account
+              </button>
+              <button
+                type="button"
+                onClick={onOpenAuthModal}
+                className="min-h-[44px] flex-1 rounded-xl border border-outline-variant/25 bg-surface py-3 font-headline text-sm font-bold tracking-tight text-on-surface-variant transition-all hover:border-primary/25 hover:text-on-surface"
+              >
+                Already Verified? Sign In
+              </button>
+            </>
           )}
-
-          <button
-            type="button"
-            onClick={onOpenAuthModal}
-            className="min-h-[44px] flex-1 rounded-xl border border-outline-variant/25 bg-surface py-3 font-headline text-sm font-bold tracking-tight text-on-surface-variant transition-all hover:border-primary/25 hover:text-on-surface"
-          >
-            {isAuthenticated
-              ? "Re-register with Uni Email"
-              : "Already Verified? Sign In"}
-          </button>
         </div>
       </div>
     </div>

@@ -34,7 +34,10 @@ function mapDeal(row) {
     endTime: row.end_time ?? null,
     showStartDate: !!row.show_start_date,
     showEndDate: !!row.show_end_date,
-    isComingSoon: !!row.is_coming_soon,
+    // Leave undefined when the RPC omits the flag so helpers can fall back to dates.
+    isComingSoon:
+      row.is_coming_soon == null ? undefined : !!row.is_coming_soon,
+    isExpired: row.is_expired == null ? undefined : !!row.is_expired,
   };
 }
 

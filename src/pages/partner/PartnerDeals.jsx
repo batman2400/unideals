@@ -14,12 +14,14 @@ const STATUS_BADGE = {
   expired: "bg-surface-container-high text-on-surface border-outline-variant/30",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  paused: "bg-red-50 text-red-600 border-red-200",
 };
 
 const STATUS_TABS = [
   { value: null, label: "All" },
   { value: "active", label: "Active" },
   { value: "scheduled", label: "Scheduled" },
+  { value: "paused", label: "Paused" },
   { value: "expired", label: "Expired" },
 ];
 
@@ -40,6 +42,7 @@ function PartnerDeals() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [statusFilter, setStatusFilter] = useState(searchParams.get("filter") || null);
   const [deletingDealId, setDeletingDealId] = useState(null);
+  const [actingDealId, setActingDealId] = useState(null);
   const isMountedRef = useRef(true);
 
   useEffect(() => {
@@ -153,6 +156,41 @@ function PartnerDeals() {
     [partnerBrandId],
   );
 
+  const handleStatusChange = useCallback(
+    async (dealId, newStatus) => {
+      if (!partnerBrandId) return;
+      setActingDealId(dealId);
+      setError("");
+
+      const { error: updateError } = await supabase
+        .from("deals")
+        .update({ status: newStatus })
+        .eq("id", dealId)
+        .eq("brand_id", partnerBrandId);
+
+      if (!isMountedRef.current) return;
+      if (updateError) {
+        setError(updateError.message);
+        setActingDealId(null);
+        return;
+      }
+
+      setDeals((prev) =>
+        prev.map((d) => (d.id === dealId ? { ...d, status: newStatus } : d)),
+      );
+      setActingDealId(null);
+      setMessage(
+        newStatus === "paused"
+          ? "Deal paused. Students will not see it until you activate it."
+          : "Deal is live again.",
+      );
+      setTimeout(() => {
+        if (isMountedRef.current) setMessage("");
+      }, 3000);
+    },
+    [partnerBrandId],
+  );
+
   const now = new Date();
   const filteredDeals = statusFilter
     ? deals.filter((d) => {
@@ -168,7 +206,7 @@ function PartnerDeals() {
                  start > now;
         }
         if (statusFilter === "expired") {
-          return d.status === "expired" || (end && end < now);
+          return d.status !== "paused" && (d.status === "expired" || (end && end < now));
         }
         return d.status === statusFilter;
       })
@@ -238,7 +276,7 @@ function PartnerDeals() {
                          start > now;
                 }
                 if (tab.value === "expired") {
-                  return d.status === "expired" || (end && end < now);
+                  return d.status !== "paused" && (d.status === "expired" || (end && end < now));
                 }
                 return d.status === tab.value;
               }).length
@@ -294,6 +332,7 @@ function PartnerDeals() {
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {filteredDeals.map((deal) => {
             const isDeleting = deletingDealId === deal.id;
+            const isActing = actingDealId === deal.id;
             const start = deal.start_time ? new Date(deal.start_time) : new Date(0);
             const end = deal.end_time ? new Date(deal.end_time) : null;
             let displayStatus = deal.status;
@@ -301,11 +340,16 @@ function PartnerDeals() {
               if (start > now) displayStatus = "scheduled";
               else if (end && end < now) displayStatus = "expired";
               else displayStatus = "active";
+            } else if (deal.status === "paused") {
+              displayStatus = "paused";
             } else if (end && end < now) {
               displayStatus = "expired";
             }
             
             const badge = STATUS_BADGE[displayStatus] || STATUS_BADGE.pending;
+            const canPause =
+              displayStatus === "active" || displayStatus === "scheduled";
+            const canActivate = displayStatus === "paused";
 
             return (
               <article
@@ -349,6 +393,32 @@ function PartnerDeals() {
 
                   {/* Actions */}
                   <div className="flex items-center gap-2">
+                    {canPause && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(deal.id, "paused")}
+                        disabled={isActing}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-headline font-bold text-on-surface-variant bg-surface-container-low border border-outline-variant/20 hover:bg-surface-container transition-colors disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          pause_circle
+                        </span>
+                        Pause
+                      </button>
+                    )}
+                    {canActivate && (
+                      <button
+                        type="button"
+                        onClick={() => handleStatusChange(deal.id, "approved")}
+                        disabled={isActing}
+                        className="inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-headline font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                      >
+                        <span className="material-symbols-outlined text-sm">
+                          play_circle
+                        </span>
+                        Activate
+                      </button>
+                    )}
                     <Link
                       to={`/partner/edit-deal/${deal.id}`}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-headline font-bold text-primary bg-primary/8 border border-primary/15 hover:bg-primary/15 transition-colors"
@@ -360,7 +430,7 @@ function PartnerDeals() {
                     </Link>
                     <button
                       onClick={() => handleDelete(deal.id)}
-                      disabled={isDeleting}
+                      disabled={isDeleting || isActing}
                       className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-headline font-bold text-red-600 bg-red-50 border border-red-200 hover:bg-red-100 transition-colors disabled:opacity-50"
                     >
                       {isDeleting ? (

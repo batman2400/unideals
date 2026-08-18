@@ -63,6 +63,7 @@ const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const BrandPage = lazy(() => import("./pages/BrandPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
+const NotFound = lazy(() => import("./pages/NotFound"));
 
 /** Legacy /perks/:id → /deals/:id, preserving the deal id. */
 function LegacyDealRedirect() {
@@ -339,8 +340,8 @@ function App() {
                 <Route path="blog" element={<AdminBlog />} />
               </Route>
 
-              {/* Catch-all 404 → redirect to home */}
-              <Route path="*" element={<Navigate to="/" replace />} />
+              {/* Catch-all 404 */}
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </div>
         </Suspense>

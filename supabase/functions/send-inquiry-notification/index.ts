@@ -9,14 +9,31 @@ import {
 
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const payload = await req.json();
     // Supabase webhooks wrap payload in { type, table, record, old_record }
     const { record } = payload;
     
     if (!record || !record.email) {
-      return new Response(JSON.stringify({ error: "Missing record or email" }), { status: 400 });
+      return json({ error: "Missing record or email" }, 400);
     }
 
     const { name, email, inquiry_type, message, brand_name } = record;
@@ -67,10 +84,8 @@ serve(async (req) => {
       }),
     });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return json({ success: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return json({ error: error.message }, 500);
   }
 });

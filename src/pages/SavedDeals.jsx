@@ -74,7 +74,11 @@ export default function SavedDeals() {
           error={dealsError || savedError}
         />
       ) : (
-        <DealGrid deals={savedDeals} />
+        <DealGrid
+          deals={savedDeals}
+          emptyTitle="Nothing saved yet"
+          emptyMessage="Tap the heart on a deal to keep it here."
+        />
       )}
     </div>
   );

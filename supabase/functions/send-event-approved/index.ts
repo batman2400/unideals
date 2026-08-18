@@ -13,25 +13,42 @@ const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+};
+
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+
 serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
+
   try {
     const payload = await req.json();
     const { record, old_record } = payload;
     
     // Only proceed if status shifted to approved
     if (record?.status !== 'approved' || old_record?.status === 'approved') {
-      return new Response(JSON.stringify({ message: "Not an approval transition" }), { status: 200 });
+      return json({ message: "Not an approval transition" });
     }
 
     if (!record.organizer_id) {
-      return new Response(JSON.stringify({ error: "No organizer id" }), { status: 400 });
+      return json({ error: "No organizer id" }, 400);
     }
 
     // Fetch user email from auth.users (requires service role key)
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(record.organizer_id);
     
     if (userError || !userData?.user) {
-      return new Response(JSON.stringify({ error: "User not found" }), { status: 400 });
+      return json({ error: "User not found" }, 400);
     }
     
     const userEmail = userData.user.email;
@@ -59,10 +76,8 @@ serve(async (req) => {
       }),
     });
 
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { "Content-Type": "application/json" },
-    });
+    return json({ success: true });
   } catch (error) {
-    return new Response(JSON.stringify({ error: error.message }), { status: 500 });
+    return json({ error: error.message }, 500);
   }
 });

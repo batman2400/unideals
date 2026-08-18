@@ -134,7 +134,9 @@ function AdminAllDeals() {
     }
 
     setDeals((prev) =>
-      prev.map((d) => (d.id === dealId ? { ...d, status: newStatus } : d)),
+      prev.map((d) =>
+        d.id === dealId ? { ...d, status: newStatus, db_status: newStatus } : d,
+      ),
     );
     setActingDealId(null);
     setMessage(`Deal status changed to ${newStatus}.`);

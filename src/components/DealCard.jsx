@@ -12,7 +12,7 @@ import { memo, useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
-import { formatLaunchRelative, isComingSoonDeal } from "../lib/comingSoon";
+import { formatLaunchRelative, isComingSoonDeal, isExpiredDeal } from "../lib/comingSoon";
 
 /** Days remaining until endTime, or null when unavailable. */
 function getDaysLeft(endTime) {
@@ -22,6 +22,30 @@ function getDaysLeft(endTime) {
   const ms = end.getTime() - Date.now();
   if (ms <= 0) return 0;
   return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+function EndedLock({ compact = false }) {
+  return (
+    <div className="pointer-events-none absolute inset-0 z-[2] flex flex-col items-center justify-center px-3 text-center">
+      <div className="absolute inset-0 bg-black/45" />
+      <div className="relative flex flex-col items-center gap-1.5">
+        <span
+          className={`material-symbols-outlined text-white drop-shadow-md ${
+            compact ? "text-3xl" : "text-4xl"
+          }`}
+        >
+          event_busy
+        </span>
+        <p
+          className={`font-headline font-extrabold tracking-tight text-white drop-shadow-md ${
+            compact ? "text-sm" : "text-base md:text-lg"
+          }`}
+        >
+          Ended
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function ComingSoonLock({ relativeLabel, compact = false }) {
@@ -78,8 +102,10 @@ function DealCard({
   const isDemo = typeof id === "string" && id.startsWith("demo-");
   const isHero = variant === "hero";
   const comingSoon = isComingSoonDeal(deal);
+  const expired = !comingSoon && isExpiredDeal(deal);
   const relativeLaunch = comingSoon ? formatLaunchRelative(startTime) : "";
-  const daysLeft = !comingSoon && showEndDate ? getDaysLeft(endTime) : null;
+  const daysLeft =
+    !comingSoon && !expired && showEndDate ? getDaysLeft(endTime) : null;
   const headline = discount || title;
 
   const isBatchMode = batchSaved !== undefined;
@@ -192,6 +218,7 @@ function DealCard({
         {comingSoon && (
           <ComingSoonLock relativeLabel={relativeLaunch} />
         )}
+        {expired && <EndedLock />}
 
         {/* Top-left: type only — avoid stacking with coming-soon banners */}
         <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
@@ -253,6 +280,7 @@ function DealCard({
         {comingSoon && (
           <ComingSoonLock relativeLabel={relativeLaunch} compact />
         )}
+        {expired && <EndedLock compact />}
         {!isDemo && (
           <button
             type="button"
@@ -294,6 +322,11 @@ function DealCard({
                 schedule
               </span>
               {relativeLaunch}
+            </span>
+          )}
+          {expired && (
+            <span className="inline-flex self-start rounded-full bg-surface-container px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant">
+              Ended
             </span>
           )}
           {daysLeft !== null && (

@@ -615,9 +615,8 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
                         <span className="material-symbols-outlined text-sm text-primary mt-0.5">
                           mail
                         </span>
-                        Sign up with any email — you can link your university
-                        email later in your profile for instant student
-                        verification.
+                        Sign up with any email — then verify from Profile.
+                        An admin must approve before you can redeem deals.
                       </p>
                     </div>
                   )}
