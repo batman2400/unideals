@@ -16,7 +16,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "../lib/supabaseClient";
 import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
-import { formatLaunchDate, isComingSoonDeal } from "../lib/comingSoon";
+import { formatLaunchDate, isComingSoonDeal, isExpiredDeal } from "../lib/comingSoon";
+import { asHttpUrl } from "../lib/httpUrl";
 import DealsLoader from "../components/DealsLoader";
 import DealOfferSchema from "../components/DealOfferSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
@@ -419,7 +420,7 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
     );
   }
 
-  const hasStoreLink = storeUrl && storeUrl !== "#";
+  const hasStoreLink = !!asHttpUrl(storeUrl);
 
   return (
     <div className="animate-modal-enter space-y-3 sm:space-y-4">
@@ -451,7 +452,7 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
 
       {hasStoreLink ? (
         <a
-          href={storeUrl}
+          href={asHttpUrl(storeUrl)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={handleClickThrough}
@@ -480,14 +481,17 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
 
 function VerificationWall({
   isAuthenticated,
+  isPending,
   verificationLoading,
   onOpenAuthModal,
 }) {
   const helperText = verificationLoading
     ? "Checking your account verification status..."
-    : isAuthenticated
-      ? "Your account is signed in, but not yet verified. Add a valid university email to unlock redemption codes."
-      : "Sign in or create an account with a valid university email to unlock this redemption code.";
+    : isPending
+      ? "Your student ID is with an admin for review. You'll be able to redeem once it's approved."
+      : isAuthenticated
+        ? "Your account is signed in, but not yet verified. Open Profile to complete verification."
+        : "Sign in or create an account, then verify your student status to unlock this redemption code.";
 
   return (
     <div className="relative animate-modal-enter overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 shadow-[0_18px_55px_-35px_rgba(6,26,20,0.8)] sm:p-6 md:p-8">
@@ -531,10 +535,10 @@ function VerificationWall({
         <div className="flex flex-col gap-3 sm:flex-row">
           {isAuthenticated ? (
             <Link
-              to="/profile?tab=settings"
+              to="/profile"
               className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl emerald-gradient py-3 text-center font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
             >
-              Update Profile Email
+              {isPending ? "Verification pending" : "Go to verification"}
             </Link>
           ) : (
             <button
@@ -567,6 +571,7 @@ function DealDetails() {
     role,
     isVerified,
     isAuthenticated,
+    user,
     loading: roleLoading,
   } = useRoleContext();
   const dealAccessKey = [
@@ -580,10 +585,32 @@ function DealDetails() {
   const [loadingSave, setLoadingSave] = useState(true);
   const [saveError, setSaveError] = useState("");
   const [brandLogoUrl, setBrandLogoUrl] = useState(null);
+  const [verificationPending, setVerificationPending] = useState(false);
 
   const handleOpenAuthModal = useCallback(() => {
     window.dispatchEvent(new Event("open-auth-modal"));
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadPending() {
+      if (!user?.id || isVerified) {
+        if (active) setVerificationPending(false);
+        return;
+      }
+      const { data } = await supabase
+        .from("manual_verifications")
+        .select("id")
+        .eq("user_id", user.id)
+        .in("status", ["pending", "awaiting_confirmation"])
+        .limit(1);
+      if (active) setVerificationPending((data?.length ?? 0) > 0);
+    }
+    loadPending();
+    return () => {
+      active = false;
+    };
+  }, [user?.id, isVerified]);
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -727,10 +754,11 @@ function DealDetails() {
   } = deal;
   const isInStore = type === "In-Store";
   const comingSoon = isComingSoonDeal(deal);
+  const expired = !comingSoon && isExpiredDeal(deal);
   const isPrivilegedRole = role === "admin" || role === "partner";
   const canRevealRedemption =
     isPrivilegedRole || (isAuthenticated && isVerified);
-  const showVerificationWall = !comingSoon && !canRevealRedemption;
+  const showVerificationWall = !comingSoon && !expired && !canRevealRedemption;
   const hasRedemptionCode =
     typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
   const headline = discount || title;
@@ -762,9 +790,21 @@ function DealDetails() {
           : "This offer is not live yet. Redemption unlocks on the launch date."}
       </p>
     </div>
+  ) : expired ? (
+    <div className="rounded-2xl border border-outline-variant/25 bg-surface-container-low p-5 text-sm text-on-surface-variant sm:p-6 md:p-8">
+      <p className="mb-2 inline-flex items-center gap-2 font-headline font-bold text-on-background">
+        <span className="material-symbols-outlined text-xl">event_busy</span>
+        This offer has ended
+      </p>
+      <p>
+        You can still browse the details, but the promo code and in-store ticket
+        are no longer available.
+      </p>
+    </div>
   ) : showVerificationWall ? (
     <VerificationWall
       isAuthenticated={isAuthenticated}
+      isPending={verificationPending}
       verificationLoading={roleLoading && isAuthenticated}
       onOpenAuthModal={handleOpenAuthModal}
     />

@@ -1,4 +1,4 @@
-import React from "react";
+import { asHttpUrl } from "../lib/httpUrl";
 
 const SITE_URL = "https://www.unideals.co";
 const FALLBACK_IMAGE = `${SITE_URL}/icon-512-v9.png`;
@@ -31,7 +31,8 @@ export default function DealOfferSchema({ deal, canonicalUrl }) {
   } = deal;
 
   const isInStore = type === "In-Store";
-  const hasStoreUrl = typeof storeUrl === "string" && storeUrl !== "#" && storeUrl.length > 0;
+  const safeStoreUrl = asHttpUrl(storeUrl);
+  const hasStoreUrl = !!safeStoreUrl;
 
   const schema = {
     "@context": "https://schema.org",
@@ -47,7 +48,7 @@ export default function DealOfferSchema({ deal, canonicalUrl }) {
     seller: {
       "@type": "Organization",
       name: brand,
-      ...(hasStoreUrl ? { url: storeUrl } : {}),
+      ...(hasStoreUrl ? { url: safeStoreUrl } : {}),
     },
     areaServed: {
       "@type": "Country",

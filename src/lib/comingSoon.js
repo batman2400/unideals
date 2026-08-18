@@ -11,6 +11,15 @@ export function isComingSoonDeal(deal) {
   return !Number.isNaN(t.getTime()) && t.getTime() > Date.now();
 }
 
+/** True when the deal's end time is in the past. */
+export function isExpiredDeal(deal) {
+  if (!deal) return false;
+  const end = deal.endTime || deal.end_time;
+  if (!end) return false;
+  const t = new Date(end);
+  return !Number.isNaN(t.getTime()) && t.getTime() < Date.now();
+}
+
 export function isComingSoonEvent(event) {
   if (!event) return false;
   const publishAt = event.publish_at || event.publishAt;

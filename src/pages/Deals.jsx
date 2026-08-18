@@ -2,7 +2,7 @@
  * Deals Page (/deals)
  *
  * Displays deals from Supabase in a filterable grid with
- * Current | Coming Soon tabs. Coming Soon is sorted nearest launch first.
+ * Live | Coming Soon tabs. Coming Soon is sorted nearest launch first.
  *
  * Props:
  *   - searchQuery : string — global search text from App state
@@ -24,7 +24,7 @@ const filters = [
 
 const scheduleTabs = [
   { label: "All", value: "all" },
-  { label: "Current", value: "current" },
+  { label: "Live", value: "current" },
   { label: "Coming Soon", value: "coming_soon" },
 ];
 
@@ -181,7 +181,7 @@ function Deals({ searchQuery }) {
         <DealsLoader loading={loading} error={error} />
       ) : (
         <>
-          {/* Current | Coming Soon tabs */}
+          {/* Live | Coming Soon tabs */}
           <div className="flex flex-wrap gap-2 mb-6">
             {scheduleTabs.map((tab) => (
               <button

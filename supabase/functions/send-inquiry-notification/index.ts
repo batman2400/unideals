@@ -1,5 +1,12 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 
+import {
+  MAIL_FOOTER,
+  REPLY_TO,
+  TEAM_INBOX,
+  TRANSACTIONAL_FROM,
+} from "../_shared/mail.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 
 serve(async (req) => {
@@ -22,8 +29,9 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "UniDeals Support <help@unideals.lk>",
-        to: ["help@unideals.lk"],
+        from: TRANSACTIONAL_FROM,
+        reply_to: REPLY_TO,
+        to: [TEAM_INBOX],
         subject: `New Inquiry [${inquiry_type}]: ${name}`,
         html: `<div style="font-family: sans-serif; max-width: 500px; padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px;">
                  <h2 style="color: #0f172a; margin-top: 0;">New Inquiry Received</h2>
@@ -45,14 +53,16 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "UniDeals Support <help@unideals.lk>",
+        from: TRANSACTIONAL_FROM,
+        reply_to: REPLY_TO,
         to: [email],
         subject: "We received your inquiry!",
         html: `<div style="font-family: sans-serif; max-width: 500px; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px;">
                  <h2 style="color: #0f172a; margin-top: 0;">Hi ${name},</h2>
-                 <p style="color: #475569; line-height: 1.5;">Thanks for reaching out to UniDeals. We have received your inquiry and our support team will get back to you shortly.</p>
+                 <p style="color: #475569; line-height: 1.5;">Thanks for reaching out to Uni Deals. We have received your inquiry and our support team will get back to you shortly.</p>
                  <br/>
-                 <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Best regards,<br/><strong>The UniDeals Team</strong></p>
+                 <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Best regards,<br/><strong>The Uni Deals Team</strong></p>
+                 ${MAIL_FOOTER}
                </div>`,
       }),
     });

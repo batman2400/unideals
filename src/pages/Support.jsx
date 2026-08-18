@@ -42,6 +42,46 @@ export default function Support() {
           </p>
         </div>
       </div>
+
+      <div className="mt-10">
+        <h2 className="font-headline font-bold text-2xl text-on-background mb-4">
+          Frequently asked
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">
+              How do I verify my student status?
+            </h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Open Profile and complete verification. Institute emails use a one-time code to prove inbox ownership; Gmail and school students upload ID. An admin must approve before you can redeem — OTP alone does not verify you.
+            </p>
+          </div>
+          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">
+              How do I redeem a deal?
+            </h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Open the deal. Online offers reveal a promo code. In-store offers generate a timed ticket on that deal page — show it to the cashier. Your Profile pass is identity only, not a ticket.
+            </p>
+          </div>
+          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">
+              How do I submit a campus event?
+            </h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Sign in, go to Events, and submit a listing. Events stay pending until an admin approves them. Students will see approved events on the Events page.
+            </p>
+          </div>
+          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">
+              How do brand partnerships work?
+            </h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Email us at unideals.lk@gmail.com or use the Contact form. A team member will reply from that inbox — automated mail from Uni Deals is send-only and is not monitored.
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

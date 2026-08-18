@@ -12,7 +12,10 @@ import {
   getOfferValuePlaceholder,
   isOfferValueRequired,
   OFFER_TYPE_OPTIONS,
+  validateOfferValue,
+  validateSchedule,
 } from "../../lib/dealOffer";
+import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 import DealCard from "../../components/DealCard";
 
@@ -48,6 +51,7 @@ const INITIAL_FORM = {
   description: "",
   start_time: "",
   end_time: "",
+  store_url: "",
   show_start_date: false,
   show_end_date: false,
 };
@@ -301,6 +305,24 @@ function CreateDeal() {
       return;
     }
 
+    const offerError = validateOfferValue(offerType, offerValue);
+    if (offerError) {
+      setError(offerError);
+      return;
+    }
+
+    const scheduleError = validateSchedule(formData.start_time, formData.end_time);
+    if (scheduleError) {
+      setError(scheduleError);
+      return;
+    }
+
+    const trimmedStoreUrl = String(formData.store_url || "").trim();
+    if (formData.type === "Online" && trimmedStoreUrl && !asHttpUrl(trimmedStoreUrl)) {
+      setError("Store URL must start with http:// or https://.");
+      return;
+    }
+
     if (!selectedImageFile) {
       setError("Please upload a deal image.");
       return;
@@ -361,6 +383,8 @@ function CreateDeal() {
         end_time: endIso,
         show_start_date: !!formData.show_start_date,
         show_end_date: !!formData.show_end_date,
+        store_url:
+          formData.type === "Online" ? asHttpUrl(trimmedStoreUrl) : null,
       };
 
       setSubmitStage("Saving deal...");
@@ -607,6 +631,26 @@ function CreateDeal() {
                     ))}
                   </select>
                 </div>
+
+                {formData.type === "Online" && (
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                      Store URL (Optional)
+                    </label>
+                    <input
+                      name="store_url"
+                      type="url"
+                      value={formData.store_url}
+                      onChange={onChange}
+                      disabled={submitting}
+                      placeholder="https://example.com/checkout"
+                      className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    />
+                    <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+                      http or https only. Shown after the student reveals the promo code.
+                    </p>
+                  </div>
+                )}
               </div>
 
             </div>

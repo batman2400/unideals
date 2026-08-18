@@ -20,6 +20,8 @@ const STATUS_BADGE = {
   pending: "bg-amber-50 text-amber-700 border-amber-200",
 };
 
+const PAGE_LIMIT = 500;
+
 function AdminAllDeals() {
   const { role, loading: roleLoading } = useRoleContext();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +35,7 @@ function AdminAllDeals() {
   const [inputValue, setInputValue] = useState("");
   const [message, setMessage] = useState("");
   const [actingDealId, setActingDealId] = useState(null);
+  const [listTruncated, setListTruncated] = useState(false);
   const isMountedRef = useRef(true);
 
   useEffect(
@@ -53,13 +56,14 @@ function AdminAllDeals() {
       {
         status_filter: null,
         search_query: searchQuery,
-        page_limit: 500,
+        page_limit: PAGE_LIMIT,
         page_offset: 0,
       },
     );
 
     if (fetchError) {
       setError(fetchError.message);
+      setListTruncated(false);
       setLoading(false);
       return;
     }
@@ -106,6 +110,7 @@ function AdminAllDeals() {
     }
 
     setDeals(processedDeals || []);
+    setListTruncated((data || []).length >= PAGE_LIMIT);
     setLoading(false);
   }, [role, statusFilter, searchQuery]);
 
@@ -405,7 +410,7 @@ function AdminAllDeals() {
                           )}
                           {displayStatus === "paused" && (
                             <button
-                              onClick={() => handleStatusChange(deal.id, "active")}
+                              onClick={() => handleStatusChange(deal.id, "approved")}
                               disabled={isActing}
                               title="Activate Deal"
                               className="w-8 h-8 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-700 transition-colors disabled:opacity-50"
@@ -434,6 +439,11 @@ function AdminAllDeals() {
               </tbody>
             </table>
           </div>
+          {listTruncated && (
+            <p className="px-4 py-3 text-xs font-bold text-on-surface-variant border-t border-outline-variant/10">
+              Showing first {PAGE_LIMIT} deals
+            </p>
+          )}
         </div>
       )}
     </PortalLayout>

@@ -9,7 +9,7 @@ import ItemListSchema from "../components/ItemListSchema";
 
 const scheduleTabs = [
   { label: "All", value: "all" },
-  { label: "Current", value: "current" },
+  { label: "Live", value: "current" },
   { label: "Coming Soon", value: "coming_soon" },
 ];
 
@@ -23,7 +23,7 @@ export default function UniversityEvents() {
     [allEvents],
   );
 
-  // Current tab: upcoming/ongoing vs past — exclude coming soon
+  // Live tab: upcoming/ongoing vs past — exclude coming soon
   const { activeEvents, pastEvents } = useMemo(() => {
     const now = new Date();
     const active = [];

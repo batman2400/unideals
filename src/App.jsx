@@ -14,6 +14,7 @@
  *   /categories  → Deals grouped by category
  *   /brands      → Partner directory
  *   /profile     → User dashboard & settings
+ *   /auth/callback → Google OAuth PKCE return
  */
 import { lazy, Suspense, useState, useEffect } from "react";
 import { Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
@@ -61,6 +62,7 @@ const AdminBlog = lazy(() => import("./pages/admin/AdminBlog"));
 const CategoryPage = lazy(() => import("./pages/CategoryPage"));
 const BrandPage = lazy(() => import("./pages/BrandPage"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
+const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 
 /** Legacy /perks/:id → /deals/:id, preserving the deal id. */
 function LegacyDealRedirect() {
@@ -145,6 +147,8 @@ function App() {
   // Surface OAuth errors returned in the URL (e.g. user cancelled Google),
   // then strip the query params so a refresh doesn't reopen the modal.
   useEffect(() => {
+    if (location.pathname === "/auth/callback") return;
+
     const params = new URLSearchParams(location.search);
     const error = params.get("error");
     const description = params.get("error_description");
@@ -178,12 +182,29 @@ function App() {
   const isLoggedIn = !!session;
   const user = session?.user ?? null;
   const isDealDetailsPage = /^\/deals\/[^/]+$/.test(location.pathname);
+  const isAuthCallback = location.pathname === "/auth/callback";
 
   // ── Logout Handler ───────────────────────────────────
   const handleLogout = async () => {
     await supabase.auth.signOut();
     // Session will be set to null by the onAuthStateChange listener
   };
+
+  // OAuth returns here with a PKCE code — keep chrome (nav/footer/modal)
+  // off the screen so the exchange isn't interrupted by a route remount.
+  if (isAuthCallback) {
+    return (
+      <Suspense
+        fallback={
+          <div className="min-h-[100dvh] flex items-center justify-center bg-background">
+            <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
+          </div>
+        }
+      >
+        <AuthCallback />
+      </Suspense>
+    );
+  }
 
   // Don't render until initial session check is done
   // This prevents a flash of unauthenticated UI
@@ -271,6 +292,7 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               {/* Public: the recovery link must open for signed-out users. */}
               <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route
                 path="/profile"
                 element={

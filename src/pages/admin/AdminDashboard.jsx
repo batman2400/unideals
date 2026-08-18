@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
+import { signVerificationProofs } from "../../lib/verificationProof";
+import { notifyVerificationRejected } from "../../lib/notifyVerificationRejected";
 
 function formatDateTime(value) {
   if (!value) return "-";
@@ -27,6 +29,7 @@ function AdminDashboard() {
 
   const [pendingDeals, setPendingDeals] = useState([]);
   const [pendingVerifications, setPendingVerifications] = useState([]);
+  const [verificationProofs, setVerificationProofs] = useState({});
   const [scanEvents, setScanEvents] = useState([]);
   const [confirmedRedemptions, setConfirmedRedemptions] = useState([]);
   const [shopAnalytics, setShopAnalytics] = useState([]);
@@ -98,13 +101,18 @@ function AdminDashboard() {
       const { data: verificationsData, error: verificationsError } = await supabase
         .from("manual_verifications")
         .select("*")
-        .eq("status", "pending")
+        .in("status", ["pending", "awaiting_confirmation"])
         .order("created_at", { ascending: false });
 
       if (verificationsError) {
         setError(verificationsError.message || "Failed to load pending verifications.");
       } else {
-        setPendingVerifications(verificationsData || []);
+        const rows = verificationsData || [];
+        setPendingVerifications(rows);
+        const signed = await Promise.all(
+          rows.map(async (row) => [row.id, await signVerificationProofs(row)]),
+        );
+        if (active) setVerificationProofs(Object.fromEntries(signed));
       }
 
       const [
@@ -250,15 +258,13 @@ function AdminDashboard() {
     showMessage("Deal rejected and removed from moderation queue.", "success");
   };
 
-  const handleApproveVerification = async (id, targetUserId, targetEmail) => {
+  const handleApproveVerification = async (id) => {
     if (role !== "admin") return;
     setActingVerificationId(id);
     setError("");
 
     const { error: updateError } = await supabase.rpc("approve_manual_verification", {
       request_id: id,
-      target_user_id: targetUserId,
-      target_email: targetEmail
     });
 
     if (!isMountedRef.current) return;
@@ -276,11 +282,17 @@ function AdminDashboard() {
 
   const handleRejectVerification = async (id) => {
     if (role !== "admin") return;
+    const reason = window.prompt(
+      "Reject reason (unreadable ID, not a student card, mismatch, duplicate, or other):",
+    );
+    if (!reason || !reason.trim()) return;
+
     setActingVerificationId(id);
     setError("");
 
     const { error: updateError } = await supabase.rpc("reject_manual_verification", {
-      request_id: id
+      request_id: id,
+      reason: reason.trim(),
     });
 
     if (!isMountedRef.current) return;
@@ -290,6 +302,9 @@ function AdminDashboard() {
       setError(updateError.message || "Failed to reject verification.");
       return;
     }
+
+    await notifyVerificationRejected(id);
+    if (!isMountedRef.current) return;
 
     setPendingVerifications((prev) => prev.filter((v) => v.id !== id));
     setActingVerificationId(null);
@@ -657,7 +672,7 @@ function AdminDashboard() {
           Manual Verifications
         </h2>
         <p className="text-on-surface-variant text-sm md:text-base max-w-2xl mb-8">
-          Review documents submitted by students whose emails couldn't be automatically verified.
+          Review email-OTP and manual student ID requests. Full queues live on Student Moderation.
         </p>
 
         {pendingVerifications.length === 0 ? (
@@ -673,31 +688,49 @@ function AdminDashboard() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
             {pendingVerifications.map((req) => {
               const isActing = actingVerificationId === req.id;
+              const proofs = verificationProofs[req.id] || {};
 
               return (
                 <article
                   key={req.id}
-                  className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm flex flex-col sm:flex-row"
+                  className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm"
                 >
-                  <a 
-                    href={req.proof_image_url} 
-                    target="_blank" 
-                    rel="noreferrer"
-                    className="w-full sm:w-48 bg-surface-container-low overflow-hidden block flex-shrink-0 border-r border-outline-variant/10 hover:opacity-90 transition-opacity"
-                    title="Click to view full image in new tab"
-                  >
-                    <img
-                      src={req.proof_image_url}
-                      alt="Proof document"
-                      className="w-full h-full object-cover sm:min-h-[220px]"
-                    />
-                  </a>
+                  <div className="grid grid-cols-2">
+                    {["front", "back"].map((side) => {
+                      const url = proofs[side];
+                      return url ? (
+                        <a
+                          key={side}
+                          href={url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="bg-surface-container-low overflow-hidden block hover:opacity-90 transition-opacity"
+                          title={`View ${side} of ID`}
+                        >
+                          <img
+                            src={url}
+                            alt={`Student ID ${side}`}
+                            className="w-full h-40 object-cover"
+                          />
+                        </a>
+                      ) : (
+                        <div
+                          key={side}
+                          className="bg-surface-container-low flex items-center justify-center p-4 h-40"
+                        >
+                          <p className="text-xs text-on-surface-variant text-center">
+                            {side} unavailable
+                          </p>
+                        </div>
+                      );
+                    })}
+                  </div>
 
                   <div className="p-5 md:p-6 flex-1 flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">
-                          {req.institution_type}
+                          {req.method === "email_otp" ? "Email OTP" : req.institution_type}
                         </p>
                         <span className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-wider">
                           {formatDateTime(req.created_at)}
@@ -708,13 +741,16 @@ function AdminDashboard() {
                         {req.institution_name}
                       </h3>
                       
-                      {req.institution_type === "university" && (
+                      {req.course_details && (
                         <p className="text-on-surface-variant text-sm mb-1">
-                          <span className="font-bold">Course:</span> {req.course_details}
+                          <span className="font-bold">
+                            {req.institution_type === "school" ? "Grade:" : "Course:"}
+                          </span>{" "}
+                          {req.course_details}
                         </p>
                       )}
                       
-                      {req.institution_type === "university" && (
+                      {req.student_id_number && (
                         <p className="text-on-surface-variant text-sm mb-1">
                           <span className="font-bold">ID:</span> {req.student_id_number}
                         </p>
@@ -727,7 +763,7 @@ function AdminDashboard() {
 
                     <div className="flex flex-col sm:flex-row gap-3 mt-4">
                       <button
-                        onClick={() => handleApproveVerification(req.id, req.user_id, req.contact_email)}
+                        onClick={() => handleApproveVerification(req.id)}
                         disabled={isActing}
                         className="flex-1 inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                       >

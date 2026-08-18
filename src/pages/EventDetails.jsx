@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { formatLaunchDate, isComingSoonEvent } from "../lib/comingSoon";
+import { asHttpUrl } from "../lib/httpUrl";
 import { SITE_URL } from "../lib/seo";
 import EventSchema from "../components/EventSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
@@ -91,6 +92,7 @@ export default function EventDetails() {
 
   const comingSoon = isComingSoonEvent(event);
   const publishLabel = comingSoon ? formatLaunchDate(event.publish_at) : "";
+  const registrationUrl = asHttpUrl(event.external_registration_url);
   const canonicalUrl = `${SITE_URL}/events/${event.id}`;
   const metaTitle = `${event.title} | Uni Deals Events`;
   const metaDescription = (
@@ -244,9 +246,9 @@ export default function EventDetails() {
                 <span className="material-symbols-outlined text-[18px]">lock</span>
                 Registration unlocks at go-live
               </div>
-            ) : event.external_registration_url ? (
+            ) : registrationUrl ? (
               <a 
-                href={event.external_registration_url}
+                href={registrationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 bg-primary text-on-primary font-bold rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm hover:shadow"

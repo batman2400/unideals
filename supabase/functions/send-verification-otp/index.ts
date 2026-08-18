@@ -1,6 +1,12 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
 
+import {
+  MAIL_FOOTER,
+  REPLY_TO,
+  TRANSACTIONAL_FROM,
+} from "../_shared/mail.ts";
+
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -143,15 +149,17 @@ serve(async (req) => {
         Authorization: `Bearer ${RESEND_API_KEY}`,
       },
       body: JSON.stringify({
-        from: "UniDeals <help@unideals.lk>",
+        from: TRANSACTIONAL_FROM,
+        reply_to: REPLY_TO,
         to: [normalized],
-        subject: "Your UniDeals verification code",
+        subject: "Your Uni Deals verification code",
         html: `<div style="font-family: sans-serif; max-width: 500px; padding: 24px; border: 1px solid #e5e7eb; border-radius: 8px;">
                  <h2 style="color: #0f172a; margin-top: 0;">Hi ${studentName},</h2>
                  <p style="color: #475569; line-height: 1.5;">Enter this code to verify your student status:</p>
                  <p style="font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #0f172a; margin: 24px 0;">${otp}</p>
                  <p style="color: #475569; line-height: 1.5;">The code expires in 15 minutes. If you didn't request it, you can ignore this email.</p>
-                 <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Best regards,<br/><strong>The UniDeals Team</strong></p>
+                 <p style="color: #64748b; font-size: 14px; margin-bottom: 0;">Best regards,<br/><strong>The Uni Deals Team</strong></p>
+                 ${MAIL_FOOTER}
                </div>`,
       }),
     });

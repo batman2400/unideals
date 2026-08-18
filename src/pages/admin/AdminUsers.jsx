@@ -16,6 +16,8 @@ const ROLE_FILTER_TABS = [
   { value: "admin", label: "Admins" },
 ];
 
+const PAGE_LIMIT = 100;
+
 function AdminUsers() {
   const { role, loading: roleLoading } = useRoleContext();
   const [users, setUsers] = useState([]);
@@ -33,6 +35,7 @@ function AdminUsers() {
   const [promoteEmail, setPromoteEmail] = useState("");
   const [promoteBrandId, setPromoteBrandId] = useState("");
   const [promoting, setPromoting] = useState(false);
+  const [listTruncated, setListTruncated] = useState(false);
   const isMountedRef = useRef(true);
 
   useEffect(
@@ -52,18 +55,20 @@ function AdminUsers() {
       {
         search_query: searchQuery,
         role_filter: roleFilter,
-        page_limit: 100,
+        page_limit: PAGE_LIMIT,
         page_offset: 0,
       },
     );
 
     if (fetchError) {
       setError(fetchError.message);
+      setListTruncated(false);
       setLoading(false);
       return;
     }
 
     setUsers(data || []);
+    setListTruncated((data || []).length >= PAGE_LIMIT);
     setLoading(false);
   }, [role, searchQuery, roleFilter]);
 
@@ -455,6 +460,11 @@ function AdminUsers() {
               </tbody>
             </table>
           </div>
+          {listTruncated && (
+            <p className="px-4 py-3 text-xs font-bold text-on-surface-variant border-t border-outline-variant/10">
+              Showing first {PAGE_LIMIT} users
+            </p>
+          )}
         </div>
       )}
     </PortalLayout>

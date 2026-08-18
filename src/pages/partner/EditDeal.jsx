@@ -13,7 +13,10 @@ import {
   isOfferValueRequired,
   OFFER_TYPE_OPTIONS,
   parseOfferLabel,
+  validateOfferValue,
+  validateSchedule,
 } from "../../lib/dealOffer";
+import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 import { toDatetimeLocalValue } from "../../lib/comingSoon";
 
@@ -42,6 +45,7 @@ const INITIAL_FORM = {
   redemptionCode: "",
   start_time: "",
   end_time: "",
+  store_url: "",
   show_start_date: false,
   show_end_date: false,
 };
@@ -160,7 +164,7 @@ function EditDeal() {
       const { data, error: fetchError } = await supabase
         .from("deals")
         .select(
-          "id, title, brand, discount, type, category, image_url, description, redemption_code, start_time, end_time, show_start_date, show_end_date",
+          "id, title, brand, discount, type, category, image_url, description, redemption_code, start_time, end_time, show_start_date, show_end_date, store_url",
         )
         .eq("id", dealId)
         .eq("brand_id", brandId)
@@ -191,6 +195,7 @@ function EditDeal() {
         redemptionCode: data.redemption_code || "",
         start_time: toDatetimeLocalValue(data.start_time),
         end_time: toDatetimeLocalValue(data.end_time),
+        store_url: data.store_url || "",
         show_start_date: !!data.show_start_date,
         show_end_date: !!data.show_end_date,
       });
@@ -286,6 +291,24 @@ function EditDeal() {
       return;
     }
 
+    const offerError = validateOfferValue(offerType, offerValue);
+    if (offerError) {
+      setError(offerError);
+      return;
+    }
+
+    const scheduleError = validateSchedule(formData.start_time, formData.end_time);
+    if (scheduleError) {
+      setError(scheduleError);
+      return;
+    }
+
+    const trimmedStoreUrl = String(formData.store_url || "").trim();
+    if (formData.type === "Online" && trimmedStoreUrl && !asHttpUrl(trimmedStoreUrl)) {
+      setError("Store URL must start with http:// or https://.");
+      return;
+    }
+
     if (!selectedImageFile && !formData.imageUrl.trim()) {
       setError("Please upload an image or provide an image URL.");
       return;
@@ -335,6 +358,8 @@ function EditDeal() {
           : null,
         show_start_date: !!formData.show_start_date,
         show_end_date: !!formData.show_end_date,
+        store_url:
+          formData.type === "Online" ? asHttpUrl(trimmedStoreUrl) : null,
       };
 
       const { data, error: updateError } = await supabase
@@ -526,6 +551,26 @@ function EditDeal() {
               ))}
             </select>
           </div>
+
+          {formData.type === "Online" && (
+            <div className="md:col-span-2">
+              <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
+                Store URL (Optional)
+              </label>
+              <input
+                name="store_url"
+                type="url"
+                value={formData.store_url}
+                onChange={onChange}
+                disabled={saving}
+                placeholder="https://example.com/checkout"
+                className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+              />
+              <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
+                http or https only. Shown after the student reveals the promo code.
+              </p>
+            </div>
+          )}
 
           <div>
             <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">

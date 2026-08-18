@@ -22,6 +22,10 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import {
+  getOAuthRedirectUrl,
+  rememberReturnPath,
+} from "../lib/authRedirect";
+import {
   PASSWORD_HINT,
   describeAuthFailure,
   validatePasswordStrength,
@@ -105,14 +109,15 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
     setOauthLoading(true);
 
     try {
-      // Return to the page the user was on after Google redirects back.
-      // Supabase exchanges the code and sets the session via detectSessionInUrl.
-      const redirectTo = `${window.location.origin}${window.location.pathname}${window.location.search}`;
+      // Always return through /auth/callback (allowlisted), then restore
+      // the page the user was on. Sending the current path as redirectTo
+      // fails unless every route is listed in Supabase Redirect URLs.
+      rememberReturnPath();
 
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo,
+          redirectTo: getOAuthRedirectUrl(),
           queryParams: {
             // Always show the account picker so shared devices don't auto-pick.
             prompt: "select_account",

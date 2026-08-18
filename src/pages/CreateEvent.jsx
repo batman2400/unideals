@@ -93,6 +93,18 @@ function CreateEvent() {
     try {
       if (!user) throw new Error("You must be logged in to create an event.");
 
+      if (formData.end_time && formData.start_time) {
+        const start = new Date(formData.start_time);
+        const end = new Date(formData.end_time);
+        if (
+          Number.isNaN(start.getTime()) ||
+          Number.isNaN(end.getTime()) ||
+          end.getTime() < start.getTime()
+        ) {
+          throw new Error("End time must be on or after the start time.");
+        }
+      }
+
       // Prefer the live auth uid so organizer_id always matches RLS (auth.uid()).
       const {
         data: { user: authUser },

@@ -95,11 +95,21 @@ function PartnerScanner() {
     setResult(null);
 
     try {
+      const payload = String(code ?? "").trim();
+      if (payload.toLowerCase().startsWith("unideals://student/")) {
+        setResult({
+          result: "invalid",
+          message:
+            "This is a student identity pass, not a redemption ticket. Ask the student to open the deal and generate an in-store ticket.",
+        });
+        return;
+      }
+
       // Try the new ticket-based validation first
       const { data, error: rpcError } = await supabase.rpc(
         "validate_instore_ticket",
         {
-          scanned_payload: code,
+          scanned_payload: payload,
           scan_method: method,
         },
       );
@@ -137,7 +147,7 @@ function PartnerScanner() {
         const { data, error: legacyError } = await supabase.rpc(
           "record_partner_redemption_scan",
           {
-            scanned_payload: code,
+            scanned_payload: payload,
             scan_method: method,
           },
         );

@@ -1,27 +1,30 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
+import { signVerificationProofs } from "../../lib/verificationProof";
+import {
+  VERIFICATION_REJECT_REASONS,
+  formatVerificationRejectReason,
+} from "../../lib/verificationRejectReasons";
+import { notifyVerificationRejected } from "../../lib/notifyVerificationRejected";
 
-const PROOF_BUCKET = "verification-documents";
-const SIGNED_URL_TTL_SECONDS = 300;
-
-/**
- * Rows created before the bucket was made private stored a full public URL;
- * newer rows store the object path. Accept both.
- */
-function toStoragePath(value) {
-  if (!value) return null;
-  const marker = `/${PROOF_BUCKET}/`;
-  const index = value.indexOf(marker);
-  return index >= 0 ? value.slice(index + marker.length) : value;
+function inQueue(row, queue) {
+  if (queue === "email_otp") {
+    return row.method === "email_otp" && row.status === "awaiting_confirmation";
+  }
+  return row.method !== "email_otp" && row.status === "pending";
 }
 
 function AdminVerifications() {
   const { role, loading: roleLoading } = useRoleContext();
   const [pendingVerifications, setPendingVerifications] = useState([]);
   const [proofUrls, setProofUrls] = useState({});
+  const [queue, setQueue] = useState("email_otp");
   const [actingVerificationId, setActingVerificationId] = useState(null);
+  const [rejectingId, setRejectingId] = useState(null);
+  const [rejectPreset, setRejectPreset] = useState("unreadable");
+  const [rejectNote, setRejectNote] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState("success");
   const [loading, setLoading] = useState(true);
@@ -51,7 +54,7 @@ function AdminVerifications() {
         const { data, error: fetchError } = await supabase
           .from("manual_verifications")
           .select("*")
-          .eq("status", "pending")
+          .in("status", ["pending", "awaiting_confirmation"])
           .order("created_at", { ascending: false });
 
         if (!active) return;
@@ -62,21 +65,8 @@ function AdminVerifications() {
           const rows = data || [];
           setPendingVerifications(rows);
 
-          // Identity documents live in a private bucket, so each proof needs a
-          // short-lived signed URL rather than a permanent public one.
           const signed = await Promise.all(
-            rows.map(async (row) => {
-              const path = toStoragePath(row.proof_image_url);
-              if (!path) return [row.id, null];
-              const { data: signedData, error: signedError } = await supabase.storage
-                .from(PROOF_BUCKET)
-                .createSignedUrl(path, SIGNED_URL_TTL_SECONDS);
-              if (signedError) {
-                console.error("Could not sign proof document:", signedError);
-                return [row.id, null];
-              }
-              return [row.id, signedData?.signedUrl ?? null];
-            }),
+            rows.map(async (row) => [row.id, await signVerificationProofs(row)]),
           );
 
           if (!active) return;
@@ -96,6 +86,19 @@ function AdminVerifications() {
     };
   }, [role, roleLoading]);
 
+  const emailCount = useMemo(
+    () => pendingVerifications.filter((row) => inQueue(row, "email_otp")).length,
+    [pendingVerifications],
+  );
+  const manualCount = useMemo(
+    () => pendingVerifications.filter((row) => inQueue(row, "manual")).length,
+    [pendingVerifications],
+  );
+  const visible = useMemo(
+    () => pendingVerifications.filter((row) => inQueue(row, queue)),
+    [pendingVerifications, queue],
+  );
+
   const handleApproveVerification = async (id) => {
     if (role !== "admin" || actingVerificationId) return;
     if (!window.confirm("Approve this student and grant them verified status?")) return;
@@ -103,8 +106,6 @@ function AdminVerifications() {
     setActingVerificationId(id);
     setError("");
 
-    // The RPC derives the target user from the request row itself, so no
-    // identity is passed from the browser.
     const { error: updateError } = await supabase.rpc("approve_manual_verification", {
       request_id: id,
     });
@@ -124,13 +125,13 @@ function AdminVerifications() {
 
   const handleRejectVerification = async (id) => {
     if (role !== "admin" || actingVerificationId) return;
-    if (!window.confirm("Reject this verification request?")) return;
-
+    const reason = formatVerificationRejectReason(rejectPreset, rejectNote);
     setActingVerificationId(id);
     setError("");
 
     const { error: updateError } = await supabase.rpc("reject_manual_verification", {
-      request_id: id
+      request_id: id,
+      reason,
     });
 
     if (!isMountedRef.current) return;
@@ -141,8 +142,13 @@ function AdminVerifications() {
       return;
     }
 
+    await notifyVerificationRejected(id);
+    if (!isMountedRef.current) return;
+
     setPendingVerifications((prev) => prev.filter((v) => v.id !== id));
     setActingVerificationId(null);
+    setRejectingId(null);
+    setRejectNote("");
     showMessage("Student verification rejected.", "success");
   };
 
@@ -183,8 +189,34 @@ function AdminVerifications() {
           Student Moderation
         </h1>
         <p className="text-on-surface-variant text-sm">
-          Review documents submitted by students whose emails couldn't be automatically verified.
+          Email OTP is the fast lane after inbox confirmation. Manual includes school students
+          and anyone without an institute email.
         </p>
+      </div>
+
+      <div className="flex flex-wrap gap-2 mb-6">
+        <button
+          type="button"
+          onClick={() => setQueue("email_otp")}
+          className={`min-h-[40px] px-4 py-2 rounded-xl text-sm font-bold ${
+            queue === "email_otp"
+              ? "bg-primary text-on-primary"
+              : "bg-surface text-on-surface-variant border border-outline-variant/20"
+          }`}
+        >
+          Email OTP ({emailCount})
+        </button>
+        <button
+          type="button"
+          onClick={() => setQueue("manual")}
+          className={`min-h-[40px] px-4 py-2 rounded-xl text-sm font-bold ${
+            queue === "manual"
+              ? "bg-primary text-on-primary"
+              : "bg-surface text-on-surface-variant border border-outline-variant/20"
+          }`}
+        >
+          Manual ({manualCount})
+        </button>
       </div>
 
       {message && (
@@ -211,53 +243,64 @@ function AdminVerifications() {
         </div>
       )}
 
-      {pendingVerifications.length === 0 ? (
+      {visible.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/20 p-8 text-center shadow-sm">
           <p className="font-headline font-bold text-on-background text-lg mb-1">
-            No Pending Verifications
+            No pending requests
           </p>
           <p className="text-on-surface-variant text-sm">
-            All students are verified and good to go!
+            {queue === "email_otp"
+              ? "No university-email requests are waiting for confirmation."
+              : "No manual or school requests are waiting for review."}
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {pendingVerifications.map((req) => {
+          {visible.map((req) => {
             const isActing = actingVerificationId === req.id;
-            const proofUrl = proofUrls[req.id];
+            const proofs = proofUrls[req.id] || {};
 
             return (
               <article
                 key={req.id}
-                className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm flex flex-col sm:flex-row"
+                className="bg-surface rounded-2xl border border-outline-variant/20 overflow-hidden shadow-sm"
               >
-                {proofUrl ? (
-                  <a
-                    href={proofUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="w-full sm:w-48 bg-surface-container-low overflow-hidden block flex-shrink-0 border-r border-outline-variant/10 hover:opacity-90 transition-opacity"
-                    title="Click to view full image in new tab"
-                  >
-                    <img
-                      src={proofUrl}
-                      alt="Proof document"
-                      className="w-full h-full object-cover sm:min-h-[220px]"
-                    />
-                  </a>
-                ) : (
-                  <div className="w-full sm:w-48 bg-surface-container-low flex-shrink-0 border-r border-outline-variant/10 flex items-center justify-center p-4 sm:min-h-[220px]">
-                    <p className="text-xs text-on-surface-variant text-center">
-                      Document unavailable
-                    </p>
-                  </div>
-                )}
+                <div className="grid grid-cols-2">
+                  {["front", "back"].map((side) => {
+                    const url = proofs[side];
+                    return url ? (
+                      <a
+                        key={side}
+                        href={url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="bg-surface-container-low overflow-hidden block border-r border-outline-variant/10 hover:opacity-90 transition-opacity"
+                        title={`View ${side} of ID`}
+                      >
+                        <img
+                          src={url}
+                          alt={`Student ID ${side}`}
+                          className="w-full h-44 object-cover"
+                        />
+                      </a>
+                    ) : (
+                      <div
+                        key={side}
+                        className="bg-surface-container-low flex items-center justify-center p-4 h-44"
+                      >
+                        <p className="text-xs text-on-surface-variant text-center">
+                          {side} unavailable
+                        </p>
+                      </div>
+                    );
+                  })}
+                </div>
 
-                <div className="p-5 md:p-6 flex-1 flex flex-col justify-between">
+                <div className="p-5 md:p-6 flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between gap-3 mb-2">
                       <p className="text-xs font-bold tracking-[0.2em] uppercase text-primary">
-                        {req.institution_type}
+                        {req.method === "email_otp" ? "Email OTP" : req.institution_type}
                       </p>
                       <span className="text-[10px] font-bold text-on-surface-variant/50 uppercase tracking-wider">
                         {new Date(req.created_at).toLocaleDateString()}
@@ -267,14 +310,17 @@ function AdminVerifications() {
                     <h3 className="font-headline font-extrabold text-xl tracking-tight text-on-background mb-1">
                       {req.institution_name}
                     </h3>
-                    
-                    {req.institution_type === "university" && (
+
+                    {req.course_details && (
                       <p className="text-on-surface-variant text-sm mb-1">
-                        <span className="font-bold">Course:</span> {req.course_details}
+                        <span className="font-bold">
+                          {req.institution_type === "school" ? "Grade:" : "Course:"}
+                        </span>{" "}
+                        {req.course_details}
                       </p>
                     )}
-                    
-                    {req.institution_type === "university" && (
+
+                    {req.student_id_number && (
                       <p className="text-on-surface-variant text-sm mb-1">
                         <span className="font-bold">ID:</span> {req.student_id_number}
                       </p>
@@ -285,47 +331,72 @@ function AdminVerifications() {
                     </p>
                   </div>
 
-                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                    <button
-                      onClick={() => handleApproveVerification(req.id)}
-                      disabled={isActing}
-                      className="flex-1 inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {isActing ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-on-primary border-t-transparent rounded-full animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-base">
-                            done
-                          </span>
-                          Approve
-                        </>
-                      )}
-                    </button>
+                  {rejectingId === req.id ? (
+                    <div className="space-y-3">
+                      <div className="flex flex-wrap gap-2">
+                        {VERIFICATION_REJECT_REASONS.map((reason) => (
+                          <button
+                            key={reason.id}
+                            type="button"
+                            onClick={() => setRejectPreset(reason.id)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
+                              rejectPreset === reason.id
+                                ? "bg-error text-white"
+                                : "bg-surface-container text-on-surface-variant"
+                            }`}
+                          >
+                            {reason.label}
+                          </button>
+                        ))}
+                      </div>
+                      <input
+                        type="text"
+                        value={rejectNote}
+                        onChange={(e) => setRejectNote(e.target.value)}
+                        placeholder={rejectPreset === "other" ? "Describe the issue" : "Optional note"}
+                        className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-2.5 text-sm"
+                      />
+                      <div className="flex gap-3">
+                        <button
+                          type="button"
+                          onClick={() => setRejectingId(null)}
+                          className="flex-1 py-2.5 rounded-lg font-bold text-sm bg-surface-container"
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleRejectVerification(req.id)}
+                          disabled={isActing}
+                          className="flex-1 bg-error text-white py-2.5 rounded-lg font-bold text-sm disabled:opacity-70"
+                        >
+                          {isActing ? "Saving..." : "Confirm reject"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col sm:flex-row gap-3 mt-4">
+                      <button
+                        onClick={() => handleApproveVerification(req.id)}
+                        disabled={isActing}
+                        className="flex-1 inline-flex items-center justify-center gap-2 emerald-gradient text-on-primary py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        {isActing ? "Saving..." : "Approve"}
+                      </button>
 
-                    <button
-                      onClick={() => handleRejectVerification(req.id)}
-                      disabled={isActing}
-                      className="flex-1 inline-flex items-center justify-center gap-2 bg-error text-white py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
-                    >
-                      {isActing ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <span className="material-symbols-outlined text-base">
-                            close
-                          </span>
-                          Reject
-                        </>
-                      )}
-                    </button>
-                  </div>
+                      <button
+                        onClick={() => {
+                          setRejectingId(req.id);
+                          setRejectPreset("unreadable");
+                          setRejectNote("");
+                        }}
+                        disabled={isActing}
+                        className="flex-1 inline-flex items-center justify-center gap-2 bg-error text-white py-2.5 rounded-lg font-headline font-bold text-sm tracking-tight shadow-sm hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  )}
                 </div>
               </article>
             );

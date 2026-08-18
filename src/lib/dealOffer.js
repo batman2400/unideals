@@ -119,3 +119,50 @@ export function parseOfferLabel(offerLabel) {
     offerValue: normalized,
   };
 }
+
+/** Percent 1–100, flat amount > 0. Empty string means valid. */
+export function validateOfferValue(offerType, offerValue) {
+  if (!isOfferValueRequired(offerType)) return "";
+
+  const raw = String(offerValue ?? "").trim();
+  if (!raw) return "Please enter an offer value.";
+
+  if (offerType === "percentage_off") {
+    const n = Number(raw.replace(/%/g, "").replace(/,/g, "").trim());
+    if (!Number.isFinite(n) || n < 1 || n > 100) {
+      return "Percent off must be between 1 and 100.";
+    }
+  }
+
+  if (offerType === "flat_amount_off") {
+    const n = Number(raw.replace(/[^0-9.]/g, ""));
+    if (!Number.isFinite(n) || n <= 0) {
+      return "Flat amount off must be greater than 0.";
+    }
+  }
+
+  return "";
+}
+
+/**
+ * End must be on or after start. If there is no start, end must be in the future.
+ */
+export function validateSchedule(startValue, endValue) {
+  const start = startValue ? new Date(startValue) : null;
+  const end = endValue ? new Date(endValue) : null;
+  const startOk = start && !Number.isNaN(start.getTime());
+  const endOk = end && !Number.isNaN(end.getTime());
+
+  if (startValue && !startOk) return "Invalid start date.";
+  if (endValue && !endOk) return "Invalid end date.";
+
+  if (startOk && endOk && end.getTime() < start.getTime()) {
+    return "End date must be on or after the start date.";
+  }
+
+  if (!startValue && endOk && end.getTime() <= Date.now()) {
+    return "End date must be in the future.";
+  }
+
+  return "";
+}

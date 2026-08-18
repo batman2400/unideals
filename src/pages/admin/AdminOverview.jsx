@@ -56,7 +56,7 @@ function AdminOverview() {
           supabase
             .from("manual_verifications")
             .select("id", { count: "exact", head: true })
-            .eq("status", "pending"),
+            .in("status", ["pending", "awaiting_confirmation"]),
           supabase
             .from("confirmed_redemptions")
             .select("id", { count: "exact", head: true }),
