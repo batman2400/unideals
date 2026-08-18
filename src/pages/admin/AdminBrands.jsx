@@ -3,16 +3,9 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
 import { uploadBrandLogo } from "../../lib/brandLogoUpload";
+import { OFFICIAL_CATEGORIES } from "../../lib/categories";
 
-const CATEGORIES = [
-  "Food & Beverage",
-  "Fashion & Apparel",
-  "Tech & Electronics",
-  "Entertainment",
-  "Health & Beauty",
-  "Travel",
-  "Other"
-];
+const CATEGORIES = OFFICIAL_CATEGORIES;
 
 function AdminBrands() {
   const { role, loading: roleLoading } = useRoleContext();
@@ -631,7 +624,10 @@ function AdminBrands() {
                       className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                     >
                       <option value="">Select Category</option>
-                      {CATEGORIES.map((c) => (
+                      {[
+                        ...CATEGORIES,
+                        ...(editCategory && !CATEGORIES.includes(editCategory) ? [editCategory] : []),
+                      ].map((c) => (
                         <option key={c} value={c}>{c}</option>
                       ))}
                     </select>

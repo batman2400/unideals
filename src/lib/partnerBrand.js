@@ -38,8 +38,9 @@ export async function getPartnerBrand(userId) {
     };
   }
 
-  // If we have a linked brand, use it.
-  if (profile?.brands?.id) {
+  // If we have a linked brand, use it. Ignore brands(*) when brand_id is
+  // missing — that join can otherwise surface an unrelated row (e.g. UniDeals).
+  if (profile?.brand_id && profile?.brands?.id === profile.brand_id) {
     return {
       brandId: profile.brands.id,
       brandName: profile.brands.name,
@@ -49,14 +50,17 @@ export async function getPartnerBrand(userId) {
     };
   }
 
-  // Fallback to legacy brand_name if migration hasn't run yet
-  if (profile?.brand_name) {
-    return {
-      brandId: null,
-      brandName: profile.brand_name.trim(),
-      source: "partner_profiles_legacy",
-      error: null,
-    };
+  if (profile?.brand_id && Array.isArray(profile.brands)) {
+    const match = profile.brands.find((brand) => brand?.id === profile.brand_id);
+    if (match?.id) {
+      return {
+        brandId: match.id,
+        brandName: match.name,
+        logoUrl: match.logo_url,
+        source: "brands_table",
+        error: null,
+      };
+    }
   }
 
   return {

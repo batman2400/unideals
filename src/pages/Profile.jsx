@@ -17,6 +17,9 @@ import { Navigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useRoleContext } from "../lib/RoleContext";
 import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
+import { OFFICIAL_CATEGORIES } from "../lib/categories";
+import { asHttpUrl } from "../lib/httpUrl";
+import { uploadBrandLogo } from "../lib/brandLogoUpload";
 import StudentVerificationCard from "../components/StudentVerificationCard";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -31,6 +34,87 @@ function validateImageUpload(file) {
     return `That file is ${(file.size / 1024 / 1024).toFixed(1)}MB. The limit is 5MB.`;
   }
   return null;
+}
+
+function getAccountEmail(user) {
+  if (!user) return "";
+  if (user.email) return user.email;
+  const metaEmail = user.user_metadata?.email;
+  if (typeof metaEmail === "string" && metaEmail.includes("@")) return metaEmail;
+  const identity = user.identities?.find((item) => item?.identity_data?.email);
+  return identity?.identity_data?.email || "";
+}
+
+function linkedBrandFromProfile(row) {
+  // No brand_id means the account is not assigned. Never pick a random
+  // brands(*) row (that was filling in UniDeals for unassigned partners).
+  if (!row?.brand_id) return null;
+  const candidates = Array.isArray(row.brands)
+    ? row.brands
+    : row.brands
+      ? [row.brands]
+      : [];
+  const embedded = candidates.find((brand) => brand?.id === row.brand_id) || null;
+  return {
+    id: row.brand_id,
+    name: embedded?.name || row.brand_name || "",
+    logo_url: embedded?.logo_url || "",
+    category: embedded?.category || "",
+    description: embedded?.description || "",
+    website_url: embedded?.website_url || "",
+    instagram_handle: embedded?.instagram_handle || "",
+    tiktok_handle: embedded?.tiktok_handle || "",
+    location: embedded?.location || "",
+  };
+}
+
+function brandToForm(brand) {
+  return {
+    name: brand?.name || "",
+    category: brand?.category || "",
+    description: brand?.description || "",
+    website_url: brand?.website_url || "",
+    instagram_handle: brand?.instagram_handle || "",
+    tiktok_handle: brand?.tiktok_handle || "",
+    location: brand?.location || "",
+  };
+}
+
+function socialHref(handle, host) {
+  if (!handle) return null;
+  const trimmed = String(handle).trim();
+  if (!trimmed) return null;
+  if (/^https?:\/\//i.test(trimmed)) return asHttpUrl(trimmed);
+  const username = trimmed.replace(/^@/, "");
+  return username ? `https://${host}/${username}` : null;
+}
+
+function BrandMark({ name, logoUrl, size = "md" }) {
+  const dim = size === "lg" ? "w-14 h-14" : "w-12 h-12";
+  const initials = (name || "?")
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part[0])
+    .join("")
+    .toUpperCase();
+
+  if (logoUrl) {
+    return (
+      <img
+        src={logoUrl}
+        alt={name || "Brand logo"}
+        className={`${dim} rounded-xl object-contain bg-white border border-outline-variant/15 flex-shrink-0`}
+      />
+    );
+  }
+
+  return (
+    <div
+      className={`${dim} rounded-xl bg-primary/10 text-primary flex items-center justify-center font-headline font-extrabold text-sm flex-shrink-0`}
+    >
+      {initials || "?"}
+    </div>
+  );
 }
 
 function Profile({ isLoggedIn, user }) {
@@ -102,7 +186,7 @@ function Profile({ isLoggedIn, user }) {
   };
 
   // ── User info derivation ────────────────────────────
-  const userEmail = user?.email ?? "user@example.com";
+  const userEmail = getAccountEmail(user);
   const fullName =
     user?.user_metadata?.full_name ||
     user?.user_metadata?.name ||
@@ -214,52 +298,52 @@ function Profile({ isLoggedIn, user }) {
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandError, setBrandError] = useState("");
   const [brandSaved, setBrandSaved] = useState(false);
+  const [brandLoading, setBrandLoading] = useState(false);
+  const [brandLogoUploading, setBrandLogoUploading] = useState(false);
+  const brandLogoInputRef = useRef(null);
 
   useEffect(() => {
     let active = true;
     async function fetchPartnerData() {
-      if (!user || (role !== 'partner' && role !== 'admin')) return;
-      
+      if (!user || (role !== "partner" && role !== "admin")) {
+        setManagedBrands([]);
+        setActiveBrand(null);
+        setBrandFormData({});
+        setBrandLoading(false);
+        setBrandError("");
+        return;
+      }
+
+      setBrandLoading(true);
       const { data: accessData, error: accessError } = await supabase
-        .from('partner_profiles')
-        .select('brand_id, brand_name, brands(*)')
-        .eq('user_id', user.id);
+        .from("partner_profiles")
+        .select("brand_id, brand_name, brands(*)")
+        .eq("user_id", user.id);
 
       if (!active) return;
 
       if (accessError) {
         console.error("Failed to load partner brand:", accessError);
         setBrandError("Couldn't load your brand profile. Check your connection and refresh.");
+        setManagedBrands([]);
+        setActiveBrand(null);
+        setBrandLoading(false);
         return;
       }
 
-      if (accessData && accessData.length > 0) {
-        const brands = accessData.map(a => {
-          if (a.brands) return a.brands;
-          return {
-            id: a.brand_id || null,
-            name: a.brand_name || "",
-            category: "",
-            description: "",
-            website_url: "",
-            instagram_handle: "",
-            tiktok_handle: ""
-          };
-        });
-        setManagedBrands(brands);
-        if (brands.length > 0) {
-          setActiveBrand(brands[0]);
-          setBrandFormData({
-            name: brands[0].name || "",
-            category: brands[0].category || "",
-            description: brands[0].description || "",
-            website_url: brands[0].website_url || "",
-            instagram_handle: brands[0].instagram_handle || "",
-            tiktok_handle: brands[0].tiktok_handle || "",
-            location: brands[0].location || ""
-          });
-        }
+      const brands = (accessData || [])
+        .map(linkedBrandFromProfile)
+        .filter((brand) => brand?.id);
+      setManagedBrands(brands);
+      if (brands.length > 0) {
+        setActiveBrand(brands[0]);
+        setBrandFormData(brandToForm(brands[0]));
+        setBrandError("");
+      } else {
+        setActiveBrand(null);
+        setBrandFormData({});
       }
+      setBrandLoading(false);
     }
     fetchPartnerData();
     return () => { active = false; };
@@ -303,7 +387,16 @@ function Profile({ isLoggedIn, user }) {
     try {
       const { data, error } = await supabase
         .from('brands')
-        .update(brandFormData)
+        .update({
+          ...brandFormData,
+          name: brandFormData.name.trim(),
+          category: brandFormData.category.trim() || null,
+          description: brandFormData.description.trim() || null,
+          website_url: brandFormData.website_url.trim() || null,
+          instagram_handle: brandFormData.instagram_handle.trim() || null,
+          tiktok_handle: brandFormData.tiktok_handle.trim() || null,
+          location: brandFormData.location.trim() || null,
+        })
         .eq('id', activeBrand.id)
         .select();
       if (error) throw error;
@@ -325,6 +418,47 @@ function Profile({ isLoggedIn, user }) {
       );
     } finally {
       setBrandSaving(false);
+    }
+  };
+
+  const handleBrandLogoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !activeBrand?.id) return;
+
+    const validationError = validateImageUpload(file);
+    if (validationError) {
+      setBrandError(validationError);
+      e.target.value = "";
+      return;
+    }
+
+    setBrandError("");
+    setBrandLogoUploading(true);
+    try {
+      const { publicUrl } = await uploadBrandLogo({
+        file,
+        brandName: activeBrand.name || brandFormData.name || "brand",
+      });
+      const { data, error } = await supabase
+        .from("brands")
+        .update({ logo_url: publicUrl })
+        .eq("id", activeBrand.id)
+        .select();
+      if (error) throw error;
+      if (!data || data.length === 0) {
+        throw new Error("You don't have permission to update this brand logo.");
+      }
+      setActiveBrand({ ...activeBrand, ...data[0] });
+      setManagedBrands((prev) =>
+        prev.map((b) => (b.id === activeBrand.id ? { ...b, ...data[0] } : b)),
+      );
+      flashSaved(setBrandSaved);
+    } catch (err) {
+      console.error("Failed to upload brand logo:", err);
+      setBrandError(err.message || "Couldn't upload that logo. Please try again.");
+    } finally {
+      setBrandLogoUploading(false);
+      e.target.value = "";
     }
   };
 
@@ -390,9 +524,11 @@ function Profile({ isLoggedIn, user }) {
 
   if (!isLoggedIn) return <Navigate to="/" replace />;
 
+  const hasLinkedBrand = role === "partner" && Boolean(activeBrand?.id);
+
   // Without this, partners and admins briefly render the student card while
-  // the role resolves.
-  if (verificationLoading) {
+  // the role / brand assignment resolves.
+  if (verificationLoading || (role === "partner" && brandLoading)) {
     return (
       <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 md:py-12">
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
@@ -441,13 +577,20 @@ function Profile({ isLoggedIn, user }) {
 
         <div>
           <h1 className="font-headline font-extrabold text-2xl tracking-tighter text-on-background">
-            {profileData.fullName?.split(' ')[0] || "Student"}
+            {hasLinkedBrand
+              ? (activeBrand.name || profileData.fullName?.split(" ")[0] || "Partner")
+              : (profileData.fullName?.split(" ")[0] || "Student")}
           </h1>
+          {userEmail ? (
+            <p className="mt-1 text-xs text-on-surface-variant font-medium truncate max-w-[16rem]">
+              {userEmail}
+            </p>
+          ) : null}
           <div className="mt-1 flex items-center justify-center">
-            {isVerified || role === "admin" || role === "partner" ? (
+            {isVerified || role === "admin" || hasLinkedBrand ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                 <span className="material-symbols-outlined text-[14px]">verified</span>
-                {role === "admin" ? "Verified Admin" : role === "partner" ? "Verified Brand" : "Verified Student"}
+                {role === "admin" ? "Verified Admin" : hasLinkedBrand ? "Verified Brand" : "Verified Student"}
               </span>
             ) : hasPendingVerification ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-[#d4a017] bg-[#d4a017]/10 px-2.5 py-1 rounded-full">
@@ -484,29 +627,42 @@ function Profile({ isLoggedIn, user }) {
             </div>
           </div>
         </div>
-      ) : role === 'partner' ? (
+      ) : hasLinkedBrand ? (
         <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 w-full max-w-sm mx-auto lg:mx-0 shadow-xl border border-outline-variant/20 flex flex-col gap-5">
-          <h3 className="font-headline font-bold text-base text-on-background border-b border-outline-variant/20 pb-2">Platform Status</h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Status</p>
-              <div className="flex items-center gap-2 text-primary font-bold text-sm bg-primary/10 px-3 py-1.5 rounded-lg w-fit">
-                <span className="material-symbols-outlined text-[16px]">verified</span>
-                Active Partner
-              </div>
+          <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase">Brand Pass</p>
+          <div className="flex items-center gap-4 w-full">
+            <BrandMark name={activeBrand.name} logoUrl={activeBrand.logo_url} size="lg" />
+            <div className="min-w-0">
+              <p className="font-headline font-bold text-sm text-on-background truncate">
+                {activeBrand.name}
+              </p>
+              <p className="text-xs text-on-surface-variant/70 truncate">
+                {activeBrand.category || "Partner account"}
+              </p>
+              <p className="text-xs text-on-surface-variant truncate">
+                {userEmail || "Email not available"}
+              </p>
             </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 text-xs w-full pt-1">
             <div>
-              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Joined Date</p>
+              <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Joined</p>
               <p className="font-headline font-bold text-on-background">{memberSince}</p>
             </div>
             <div>
-              <p className="text-on-surface-variant/70 font-bold uppercase tracking-wider text-xs mb-1">Active Deals</p>
-              <p className="font-headline font-bold text-3xl text-primary">{activeDealsCount}</p>
+              <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Live deals</p>
+              <p className="font-headline font-bold text-on-background">{activeDealsCount}</p>
             </div>
           </div>
         </div>
       ) : (
         <div className="mt-8 id-card-glass rounded-2xl p-5 md:p-6 flex flex-col items-center gap-5 w-full max-w-sm mx-auto lg:mx-0 shadow-xl">
+          <div className="flex items-center justify-between w-full">
+            <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase">Student Pass</p>
+            <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
+              {isVerified ? "Active" : "Inactive"}
+            </span>
+          </div>
           <div className="flex items-center gap-4 flex-1 w-full">
             <div className="w-12 h-12 rounded-xl overflow-hidden flex-shrink-0 bg-surface-container">
               {avatarUrl ? (
@@ -519,7 +675,10 @@ function Profile({ isLoggedIn, user }) {
             </div>
             <div className="min-w-0">
               <p className="font-headline font-bold text-sm text-on-background truncate">
-                {profileData.fullName}
+                {profileData.fullName || "Student"}
+              </p>
+              <p className="text-xs text-on-surface-variant/70 truncate">
+                {userEmail || "Email not available"}
               </p>
               <p className="text-xs text-on-surface-variant/60 truncate">
                 {profileData.studentType === 'school' ? 'High School ID' : 'University ID'}
@@ -527,23 +686,33 @@ function Profile({ isLoggedIn, user }) {
             </div>
           </div>
 
-          <div className="flex flex-wrap sm:flex-col gap-4 sm:gap-2 text-xs w-full sm:w-auto">
+          <div className="grid grid-cols-2 gap-3 text-xs w-full">
+            <div>
+              <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
+                {profileData.studentType === 'school' ? 'School' : 'University'}
+              </p>
+              <p className="font-headline font-bold text-on-background truncate">
+                {profileData.institution || "—"}
+              </p>
+            </div>
             <div>
               <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
                 {profileData.studentType === 'school' ? 'Grade / Level' : 'Batch / Intake'}
               </p>
-              <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
+              <p className="font-headline font-bold text-on-background truncate">
                 {profileData.studentType === 'school' ? (profileData.grade || "—") : (profileData.batch || "—")}
               </p>
             </div>
-            <div>
-              <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
-                {profileData.studentType === 'school' ? 'School' : 'Faculty'}
-              </p>
-              <p className="font-headline font-bold text-on-background max-w-[120px] truncate">
-                {profileData.studentType === 'school' ? (profileData.institution || "—") : (profileData.department || "—")}
-              </p>
-            </div>
+            {profileData.studentType !== 'school' ? (
+              <div className="col-span-2">
+                <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">
+                  Faculty
+                </p>
+                <p className="font-headline font-bold text-on-background truncate">
+                  {profileData.department || "—"}
+                </p>
+              </div>
+            ) : null}
           </div>
 
           {isVerified && user?.id ? (
@@ -582,7 +751,7 @@ function Profile({ isLoggedIn, user }) {
               </div>
               <div>
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Email</p>
-                <p className="text-sm font-medium text-on-background">{user?.email || "Not available"}</p>
+                <p className="text-sm font-medium text-on-background">{userEmail || "Not available"}</p>
               </div>
               <div className="md:col-span-2">
                 <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Access Level</p>
@@ -590,17 +759,9 @@ function Profile({ isLoggedIn, user }) {
               </div>
             </div>
           </div>
-        ) : role === 'partner' && !activeBrand ? (
-          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
-            <h3 className="font-headline font-bold text-base text-on-background mb-2">Brand Profile</h3>
-            <p className="text-on-surface-variant text-sm">
-              {brandError ||
-                "This partner account isn't linked to a brand yet. Please contact support so we can connect it."}
-            </p>
-          </div>
-        ) : role === 'partner' ? (
-          <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
-            <div className="flex items-center justify-between mb-6">
+        ) : hasLinkedBrand ? (
+          <div className="w-full bg-surface rounded-2xl p-6 shadow-sm border border-outline-variant/20 relative">
+            <div className="flex items-center justify-between mb-6 gap-3 flex-wrap">
               <h3 className="font-headline font-bold text-base text-on-background">Brand Profile</h3>
               <div className="flex items-center gap-3">
                 {managedBrands.length > 1 && (
@@ -611,15 +772,7 @@ function Profile({ isLoggedIn, user }) {
                       const newBrand = managedBrands.find(b => b.id === e.target.value);
                       if (newBrand) {
                         setActiveBrand(newBrand);
-                        setBrandFormData({
-                          name: newBrand.name || "",
-                          category: newBrand.category || "",
-                          description: newBrand.description || "",
-                          website_url: newBrand.website_url || "",
-                          instagram_handle: newBrand.instagram_handle || "",
-                          tiktok_handle: newBrand.tiktok_handle || "",
-                          location: newBrand.location || ""
-                        });
+                        setBrandFormData(brandToForm(newBrand));
                         setIsEditingBrand(false);
                       }
                     }}
@@ -632,15 +785,7 @@ function Profile({ isLoggedIn, user }) {
                 {!isEditingBrand && (
                   <button 
                     onClick={() => {
-                      setBrandFormData({
-                        name: activeBrand.name || "",
-                        category: activeBrand.category || "",
-                        description: activeBrand.description || "",
-                        website_url: activeBrand.website_url || "",
-                        instagram_handle: activeBrand.instagram_handle || "",
-                        tiktok_handle: activeBrand.tiktok_handle || "",
-                        location: activeBrand.location || ""
-                      });
+                      setBrandFormData(brandToForm(activeBrand));
                       setBrandError("");
                       setIsEditingBrand(true);
                     }} 
@@ -655,34 +800,66 @@ function Profile({ isLoggedIn, user }) {
 
             {isEditingBrand ? (
               <form onSubmit={handleSaveBrand} className="space-y-5 animate-fade-in">
+                <div className="flex items-center gap-4">
+                  <BrandMark name={brandFormData.name || activeBrand.name} logoUrl={activeBrand.logo_url} size="lg" />
+                  <div>
+                    <button
+                      type="button"
+                      onClick={() => brandLogoInputRef.current?.click()}
+                      disabled={brandLogoUploading}
+                      className="text-xs font-bold text-primary bg-primary/10 px-3 py-1.5 rounded-full hover:bg-primary/20 transition-colors disabled:opacity-50"
+                    >
+                      {brandLogoUploading ? "Uploading..." : "Change logo"}
+                    </button>
+                    <p className="text-[11px] text-on-surface-variant/70 mt-1.5">JPEG, PNG, or WEBP. 5MB max.</p>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Brand Name</label>
-                    <input type="text" value={brandFormData.name} onChange={(e) => setBrandFormData({...brandFormData, name: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                    <input type="text" value={brandFormData.name} onChange={(e) => setBrandFormData({...brandFormData, name: e.target.value})} className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Contact Email</label>
+                    <input type="email" value={userEmail} readOnly className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full text-sm text-on-surface-variant cursor-not-allowed" />
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Category</label>
-                    <input type="text" value={brandFormData.category} onChange={(e) => setBrandFormData({...brandFormData, category: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Description</label>
-                    <textarea value={brandFormData.description} onChange={(e) => setBrandFormData({...brandFormData, description: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background min-h-[80px]" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Website URL</label>
-                    <input type="url" value={brandFormData.website_url} onChange={(e) => setBrandFormData({...brandFormData, website_url: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Instagram Handle</label>
-                    <input type="text" value={brandFormData.instagram_handle} onChange={(e) => setBrandFormData({...brandFormData, instagram_handle: e.target.value})} placeholder="@username" className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">TikTok Handle</label>
-                    <input type="text" value={brandFormData.tiktok_handle} onChange={(e) => setBrandFormData({...brandFormData, tiktok_handle: e.target.value})} placeholder="@username" className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                    <select
+                      value={brandFormData.category}
+                      onChange={(e) => setBrandFormData({...brandFormData, category: e.target.value})}
+                      className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background"
+                    >
+                      <option value="">Select a category</option>
+                      {[
+                        ...OFFICIAL_CATEGORIES,
+                        ...(brandFormData.category && !OFFICIAL_CATEGORIES.includes(brandFormData.category)
+                          ? [brandFormData.category]
+                          : []),
+                      ].map((category) => (
+                        <option key={category} value={category}>{category}</option>
+                      ))}
+                    </select>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Location</label>
-                    <input type="text" value={brandFormData.location} onChange={(e) => setBrandFormData({...brandFormData, location: e.target.value})} placeholder="e.g. Sydney, NSW" className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                    <input type="text" value={brandFormData.location} onChange={(e) => setBrandFormData({...brandFormData, location: e.target.value})} placeholder="e.g. Colombo" className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Description</label>
+                    <textarea value={brandFormData.description} onChange={(e) => setBrandFormData({...brandFormData, description: e.target.value})} className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background min-h-[80px]" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Website URL</label>
+                    <input type="url" value={brandFormData.website_url} onChange={(e) => setBrandFormData({...brandFormData, website_url: e.target.value})} placeholder="https://" className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Instagram Handle</label>
+                    <input type="text" value={brandFormData.instagram_handle} onChange={(e) => setBrandFormData({...brandFormData, instagram_handle: e.target.value})} placeholder="@username" className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">TikTok Handle</label>
+                    <input type="text" value={brandFormData.tiktok_handle} onChange={(e) => setBrandFormData({...brandFormData, tiktok_handle: e.target.value})} placeholder="@username" className="bg-surface-container-low border border-outline-variant/30 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" />
                   </div>
                 </div>
 
@@ -690,7 +867,7 @@ function Profile({ isLoggedIn, user }) {
                   <button type="submit" disabled={brandSaving} className="px-6 py-2.5 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 transition-all active:scale-[0.98] disabled:opacity-50">
                     {brandSaving ? 'Saving...' : 'Save Changes'}
                   </button>
-                  <button type="button" onClick={() => { setIsEditingBrand(false); setBrandError(""); }} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
+                  <button type="button" onClick={() => { setIsEditingBrand(false); setBrandError(""); setBrandFormData(brandToForm(activeBrand)); }} className="text-sm font-bold text-on-surface-variant hover:text-on-background transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -698,7 +875,7 @@ function Profile({ isLoggedIn, user }) {
                 {brandError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{brandError}</p>}
               </form>
             ) : (
-              <div className="space-y-4 animate-fade-in">
+              <div className="space-y-5 animate-fade-in">
                 {brandSaved && (
                   <div className="flex items-center gap-2 text-primary bg-primary/10 p-2.5 rounded-lg">
                     <span className="material-symbols-outlined text-sm">check_circle</span>
@@ -706,34 +883,63 @@ function Profile({ isLoggedIn, user }) {
                   </div>
                 )}
                 {brandError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{brandError}</p>}
+                <div className="flex items-center gap-4 pb-2 border-b border-outline-variant/15">
+                  <BrandMark name={activeBrand.name} logoUrl={activeBrand.logo_url} size="lg" />
+                  <div className="min-w-0">
+                    <p className="font-headline font-bold text-on-background truncate">{activeBrand.name || "Unnamed brand"}</p>
+                    <p className="text-sm text-on-surface-variant truncate">{userEmail || "Email not available"}</p>
+                  </div>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-y-4 gap-x-6">
                   <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Brand Name</p>
                     <p className="text-sm font-medium text-on-background">{activeBrand.name || "Not provided"}</p>
                   </div>
                   <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Contact Email</p>
+                    <p className="text-sm font-medium text-on-background break-all">{userEmail || "Not available"}</p>
+                  </div>
+                  <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Category</p>
                     <p className="text-sm font-medium text-on-background">{activeBrand.category || "Not provided"}</p>
-                  </div>
-                  <div className="md:col-span-2">
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</p>
-                    <p className="text-sm font-medium text-on-background">{activeBrand.description || "Not provided"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Website URL</p>
-                    <p className="text-sm font-medium text-primary hover:underline">{activeBrand.website_url ? <a href={activeBrand.website_url} target="_blank" rel="noreferrer">{activeBrand.website_url}</a> : "Not provided"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Instagram</p>
-                    <p className="text-sm font-medium text-on-background">{activeBrand.instagram_handle || "Not provided"}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">TikTok</p>
-                    <p className="text-sm font-medium text-on-background">{activeBrand.tiktok_handle || "Not provided"}</p>
                   </div>
                   <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Location</p>
                     <p className="text-sm font-medium text-on-background">{activeBrand.location || "Not provided"}</p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Description</p>
+                    <p className="text-sm font-medium text-on-background whitespace-pre-wrap">{activeBrand.description || "Not provided"}</p>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Website</p>
+                    {asHttpUrl(activeBrand.website_url) ? (
+                      <a href={asHttpUrl(activeBrand.website_url)} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline break-all">
+                        {activeBrand.website_url}
+                      </a>
+                    ) : (
+                      <p className="text-sm font-medium text-on-background">Not provided</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Instagram</p>
+                    {socialHref(activeBrand.instagram_handle, "instagram.com") ? (
+                      <a href={socialHref(activeBrand.instagram_handle, "instagram.com")} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline">
+                        {activeBrand.instagram_handle}
+                      </a>
+                    ) : (
+                      <p className="text-sm font-medium text-on-background">Not provided</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">TikTok</p>
+                    {socialHref(activeBrand.tiktok_handle, "tiktok.com") ? (
+                      <a href={socialHref(activeBrand.tiktok_handle, "tiktok.com")} target="_blank" rel="noreferrer" className="text-sm font-medium text-primary hover:underline">
+                        {activeBrand.tiktok_handle}
+                      </a>
+                    ) : (
+                      <p className="text-sm font-medium text-on-background">Not provided</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -781,6 +987,10 @@ function Profile({ isLoggedIn, user }) {
                   <div>
                     <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Full Name</label>
                     <input type="text" value={formData.fullName} onChange={(e) => setFormData({...formData, fullName: e.target.value})} className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full focus:ring-2 focus:ring-primary focus:outline-none transition-all text-sm text-on-background" required />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Email</label>
+                    <input type="email" value={userEmail} readOnly className="bg-gray-50 border border-gray-200 rounded-lg p-3 w-full text-sm text-on-surface-variant cursor-not-allowed" />
                   </div>
                   
                   {formData.studentType === 'university' ? (
@@ -839,7 +1049,7 @@ function Profile({ isLoggedIn, user }) {
                   </div>
                   <div>
                     <p className="text-xs font-bold text-on-surface-variant uppercase tracking-wider">Email</p>
-                    <p className="text-sm font-medium text-on-background">{profileData.email || "Not provided"}</p>
+                    <p className="text-sm font-medium text-on-background break-all">{userEmail || "Not available"}</p>
                   </div>
                   
                   {profileData.studentType === 'university' ? (
@@ -884,10 +1094,10 @@ function Profile({ isLoggedIn, user }) {
               <label className="flex items-center justify-between cursor-pointer group">
                 <div>
                   <p className="text-sm font-bold text-on-background">
-                    {role === 'admin' ? 'New Partner Signups' : role === 'partner' ? 'Daily Redemption Summaries' : 'New Deal Alerts'}
+                    {role === 'admin' ? 'New Partner Signups' : hasLinkedBrand ? 'Daily Redemption Summaries' : 'New Deal Alerts'}
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    {role === 'admin' ? 'Get notified when a new brand registers.' : role === 'partner' ? 'Get a daily summary of all redemptions.' : 'Get notified when new exclusive deals drop.'}
+                    {role === 'admin' ? 'Get notified when a new brand registers.' : hasLinkedBrand ? 'Get a daily summary of all redemptions.' : 'Get notified when new exclusive deals drop.'}
                   </p>
                 </div>
                 <div className="relative ml-4">
@@ -899,10 +1109,10 @@ function Profile({ isLoggedIn, user }) {
               <label className="flex items-center justify-between cursor-pointer group">
                 <div>
                   <p className="text-sm font-bold text-on-background">
-                    {role === 'admin' ? 'Pending Verifications' : role === 'partner' ? 'Deal Expiry Warnings' : 'Campus Event Reminders'}
+                    {role === 'admin' ? 'Pending Verifications' : hasLinkedBrand ? 'Deal Expiry Warnings' : 'Campus Event Reminders'}
                   </p>
                   <p className="text-xs text-on-surface-variant">
-                    {role === 'admin' ? 'Alerts for unverified student IDs.' : role === 'partner' ? 'Receive warnings before your active deals expire.' : 'Receive reminders for upcoming events.'}
+                    {role === 'admin' ? 'Alerts for unverified student IDs.' : hasLinkedBrand ? 'Receive warnings before your active deals expire.' : 'Receive reminders for upcoming events.'}
                   </p>
                 </div>
                 <div className="relative ml-4">
@@ -936,7 +1146,7 @@ function Profile({ isLoggedIn, user }) {
           </div>
         </div>
 
-        {role === "student" && !isVerified && (
+        {role !== "admin" && !hasLinkedBrand && !isVerified && (
           <StudentVerificationCard
             user={user}
             isSchoolStudent={user?.user_metadata?.student_type === "school"}
@@ -951,6 +1161,7 @@ function Profile({ isLoggedIn, user }) {
       
       {/* Hidden file input for avatar */}
       <input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleAvatarUpload} />
+      <input type="file" accept="image/jpeg,image/png,image/webp" ref={brandLogoInputRef} className="hidden" onChange={handleBrandLogoUpload} />
     </div>
   );
 }
