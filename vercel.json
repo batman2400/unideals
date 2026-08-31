@@ -111,19 +111,6 @@
       ]
     },
     {
-      "source": "/google-favicon.png",
-      "headers": [
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=86400, must-revalidate"
-        },
-        {
-          "key": "Content-Type",
-          "value": "image/png"
-        }
-      ]
-    },
-    {
       "source": "/manifest.webmanifest",
       "headers": [
         {

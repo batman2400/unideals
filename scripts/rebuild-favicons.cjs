@@ -168,11 +168,7 @@ function makeCircularIcon(glyphCrop, size) {
   return out;
 }
 
-/**
- * Solid white square + black UD — Google Search favicon.
- * Transparent circular icons often fail Google's favicon pipeline or look
- * like a default globe; Google wants a stable square PNG ≥ 48px.
- */
+/** Solid white square + black UD — schema / OG logo only. */
 function makeSolidSquareIcon(glyphCrop, size) {
   const out = new PNG({ width: size, height: size });
   const { scaled, gw, gh, ox, oy } = placeGlyph(glyphCrop, size, 0.72);
@@ -219,21 +215,12 @@ async function main() {
   const cropped = crop(src, bbox, 12);
 
   const circular = {};
-  const solid = {};
   for (const size of [16, 32, 48, 96, 180, 192, 512]) {
     circular[size] = makeCircularIcon(cropped, size);
-    solid[size] = makeSolidSquareIcon(cropped, size);
   }
 
-  // Stable unversioned paths for Google Search (do not rename these).
-  for (const [name, png] of [
-    ["favicon-48.png", solid[48]],
-    ["favicon-96.png", solid[96]],
-    ["google-favicon.png", solid[96]],
-    ["logo-512.png", solid[512]],
-  ]) {
-    writePng(path.join(PUBLIC, name), png);
-  }
+  // Schema / OG logo only — not used as a Search favicon.
+  writePng(path.join(PUBLIC, "logo-512.png"), makeSolidSquareIcon(cropped, 512));
 
   // Versioned circular marks for browser tabs / PWA / Apple.
   for (const [name, png] of [
@@ -257,7 +244,7 @@ async function main() {
   fs.mkdirSync(tmpDir, { recursive: true });
   const tmpFiles = [16, 32, 48].map((s) => {
     const f = path.join(tmpDir, `${s}.png`);
-    writePng(f, solid[s]);
+    writePng(f, circular[s]);
     return f;
   });
   const icoBuf = await pngToIco(tmpFiles);
