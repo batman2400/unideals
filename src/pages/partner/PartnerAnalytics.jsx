@@ -3,6 +3,10 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
+import {
+  formatDealStatusLabel,
+  getDealComputedStatus,
+} from "../../lib/comingSoon";
 
 function PartnerAnalytics() {
   const {
@@ -334,22 +338,15 @@ function PartnerAnalytics() {
               </thead>
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {dealStats.map((d) => {
-                  const start = d.start_time ? new Date(d.start_time) : new Date(0);
-                  const end = d.end_time ? new Date(d.end_time) : null;
-                  const now = new Date();
-                  let displayStatus = d.deal_status;
-                  if (d.deal_status === "active" || d.deal_status === "approved") {
-                    if (start > now) displayStatus = "scheduled";
-                    else if (end && end < now) displayStatus = "expired";
-                    else displayStatus = "active";
-                  } else if (end && end < now) {
-                    displayStatus = "expired";
-                  }
-                  
+                  const displayStatus = getDealComputedStatus({
+                    ...d,
+                    status: d.deal_status,
+                  });
                   let pillClass = "bg-surface-container-high text-on-surface border-outline-variant/30";
                   if (displayStatus === "active") pillClass = "bg-emerald-50 text-emerald-700 border-emerald-200";
                   else if (displayStatus === "scheduled") pillClass = "bg-blue-50 text-blue-700 border-blue-200";
                   else if (displayStatus === "paused") pillClass = "bg-red-50 text-red-600 border-red-200";
+                  else if (displayStatus === "finished") pillClass = "bg-surface-container-high text-on-surface-variant border-outline-variant/50";
 
                   const isOnline = d.deal_type === "Online";
                   const isInStore = d.deal_type === "In-Store";
@@ -368,7 +365,7 @@ function PartnerAnalytics() {
                     </td>
                     <td className="hidden md:table-cell px-4 py-3">
                       <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase ${pillClass}`}>
-                        {displayStatus}
+                        {formatDealStatusLabel(displayStatus)}
                       </span>
                     </td>
                     <td className="hidden md:table-cell text-right px-4 py-3 text-sm tabular-nums text-on-surface-variant">
@@ -400,7 +397,7 @@ function PartnerAnalytics() {
                             </p>
                           </div>
                           <span className={`inline-flex items-center rounded-lg border px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase whitespace-nowrap ${pillClass}`}>
-                            {displayStatus}
+                            {formatDealStatusLabel(displayStatus)}
                           </span>
                         </div>
                         

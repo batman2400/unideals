@@ -3,6 +3,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
 import { Link } from "react-router-dom";
+import { getDealComputedStatus } from "../../lib/comingSoon";
 
 function AdminOverview() {
   const { role, loading: roleLoading } = useRoleContext();
@@ -92,26 +93,23 @@ function AdminOverview() {
         let activeDeals = 0;
         let scheduledDeals = 0;
         let expiredDeals = 0;
-        const now = new Date();
+        let currentDeals = 0;
 
-        (dealsRes.data || []).forEach(d => {
-           const start = d.start_time ? new Date(d.start_time) : new Date(0);
-           const end = d.end_time ? new Date(d.end_time) : null;
-           let st = d.status;
-           if (st === "active" || st === "approved") {
-             if (start > now) scheduledDeals++;
-             else if (end && end < now) expiredDeals++;
-             else activeDeals++;
-           } else if (end && end < now) {
-             expiredDeals++;
-           }
+        (dealsRes.data || []).forEach((d) => {
+          const computed = getDealComputedStatus(d);
+          if (computed === "finished") expiredDeals++;
+          else {
+            currentDeals++;
+            if (computed === "scheduled") scheduledDeals++;
+            else if (computed === "active") activeDeals++;
+          }
         });
 
         const totalUsers = usersRes.data?.[0]?.total_count ?? 0;
         const totalPartners = partnersRes.data?.[0]?.total_count ?? 0;
 
         setMetrics({
-          totalDeals: (dealsRes.data || []).length,
+          totalDeals: currentDeals,
           activeDeals,
           scheduledDeals,
           expiredDeals,
@@ -189,11 +187,11 @@ function AdminOverview() {
       path: "/admin/deals?filter=scheduled",
     },
     {
-      label: "Expired Deals",
+      label: "Finished Deals",
       value: metrics.expiredDeals,
       icon: "history",
       color: "text-on-surface-variant",
-      path: "/admin/deals?filter=expired",
+      path: "/admin/finished-deals",
     },
     {
       label: "Total Users",

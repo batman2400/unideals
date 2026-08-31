@@ -38,7 +38,7 @@ export default function Support() {
           <span className="material-symbols-outlined text-primary text-4xl mb-4">school</span>
           <h3 className="font-headline font-bold text-xl text-on-background mb-2">Verification Help</h3>
           <p className="text-on-surface-variant text-sm mb-4">
-            Having trouble verifying your student status? Make sure your university email is valid or use the manual verification method in your profile.
+            Having trouble verifying your student status? Make sure your university email is valid or use the manual verification method in your profile. Status expires after 12 months, so re-verify each year to keep access.
           </p>
         </div>
       </div>
@@ -53,7 +53,15 @@ export default function Support() {
               How do I verify my student status?
             </h3>
             <p className="text-on-surface-variant text-sm leading-relaxed">
-              Open Profile and complete verification. Institute emails use a one-time code to prove inbox ownership; Gmail and school students upload ID. An admin must approve before you can redeem — OTP alone does not verify you.
+              Open Profile and complete verification. Institute emails use a one-time code to prove inbox ownership; Gmail and school students upload ID. An admin must approve before you can redeem — OTP alone does not verify you. Verification is valid for 12 months.
+            </p>
+          </div>
+          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">
+              Do I need to verify every year?
+            </h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              Yes. Student status lasts 12 months from approval. Re-verify from Profile before it expires so you can keep unlocking deal codes and in-store tickets.
             </p>
           </div>
           <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">

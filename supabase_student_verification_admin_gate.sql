@@ -1,12 +1,15 @@
 -- ============================================================
 -- Uni Deals — student verification admin gate
 --
--- Run this in the Supabase SQL editor, then redeploy edge functions:
+-- Run `supabase_yearly_student_verification.sql` first (adds
+-- verified_at, student_id_conflicts, and the 12-month expiry job).
+-- Then run this file and redeploy edge functions:
 --   send-verification-otp, send-event-approved,
 --   send-inquiry-notification, send-verification-rejected
 --
 -- Until this runs, confirm_university_verification still sets
--- is_verified = true (instant OTP verify).
+-- is_verified = true (instant OTP verify) and handle_new_user_role
+-- may still auto-verify .edu / .ac.lk on signup.
 -- ============================================================
 
 -- ────────────────────────────────────────────────────────────
@@ -248,11 +251,7 @@ BEGIN
       'You already have a verification request awaiting review.');
   END IF;
 
-  IF EXISTS (
-    SELECT 1 FROM public.manual_verifications
-    WHERE public.normalize_student_id(student_id_number) = normalized_id
-      AND status <> 'rejected'
-  ) THEN
+  IF public.student_id_conflicts(normalized_id, calling_user_id) THEN
     RETURN json_build_object('success', false, 'error',
       'This student ID is already linked to another verification request.');
   END IF;
@@ -359,11 +358,7 @@ BEGIN
       'You already have a pending verification request.');
   END IF;
 
-  IF normalized_id IS NOT NULL AND EXISTS (
-    SELECT 1 FROM public.manual_verifications
-    WHERE public.normalize_student_id(student_id_number) = normalized_id
-      AND status <> 'rejected'
-  ) THEN
+  IF public.student_id_conflicts(normalized_id, calling_user_id) THEN
     RETURN json_build_object('success', false, 'error',
       'This student ID is already linked to another verification request.');
   END IF;
@@ -433,7 +428,8 @@ BEGIN
   END IF;
 
   UPDATE public.user_roles
-  SET is_verified = TRUE
+  SET is_verified = TRUE,
+      verified_at = now()
   WHERE user_id = approved_user_id;
 
   RETURN json_build_object('success', true, 'message', 'Request approved and user verified.');
@@ -486,6 +482,32 @@ END
 $$;
 
 GRANT EXECUTE ON FUNCTION public.reject_manual_verification(UUID, TEXT) TO authenticated;
+
+-- ────────────────────────────────────────────────────────────
+-- 6. Signup trigger: NEVER auto-verify from email domain
+--    Older supabase_student_verification.sql set is_verified for
+--    .edu / .ac.lk on insert. That skipped the admin queue.
+--    Re-apply this file after any older verification SQL.
+-- ────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.handle_new_user_role()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, auth
+AS $$
+BEGIN
+  INSERT INTO public.user_roles (user_id, role, user_email, is_verified)
+  VALUES (NEW.id, 'student', NEW.email, FALSE)
+  ON CONFLICT (user_id) DO UPDATE
+    SET user_email = EXCLUDED.user_email,
+        is_verified = CASE
+          WHEN public.user_roles.role IN ('admin', 'partner') THEN TRUE
+          ELSE public.user_roles.is_verified
+        END;
+
+  RETURN NEW;
+END
+$$;
 
 NOTIFY pgrst, 'reload schema';
 

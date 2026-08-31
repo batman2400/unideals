@@ -371,7 +371,8 @@ BEGIN
   -- Deliberately does not write university_email: a manually verified
   -- student has proven enrolment, not ownership of an institutional inbox.
   UPDATE public.user_roles
-  SET is_verified = TRUE
+  SET is_verified = TRUE,
+      verified_at = now()
   WHERE user_id = approved_user_id;
 
   RETURN json_build_object('success', true, 'message', 'Request approved and user verified.');

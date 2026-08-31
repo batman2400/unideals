@@ -1,5 +1,9 @@
 import { Link } from "react-router-dom";
-import { formatLaunchDate, isComingSoonEvent } from "../lib/comingSoon";
+import {
+  formatLaunchDate,
+  isComingSoonEvent,
+  isFinishedEvent,
+} from "../lib/comingSoon";
 
 function formatDateTime(dateString) {
   if (!dateString) return "";
@@ -18,6 +22,7 @@ export function getEventStatus(event) {
   const endTime = event.end_time ? new Date(event.end_time) : null;
 
   if (isComingSoonEvent(event)) return "coming soon";
+  if (isFinishedEvent(event, now)) return "past";
   if (startTime > now) return null;
   if (endTime && endTime > now) return "happening now";
   if (!endTime && now - startTime < 24 * 60 * 60 * 1000) return "happening now";

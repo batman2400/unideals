@@ -25,7 +25,7 @@ const slides = [
     headline: "Exclusive Student",
     headlineAccent: "Deals.",
     subtext:
-      "Unlock hundreds of discounts across tech, food, fashion & more — exclusively for verified students.",
+      "Verified student offers in Sri Lanka — in-store and online. New partners land here as they join.",
     cta: "Browse All Deals",
     link: "/deals",
     icon: "school",
@@ -39,7 +39,7 @@ const slides = [
     headline: "Fresh Drops",
     headlineAccent: "Weekly.",
     subtext:
-      "New brands and deals added every week. Stay ahead of the curve with the latest offers.",
+      "Partner brands drop offers as they go live. Check Deals and Events for what is on right now.",
     cta: "See What's New",
     link: "/deals",
     icon: "local_fire_department",
@@ -53,7 +53,7 @@ const slides = [
     headline: "Top Brands,",
     headlineAccent: "Zero Hassle.",
     subtext:
-      "From Apple to Nike — your favourite brands with verified student pricing. No catch.",
+      "Local partner brands with student pricing. Open a deal, verify once, then redeem.",
     cta: "Explore Brands",
     link: "/brands",
     icon: "verified",
@@ -67,7 +67,7 @@ const slides = [
     headline: "In-Store Perks",
     headlineAccent: "Near You.",
     subtext:
-      "Flash your Uni Deals iD at partner stores for instant savings on coffee, fitness, fashion & more.",
+      "In-store offers use a timed ticket from the deal page — the cashier scans that, not your student pass.",
     cta: "Find In-Store Deals",
     link: "/deals",
     icon: "storefront",
@@ -211,7 +211,7 @@ function HeroSection({ searchQuery, onSearchChange }) {
         <div className="flex items-center border-b border-outline-variant/30 pb-4">
           <input
             className="bg-transparent border-none w-full text-2xl font-headline placeholder:text-on-surface-variant/30 focus:ring-0 px-0"
-            placeholder="e.g. Apple, Nike, Starbucks"
+            placeholder="e.g. Spa Ceylon, campus events"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}

@@ -12,6 +12,7 @@
  */
 import { useState, useEffect } from "react";
 import { supabase } from "./supabaseClient";
+import { isExpiredDeal } from "./comingSoon";
 
 /**
  * Maps a Supabase row (snake_case) to the frontend deal shape (camelCase).
@@ -48,14 +49,22 @@ export function useDeals() {
 
   useEffect(() => {
     let cancelled = false;
+    let timeout = null;
 
     async function fetchDeals() {
       setLoading(true);
       setError(null);
 
+      timeout = setTimeout(() => {
+        if (cancelled) return;
+        setError((prev) => prev || "Deals took too long to load.");
+        setLoading(false);
+      }, 15000);
+
       const { data, error: fetchError } =
         await supabase.rpc("get_public_deals");
 
+      clearTimeout(timeout);
       if (cancelled) return;
 
       if (fetchError) {
@@ -66,13 +75,14 @@ export function useDeals() {
       }
 
       const rows = Array.isArray(data) ? data : [];
-      setDeals(rows.map(mapDeal));
+      setDeals(rows.map(mapDeal).filter((deal) => !isExpiredDeal(deal)));
       setLoading(false);
     }
 
     fetchDeals();
     return () => {
       cancelled = true;
+      if (timeout) clearTimeout(timeout);
     };
   }, []);
 

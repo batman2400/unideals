@@ -2,10 +2,16 @@
  * useEvents Hook
  *
  * Fetches approved public events from Supabase.
+ * Finished (past) events are omitted — they live in admin/partner archives.
  * Returns { events, loading, error, refetch }.
  */
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "./supabaseClient";
+import { isFinishedEvent } from "./comingSoon";
+
+function excludeFinished(rows) {
+  return (rows || []).filter((event) => !isFinishedEvent(event));
+}
 
 export function useEvents() {
   const [events, setEvents] = useState([]);
@@ -29,7 +35,7 @@ export function useEvents() {
       return;
     }
 
-    setEvents(data || []);
+    setEvents(excludeFinished(data));
     setLoading(false);
   }, []);
 
@@ -55,7 +61,7 @@ export function useEvents() {
         return;
       }
 
-      setEvents(data || []);
+      setEvents(excludeFinished(data));
       setLoading(false);
     })();
 

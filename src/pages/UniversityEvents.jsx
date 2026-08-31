@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { partitionEvents } from "../lib/comingSoon";
@@ -15,7 +15,6 @@ const scheduleTabs = [
 
 export default function UniversityEvents() {
   const { events: allEvents, loading, error, refetch } = useEvents();
-  const [showPastEvents, setShowPastEvents] = useState(false);
   const [scheduleTab, setScheduleTab] = useState("all");
 
   const { live: liveEvents, comingSoon: comingSoonEvents } = useMemo(
@@ -23,32 +22,10 @@ export default function UniversityEvents() {
     [allEvents],
   );
 
-  // Live tab: upcoming/ongoing vs past — exclude coming soon
-  const { activeEvents, pastEvents } = useMemo(() => {
-    const now = new Date();
-    const active = [];
-    const past = [];
-
-    for (const event of liveEvents) {
-      const startTime = new Date(event.start_time);
-      const endTime = event.end_time ? new Date(event.end_time) : null;
-
-      const isUpcoming = startTime > now;
-      const isOngoing = endTime && endTime > now;
-      const isRecentNoEnd =
-        !endTime && now - startTime < 24 * 60 * 60 * 1000;
-
-      if (isUpcoming || isOngoing || isRecentNoEnd) {
-        active.push(event);
-      } else {
-        past.push(event);
-      }
-    }
-
-    active.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-    past.sort((a, b) => new Date(b.start_time) - new Date(a.start_time));
-
-    return { activeEvents: active, pastEvents: past };
+  const activeEvents = useMemo(() => {
+    return [...liveEvents].sort(
+      (a, b) => new Date(a.start_time) - new Date(b.start_time),
+    );
   }, [liveEvents]);
 
   return (
@@ -271,37 +248,8 @@ export default function UniversityEvents() {
                   ? "Nothing live yet — Coming Soon listings are above."
                   : comingSoonEvents.length > 0
                     ? "Nothing live right now — check the Coming Soon or All tab."
-                    : "No upcoming events right now, but check out past events below!"}
+                    : "No upcoming events right now. Check back soon!"}
               </p>
-            </div>
-          )}
-
-          {pastEvents.length > 0 && (
-            <div>
-              <button
-                onClick={() => setShowPastEvents(!showPastEvents)}
-                className="font-headline font-bold text-xl text-on-background mb-6 flex items-center gap-2 hover:text-primary transition-colors cursor-pointer group"
-              >
-                <span className="material-symbols-outlined text-on-surface-variant group-hover:text-primary transition-colors">
-                  history
-                </span>
-                Past Events
-                <span className="text-sm font-normal text-on-surface-variant ml-1">
-                  ({pastEvents.length})
-                </span>
-                <span
-                  className={`material-symbols-outlined text-[20px] text-on-surface-variant transition-transform ${showPastEvents ? "rotate-180" : ""}`}
-                >
-                  expand_more
-                </span>
-              </button>
-              {showPastEvents && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-8 justify-items-center sm:justify-items-stretch animate-fade-in">
-                  {pastEvents.map((event) => (
-                    <EventCard key={event.id} event={event} />
-                  ))}
-                </div>
-              )}
             </div>
           )}
         </div>

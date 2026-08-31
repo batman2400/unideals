@@ -20,12 +20,12 @@
     {
       "source": "/perks",
       "destination": "/deals",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/perks/:id",
       "destination": "/deals/:id",
-      "permanent": true
+      "statusCode": 301
     }
   ],
   "rewrites": [
@@ -93,6 +93,19 @@
         {
           "key": "Cache-Control",
           "value": "public, max-age=31536000, immutable"
+        },
+        {
+          "key": "Content-Type",
+          "value": "image/png"
+        }
+      ]
+    },
+    {
+      "source": "/google-favicon.png",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=86400, must-revalidate"
         },
         {
           "key": "Content-Type",

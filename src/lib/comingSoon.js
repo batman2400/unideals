@@ -23,12 +23,66 @@ export function isExpiredDeal(deal) {
   return !Number.isNaN(t.getTime()) && t.getTime() < Date.now();
 }
 
+/**
+ * Portal catalogue rule: paused stays paused even after end_time.
+ * Otherwise matches isExpiredDeal / status === "expired".
+ */
+export function isFinishedDeal(deal) {
+  if (!deal) return false;
+  const st = String(deal.db_status || deal.status || "");
+  if (st === "paused") return false;
+  if (st === "expired") return true;
+  return isExpiredDeal(deal);
+}
+
+/**
+ * Time-based deal status for admin/partner lists.
+ * paused | scheduled | finished | active | pending | rejected | …
+ */
+export function getDealComputedStatus(deal, now = new Date()) {
+  if (!deal) return "pending";
+  const st = String(deal.db_status || deal.status || "pending");
+  if (st === "paused") return "paused";
+  if (st === "expired" || isExpiredDeal(deal)) return "finished";
+  if (st === "active" || st === "approved") {
+    const start = deal.start_time || deal.startTime;
+    const startDate = start ? new Date(start) : new Date(0);
+    if (!Number.isNaN(startDate.getTime()) && startDate > now) {
+      return "scheduled";
+    }
+    return "active";
+  }
+  return st;
+}
+
+export function formatDealStatusLabel(status) {
+  if (status === "finished" || status === "expired") return "Finished";
+  return status || "pending";
+}
+
 export function isComingSoonEvent(event) {
   if (!event) return false;
   const publishAt = event.publish_at || event.publishAt;
   if (!publishAt) return false;
   const t = new Date(publishAt);
   return !Number.isNaN(t.getTime()) && t.getTime() > Date.now();
+}
+
+/** Past event: end_time has passed, or no end_time and start was ≥ 24h ago. Coming Soon is never finished. */
+export function isFinishedEvent(event, now = new Date()) {
+  if (!event) return false;
+  if (isComingSoonEvent(event)) return false;
+  const start = event.start_time || event.startTime;
+  if (!start) return false;
+  const startTime = new Date(start);
+  if (Number.isNaN(startTime.getTime())) return false;
+  if (startTime > now) return false;
+  const endRaw = event.end_time || event.endTime;
+  const endTime = endRaw ? new Date(endRaw) : null;
+  if (endTime && !Number.isNaN(endTime.getTime())) {
+    return endTime.getTime() <= now.getTime();
+  }
+  return now.getTime() - startTime.getTime() >= 24 * 60 * 60 * 1000;
 }
 
 export function formatLaunchDate(value) {
@@ -114,23 +168,27 @@ export function sortComingSoonEvents(events) {
 export function partitionDeals(deals) {
   const live = [];
   const comingSoon = [];
+  const finished = [];
   for (const deal of deals || []) {
     if (isComingSoonDeal(deal)) comingSoon.push(deal);
+    else if (isFinishedDeal(deal)) finished.push(deal);
     else live.push(deal);
   }
-  return { live, comingSoon: sortComingSoonDeals(comingSoon) };
+  return { live, comingSoon: sortComingSoonDeals(comingSoon), finished };
 }
 
 /**
- * Split approved events into live listings vs Coming Soon (future publish_at).
+ * Split approved events into live listings vs Coming Soon vs finished (past).
  * Coming Soon is sorted nearest publish first.
  */
 export function partitionEvents(events) {
   const live = [];
   const comingSoon = [];
+  const finished = [];
   for (const event of events || []) {
     if (isComingSoonEvent(event)) comingSoon.push(event);
+    else if (isFinishedEvent(event)) finished.push(event);
     else live.push(event);
   }
-  return { live, comingSoon: sortComingSoonEvents(comingSoon) };
+  return { live, comingSoon: sortComingSoonEvents(comingSoon), finished };
 }

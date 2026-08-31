@@ -5,12 +5,13 @@
  * the previous placeholder stub with real deal content, a clean canonical
  * URL, and Organization/BreadcrumbList/ItemList structured data.
  */
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import { isComingSoonDeal } from "../lib/comingSoon";
 import { slugify, SITE_URL } from "../lib/seo";
+import { supabase } from "../lib/supabaseClient";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
@@ -20,13 +21,41 @@ export default function BrandPage() {
   const { brandId } = useParams();
   const { deals, loading, error } = useDeals();
   const { savedIds, loading: savedLoading, toggleSave } = useSavedDealIds();
+  const [brandRecord, setBrandRecord] = useState(undefined);
 
-  // Resolve the slug back to the brand's real, original-cased name by
-  // matching against live deal data (brands have no dedicated slug column).
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadBrand() {
+      const { data, error: brandError } = await supabase
+        .from("brands")
+        .select("id, name, logo_url, description, category, website_url");
+
+      if (cancelled) return;
+
+      if (brandError || !Array.isArray(data)) {
+        setBrandRecord(null);
+        return;
+      }
+
+      const match = data.find((row) => slugify(row.name) === brandId);
+      setBrandRecord(match || null);
+    }
+
+    setBrandRecord(undefined);
+    loadBrand();
+    return () => {
+      cancelled = true;
+    };
+  }, [brandId]);
+
+  // Prefer the brands table (works even with 0 live deals). Fall back to
+  // deal.brand so a slug still resolves if the table fetch fails.
   const brandName = useMemo(() => {
+    if (brandRecord?.name) return brandRecord.name;
     const match = deals.find((deal) => slugify(deal.brand) === brandId);
     return match ? match.brand : null;
-  }, [deals, brandId]);
+  }, [brandRecord, deals, brandId]);
 
   const brandDeals = useMemo(() => {
     if (!brandName) return [];
@@ -43,8 +72,10 @@ export default function BrandPage() {
   );
 
   const canonicalUrl = `${SITE_URL}/brand/${brandId}`;
+  const brandsResolved = brandRecord !== undefined;
+  const pageLoading = !brandName && (loading || !brandsResolved);
 
-  if (!loading && !brandName) {
+  if (!pageLoading && !brandName) {
     return (
       <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center">
         <Helmet>
@@ -72,7 +103,10 @@ export default function BrandPage() {
     : "Get exclusive student discounts and promo codes in Sri Lanka.";
   const hasDeals = brandDeals.length > 0;
   const brandImage =
-    brandDeals[0]?.imageUrl || brandDeals[0]?.image_url || `${SITE_URL}/icon-512-v9.png`;
+    brandRecord?.logo_url ||
+    brandDeals[0]?.imageUrl ||
+    brandDeals[0]?.image_url ||
+    `${SITE_URL}/icon-512-v9.png`;
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-16">
@@ -123,12 +157,12 @@ export default function BrandPage() {
           {brandName || "Brand"} Student Offers
         </h1>
         <p className="text-on-surface-variant text-base max-w-2xl">
-          {description}
+          {brandRecord?.description || description}
         </p>
       </div>
 
-      {loading || error ? (
-        <DealsLoader loading={loading} error={error} />
+      {pageLoading || error ? (
+        <DealsLoader loading={pageLoading} error={error} />
       ) : hasDeals ? (
         <div className="space-y-10">
           {liveDeals.length > 0 && (

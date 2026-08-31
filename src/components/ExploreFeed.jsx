@@ -75,28 +75,6 @@ function SectionHeader({ title, subtitle, to, linkLabel = "View all →" }) {
   );
 }
 
-function getActiveEvents(liveEvents) {
-  const now = new Date();
-  const active = [];
-
-  for (const event of liveEvents) {
-    const startTime = new Date(event.start_time);
-    const endTime = event.end_time ? new Date(event.end_time) : null;
-
-    const isUpcoming = startTime > now;
-    const isOngoing = endTime && endTime > now;
-    const isRecentNoEnd =
-      !endTime && now - startTime < 24 * 60 * 60 * 1000;
-
-    if (isUpcoming || isOngoing || isRecentNoEnd) {
-      active.push(event);
-    }
-  }
-
-  active.sort((a, b) => new Date(a.start_time) - new Date(b.start_time));
-  return active;
-}
-
 function ExploreFeed({ searchQuery = "" }) {
   const {
     deals,
@@ -145,10 +123,7 @@ function ExploreFeed({ searchQuery = "" }) {
     [filteredEvents],
   );
 
-  const activeEvents = useMemo(
-    () => getActiveEvents(liveEvents),
-    [liveEvents],
-  );
+  const activeEvents = liveEvents;
 
   const loading = dealsLoading || eventsLoading;
   const error = dealsError || eventsError;

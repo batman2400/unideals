@@ -27,6 +27,7 @@ export default function BlogPost() {
         .from("posts")
         .select("*")
         .eq("slug", slug)
+        .eq("is_published", true)
         .single();
 
       if (fetchError) throw fetchError;

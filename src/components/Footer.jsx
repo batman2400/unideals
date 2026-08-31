@@ -80,7 +80,7 @@ function Footer() {
             <span className="material-symbols-outlined">share</span>
           </button>
           <button
-            onClick={() => window.open("https://unideals.com", "_blank")}
+            onClick={() => window.open("https://www.unideals.co", "_blank")}
             className="text-[#323233]/40 hover:text-primary transition-colors"
           >
             <span className="material-symbols-outlined">language</span>

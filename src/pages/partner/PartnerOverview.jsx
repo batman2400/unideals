@@ -4,6 +4,7 @@ import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
+import { getDealComputedStatus } from "../../lib/comingSoon";
 
 function PartnerOverview() {
   const {
@@ -110,23 +111,20 @@ function PartnerOverview() {
 
   const metrics = useMemo(() => {
     const now = new Date();
-    const total = deals.length;
-    const active = deals.filter((d) => {
-      if (d.status !== "active" && d.status !== "approved") return false;
-      const start = d.start_time ? new Date(d.start_time) : new Date(0);
-      const end = d.end_time ? new Date(d.end_time) : null;
-      return start <= now && (!end || end >= now);
-    }).length;
-    const scheduled = deals.filter((d) => {
-      if (d.status !== "active" && d.status !== "approved") return false;
-      const start = d.start_time ? new Date(d.start_time) : new Date(0);
-      return start > now;
-    }).length;
-    const expired = deals.filter((d) => {
-      const end = d.end_time ? new Date(d.end_time) : null;
-      return d.status === "expired" || (end && end < now);
-    }).length;
-    return { total, active, scheduled, expired };
+    let current = 0;
+    let active = 0;
+    let scheduled = 0;
+    let expired = 0;
+    for (const d of deals) {
+      const computed = getDealComputedStatus(d, now);
+      if (computed === "finished") expired++;
+      else {
+        current++;
+        if (computed === "active") active++;
+        else if (computed === "scheduled") scheduled++;
+      }
+    }
+    return { total: current, active, scheduled, expired };
   }, [deals]);
 
   if (roleLoading || loading) {
@@ -168,11 +166,11 @@ function PartnerOverview() {
       to: "/partner/deals?filter=scheduled",
     },
     {
-      label: "Expired Deals",
+      label: "Finished Deals",
       value: metrics.expired,
       icon: "history",
       color: "text-on-surface-variant",
-      to: "/partner/deals?filter=expired",
+      to: "/partner/finished-deals",
     },
     {
       label: "Redemptions",

@@ -13,7 +13,7 @@ export default function FAQSchema() {
       "name": "How do I claim student offers in Sri Lanka?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "To claim student offers in Sri Lanka, sign up on Uni Deals using your valid university email (.ac.lk). Once verified, you can access exclusive promo codes for online shopping or show your digital student pass at partner stores."
+        "text": "Sign up on Uni Deals, then verify from Profile. Institute emails use a one-time code to prove inbox ownership; school students upload ID. An admin must approve before you can redeem — a university email alone does not verify you. Online deals then reveal a promo code; in-store deals generate a timed ticket on the deal page."
       }
     },
     {
@@ -21,7 +21,7 @@ export default function FAQSchema() {
       "name": "Which brands give student discounts in Sri Lanka?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Uni Deals partners with top brands across Sri Lanka, including major tech retailers, local cafes, clothing stores, and entertainment venues like cinemas. Browse our categories to see all active student discounts."
+        "text": "Browse Deals, Brands, and Categories on Uni Deals for every live student offer. The catalogue grows as partner brands join — check the site for what is available now."
       }
     },
     {
@@ -29,7 +29,7 @@ export default function FAQSchema() {
       "name": "Is my university email eligible for student deals?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Yes, if you have an active .ac.lk email address from a recognized Sri Lankan university or institute, you are eligible to unlock all student deals on the platform."
+        "text": "Institute emails (.ac.lk, .edu, and other listed campuses) can prove inbox ownership with a one-time code, then upload student ID for admin review. Gmail and school students use the manual ID path. Eligibility is confirmed only after an admin approves."
       }
     }
   ]

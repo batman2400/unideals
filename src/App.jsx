@@ -41,6 +41,7 @@ const CreateEvent = lazy(() => import("./pages/CreateEvent"));
 const Support = lazy(() => import("./pages/Support"));
 const PartnerOverview = lazy(() => import("./pages/partner/PartnerOverview"));
 const PartnerDeals = lazy(() => import("./pages/partner/PartnerDeals"));
+const PartnerEvents = lazy(() => import("./pages/partner/PartnerEvents"));
 const PartnerScanner = lazy(() => import("./pages/partner/PartnerScanner"));
 const PartnerAnalytics = lazy(() => import("./pages/partner/PartnerAnalytics"));
 const CreateDeal = lazy(() => import("./pages/partner/CreateDeal"));
@@ -119,6 +120,16 @@ function App() {
         setAuthLoading(false);
       });
 
+    const sessionTimeout = setTimeout(() => {
+      if (!active) return;
+      setAuthLoading((stillLoading) => {
+        if (stillLoading) {
+          console.error("[App] Session bootstrap timed out; continuing signed out.");
+        }
+        return false;
+      });
+    }, 8000);
+
     // 2. Listen for auth state changes (login, logout, token refresh)
     const {
       data: { subscription },
@@ -131,6 +142,7 @@ function App() {
     // Cleanup listener on unmount
     return () => {
       active = false;
+      clearTimeout(sessionTimeout);
       subscription.unsubscribe();
     };
   }, []);
@@ -313,6 +325,15 @@ function App() {
               >
                 <Route index element={<PartnerOverview />} />
                 <Route path="deals" element={<PartnerDeals />} />
+                <Route
+                  path="finished-deals"
+                  element={<PartnerDeals finishedOnly />}
+                />
+                <Route path="events" element={<PartnerEvents />} />
+                <Route
+                  path="finished-events"
+                  element={<PartnerEvents finishedOnly />}
+                />
                 <Route path="create-deal" element={<CreateDeal />} />
                 <Route path="edit-deal/:id" element={<EditDeal />} />
                 <Route path="scanner" element={<PartnerScanner />} />
@@ -329,7 +350,15 @@ function App() {
               >
                 <Route index element={<AdminOverview />} />
                 <Route path="deals" element={<AdminAllDeals />} />
+                <Route
+                  path="finished-deals"
+                  element={<AdminAllDeals finishedOnly />}
+                />
                 <Route path="events" element={<AdminAllEvents />} />
+                <Route
+                  path="finished-events"
+                  element={<AdminAllEvents finishedOnly />}
+                />
                 <Route path="pending-events" element={<AdminPendingEvents />} />
                 <Route path="users" element={<AdminUsers />} />
                 <Route path="/admin/verifications" element={<AdminVerifications />} />

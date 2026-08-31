@@ -72,7 +72,7 @@ When scouting for the perfect study spot, you need three non-negotiables:
 * **Student-Friendly Vibe:** Staff that understands you are there to get work done, not just turn over a table in 15 minutes.
 
 ### The UniDeals Hack
-Before you order that iced latte, always check your **UniDeals app**! Many local cafes around campus offer 10% to 15% off for verified students when you scan your QR code at the counter. Keep your eyes peeled on our Explore feed for new cafe partners dropping this week!',
+Before you order that iced latte, always check **Uni Deals**! Many local cafes around campus offer 10% to 15% off for verified students. Open the deal and generate an in-store ticket — the cashier scans that ticket, not your student pass. Keep your eyes peeled on our Explore feed for new cafe partners.',
   '/images/study-cafe.jpg',
   'UniDeals Editorial Team',
   true
@@ -89,7 +89,7 @@ For years, getting a student discount meant awkwardly waving your university ID 
 By working directly with local brands, restaurants, and entertainment spots, we have digitalized the entire process. Here is how you can get the most out of the platform this semester:
 
 1. **Check the Explore Feed Daily:** Our partner brands drop limited-time flash deals every week. If you see a deal you like, hit the save icon immediately!
-2. **Use the QR Scanner:** No paper coupons required. Just open your Scanner tab, scan the partner brand’s counter code, and watch the discount apply instantly.
+2. **Redeem from the deal page:** No paper coupons. Online offers reveal a promo code after you verify. In-store offers generate a timed ticket on that deal — show it to the cashier. Your Profile student pass is identity only, not a ticket.
 3. **Share With Your Batchmates:** Group dinners are way cheaper when everyone at the table knows which restaurants are currently running 20% student promos!',
   '/images/student-discounts.jpg',
   'UniDeals Team',

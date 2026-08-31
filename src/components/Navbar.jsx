@@ -14,7 +14,7 @@ export default function Navbar({ onLogout, isLoggedIn }) {
     { path: "/deals", label: "Deals" },
     { path: "/events", label: "Events" },
     { path: "/blog", label: "Blog" },
-    { path: "/saved", label: "Saved Deals" },
+    ...(isLoggedIn ? [{ path: "/saved", label: "Saved Deals" }] : []),
   ];
 
   const isActive = (path) => {

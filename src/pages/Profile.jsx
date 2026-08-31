@@ -21,6 +21,7 @@ import { OFFICIAL_CATEGORIES } from "../lib/categories";
 import { asHttpUrl } from "../lib/httpUrl";
 import { uploadBrandLogo } from "../lib/brandLogoUpload";
 import StudentVerificationCard from "../components/StudentVerificationCard";
+import { formatVerificationExpiry } from "../lib/studentVerification";
 import { QRCodeSVG } from "qrcode.react";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -123,6 +124,9 @@ function Profile({ isLoggedIn, user }) {
     role,
     loading: verificationLoading,
     refreshRole,
+    isVerificationExpired,
+    isVerificationExpiringSoon,
+    verifiedAt,
   } = useRoleContext();
 
   // ── Avatar upload ───────────────────────────────────
@@ -200,6 +204,7 @@ function Profile({ isLoggedIn, user }) {
         year: "numeric",
       })
     : "—";
+  const verificationExpiresLabel = formatVerificationExpiry(verifiedAt);
 
   // ── Profile Editing ───────────────────────────────────
   const [isEditing, setIsEditing] = useState(false);
@@ -592,6 +597,11 @@ function Profile({ isLoggedIn, user }) {
                 <span className="material-symbols-outlined text-[14px]">verified</span>
                 {role === "admin" ? "Verified Admin" : hasLinkedBrand ? "Verified Brand" : "Verified Student"}
               </span>
+            ) : isVerificationExpired ? (
+              <button onClick={() => { setVerificationOpen(true); scrollToSettings(); }} className="inline-flex items-center gap-1 text-xs font-bold text-[#d4a017] bg-[#d4a017]/10 px-2.5 py-1 rounded-full hover:bg-[#d4a017]/20 transition-colors min-h-[44px]">
+                <span className="material-symbols-outlined text-[14px]">event_busy</span>
+                Verification expired
+              </button>
             ) : hasPendingVerification ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-[#d4a017] bg-[#d4a017]/10 px-2.5 py-1 rounded-full">
                 <span className="material-symbols-outlined text-[14px]">pending</span>
@@ -660,7 +670,7 @@ function Profile({ isLoggedIn, user }) {
           <div className="flex items-center justify-between w-full">
             <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase">Student Pass</p>
             <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
-              {isVerified ? "Active" : "Inactive"}
+              {isVerified ? "Active" : isVerificationExpired ? "Expired" : "Inactive"}
             </span>
           </div>
           <div className="flex items-center gap-4 flex-1 w-full">
@@ -721,13 +731,17 @@ function Profile({ isLoggedIn, user }) {
                 <QRCodeSVG value={`unideals://student/${user.id}`} size={140} />
               </div>
               <p className="text-[11px] text-on-surface-variant/70 text-center leading-relaxed">
-                Student Pass · in-store tickets still come from each deal page
+                {verificationExpiresLabel
+                  ? `Valid until ${verificationExpiresLabel} · in-store tickets still come from each deal page`
+                  : "Student Pass · in-store tickets still come from each deal page"}
               </p>
             </div>
           ) : (
             <div className="w-full flex items-center gap-2 pt-4 border-t border-outline-variant/20 text-xs text-on-surface-variant">
               <span className="material-symbols-outlined text-base">lock</span>
-              Verify your student status to activate your pass
+              {isVerificationExpired
+                ? "Re-verify for this year to activate your pass"
+                : "Verify your student status to activate your pass"}
             </div>
           )}
         </div>
@@ -1146,13 +1160,16 @@ function Profile({ isLoggedIn, user }) {
           </div>
         </div>
 
-        {role !== "admin" && !hasLinkedBrand && !isVerified && (
+        {role !== "admin" && !hasLinkedBrand && (!isVerified || isVerificationExpiringSoon) && (
           <StudentVerificationCard
             user={user}
             isSchoolStudent={user?.user_metadata?.student_type === "school"}
             onInFlightChange={setHasPendingVerification}
             formOpen={verificationOpen}
             onFormOpenChange={setVerificationOpen}
+            onSubmitted={refreshRole}
+            renewal={isVerificationExpired || isVerificationExpiringSoon}
+            expiresOn={verificationExpiresLabel}
           />
         )}
 

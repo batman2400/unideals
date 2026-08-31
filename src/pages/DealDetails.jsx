@@ -505,6 +505,7 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
 function VerificationWall({
   isAuthenticated,
   isPending,
+  expired,
   verificationLoading,
   onOpenAuthModal,
 }) {
@@ -512,9 +513,11 @@ function VerificationWall({
     ? "Checking your account verification status..."
     : isPending
       ? "Your student ID is with an admin for review. You'll be able to redeem once it's approved."
-      : isAuthenticated
-        ? "Your account is signed in, but not yet verified. Open Profile to complete verification."
-        : "Sign in or create an account, then verify your student status to unlock this redemption code.";
+      : expired
+        ? "Student status is valid for 12 months. Re-verify from Profile to unlock this redemption code."
+        : isAuthenticated
+          ? "Your account is signed in, but not yet verified. Open Profile to complete verification. Status is valid for 12 months."
+          : "Sign in or create an account, then verify your student status to unlock this redemption code. Verification lasts 12 months.";
 
   return (
     <div className="relative animate-modal-enter overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 shadow-[0_18px_55px_-35px_rgba(6,26,20,0.8)] sm:p-6 md:p-8">
@@ -536,10 +539,10 @@ function VerificationWall({
 
         <div>
           <p className="mb-2 text-xs font-bold uppercase tracking-[0.15em] text-primary">
-            Verification Required
+            {expired ? "Verification Expired" : "Verification Required"}
           </p>
           <h3 className="mb-2 font-headline text-xl font-extrabold tracking-tight text-on-background sm:text-2xl">
-            Verify to unlock this code
+            {expired ? "Re-verify to unlock this code" : "Verify to unlock this code"}
           </h3>
           <p className="text-sm leading-relaxed text-on-surface-variant">
             {helperText}
@@ -561,7 +564,7 @@ function VerificationWall({
               to="/profile"
               className="flex min-h-[44px] flex-1 items-center justify-center rounded-xl emerald-gradient py-3 text-center font-headline text-sm font-bold tracking-tight text-on-primary shadow-md transition-all hover:shadow-lg active:scale-[0.98]"
             >
-              {isPending ? "Verification pending" : "Go to verification"}
+              {isPending ? "Verification pending" : expired ? "Re-verify on Profile" : "Go to verification"}
             </Link>
           ) : (
             <>
@@ -595,6 +598,7 @@ function DealDetails() {
     isAuthenticated,
     user,
     loading: roleLoading,
+    isVerificationExpired,
   } = useRoleContext();
   const dealAccessKey = [
     isAuthenticated ? "auth" : "anon",
@@ -827,6 +831,7 @@ function DealDetails() {
     <VerificationWall
       isAuthenticated={isAuthenticated}
       isPending={verificationPending}
+      expired={isVerificationExpired}
       verificationLoading={roleLoading && isAuthenticated}
       onOpenAuthModal={handleOpenAuthModal}
     />
@@ -859,6 +864,7 @@ function DealDetails() {
     <article className="animate-fade-in pb-8 lg:flex lg:h-[calc(100dvh-5rem)] lg:flex-col lg:overflow-hidden lg:pb-0">
       <Helmet>
         <title>{metaTitle}</title>
+        {expired ? <meta name="robots" content="noindex, nofollow" /> : null}
         <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:type" content="product" />

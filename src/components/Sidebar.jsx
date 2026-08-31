@@ -22,7 +22,9 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
     { path: "/deals", label: "Deals", icon: "local_offer" },
     { path: "/events", label: "Events", icon: "event" },
     { path: "/blog", label: "Blog", icon: "newspaper" },
-    { path: "/saved", label: "Saved Deals", icon: "bookmark" },
+    ...(isLoggedIn
+      ? [{ path: "/saved", label: "Saved Deals", icon: "bookmark" }]
+      : []),
   ];
 
   const studentFooterLinks = [

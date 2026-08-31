@@ -1,31 +1,32 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import {
-  getPartnerBrand,
-  PARTNER_BRAND_REQUIRED_MESSAGE,
-} from "../../lib/partnerBrand";
+import { getPartnerBrand } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
+import {
+  formatDealStatusLabel,
+  getDealComputedStatus,
+} from "../../lib/comingSoon";
 
 const STATUS_BADGE = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
   approved: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  finished: "bg-surface-container-high text-on-surface border-outline-variant/30",
   expired: "bg-surface-container-high text-on-surface border-outline-variant/30",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
   paused: "bg-red-50 text-red-600 border-red-200",
 };
 
-const STATUS_TABS = [
+const CATALOGUE_TABS = [
   { value: null, label: "All" },
   { value: "active", label: "Active" },
   { value: "scheduled", label: "Scheduled" },
   { value: "paused", label: "Paused" },
-  { value: "expired", label: "Expired" },
 ];
 
-function PartnerDeals() {
+function PartnerDeals({ finishedOnly = false }) {
   const {
     user,
     role,
@@ -192,25 +193,22 @@ function PartnerDeals() {
   );
 
   const now = new Date();
+  const catalogueDeals = deals.filter((d) => {
+    const computed = getDealComputedStatus(d, now);
+    return finishedOnly ? computed === "finished" : computed !== "finished";
+  });
+
   const filteredDeals = statusFilter
-    ? deals.filter((d) => {
-        const start = d.start_time ? new Date(d.start_time) : new Date(0);
-        const end = d.end_time ? new Date(d.end_time) : null;
-        
-        if (statusFilter === "active") {
-          return (d.status === "active" || d.status === "approved") && 
-                 start <= now && (!end || end >= now);
-        }
-        if (statusFilter === "scheduled") {
-          return (d.status === "active" || d.status === "approved") && 
-                 start > now;
-        }
-        if (statusFilter === "expired") {
-          return d.status !== "paused" && (d.status === "expired" || (end && end < now));
-        }
-        return d.status === statusFilter;
+    ? catalogueDeals.filter((d) => getDealComputedStatus(d, now) === statusFilter)
+    : catalogueDeals;
+
+  const sortedDeals = finishedOnly
+    ? [...filteredDeals].sort((a, b) => {
+        const aEnd = a.end_time ? new Date(a.end_time).getTime() : 0;
+        const bEnd = b.end_time ? new Date(b.end_time).getTime() : 0;
+        return bEnd - aEnd;
       })
-    : deals;
+    : filteredDeals;
 
   if (roleLoading || loading) {
     return (
@@ -227,18 +225,24 @@ function PartnerDeals() {
     );
   }
 
+  if (!finishedOnly && searchParams.get("filter") === "expired") {
+    return <Navigate to="/partner/finished-deals" replace />;
+  }
+
   return (
     <PortalLayout portalType="partner" brandName={partnerBrand}>
       <div className="flex items-start justify-between gap-4 mb-6 flex-wrap">
         <div>
           <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
-            My Deals
+            {finishedOnly ? "Finished Deals" : "My Deals"}
           </h1>
           <p className="text-on-surface-variant text-sm">
-            {deals.length} deal{deals.length !== 1 ? "s" : ""} submitted for{" "}
-            {partnerBrand || "your brand"}.
+            {finishedOnly
+              ? `${catalogueDeals.length} ended offer${catalogueDeals.length !== 1 ? "s" : ""} for ${partnerBrand || "your brand"} — hidden from students.`
+              : `${catalogueDeals.length} deal${catalogueDeals.length !== 1 ? "s" : ""} submitted for ${partnerBrand || "your brand"}.`}
           </p>
         </div>
+        {!finishedOnly && (
         <Link
           to="/partner/create-deal"
           className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm hover:shadow-md transition-all"
@@ -246,6 +250,7 @@ function PartnerDeals() {
           <span className="material-symbols-outlined text-lg">add_circle</span>
           Create Deal
         </Link>
+        )}
       </div>
 
       {message && (
@@ -260,27 +265,14 @@ function PartnerDeals() {
       )}
 
       {/* Status Tabs */}
+      {!finishedOnly && (
       <div className="flex bg-surface-container-low rounded-xl border border-outline-variant/15 p-1 gap-0.5 mb-6 w-fit">
-        {STATUS_TABS.map((tab) => {
+        {CATALOGUE_TABS.map((tab) => {
           const count = tab.value
-            ? deals.filter((d) => {
-                const start = d.start_time ? new Date(d.start_time) : new Date(0);
-                const end = d.end_time ? new Date(d.end_time) : null;
-                
-                if (tab.value === "active") {
-                  return (d.status === "active" || d.status === "approved") && 
-                         start <= now && (!end || end >= now);
-                }
-                if (tab.value === "scheduled") {
-                  return (d.status === "active" || d.status === "approved") && 
-                         start > now;
-                }
-                if (tab.value === "expired") {
-                  return d.status !== "paused" && (d.status === "expired" || (end && end < now));
-                }
-                return d.status === tab.value;
-              }).length
-            : deals.length;
+            ? catalogueDeals.filter(
+                (d) => getDealComputedStatus(d, now) === tab.value,
+              ).length
+            : catalogueDeals.length;
           return (
             <button
               key={tab.label}
@@ -303,9 +295,10 @@ function PartnerDeals() {
           );
         })}
       </div>
+      )}
 
       {/* Deal Cards */}
-      {filteredDeals.length === 0 ? (
+      {sortedDeals.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
           <span className="material-symbols-outlined text-5xl text-on-surface-variant/30 mb-3 block">
             local_offer
@@ -316,8 +309,11 @@ function PartnerDeals() {
           <p className="text-on-surface-variant text-sm mb-5">
             {statusFilter
               ? "No deals with this status."
-              : "Create your first deal to get started."}
+              : finishedOnly
+                ? "Ended offers will appear here."
+                : "Create your first deal to get started."}
           </p>
+          {!finishedOnly && (
           <Link
             to="/partner/create-deal"
             className="inline-flex items-center gap-2 emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-sm shadow-sm"
@@ -327,24 +323,14 @@ function PartnerDeals() {
             </span>
             Create Deal
           </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {filteredDeals.map((deal) => {
+          {sortedDeals.map((deal) => {
             const isDeleting = deletingDealId === deal.id;
             const isActing = actingDealId === deal.id;
-            const start = deal.start_time ? new Date(deal.start_time) : new Date(0);
-            const end = deal.end_time ? new Date(deal.end_time) : null;
-            let displayStatus = deal.status;
-            if (deal.status === "active" || deal.status === "approved") {
-              if (start > now) displayStatus = "scheduled";
-              else if (end && end < now) displayStatus = "expired";
-              else displayStatus = "active";
-            } else if (deal.status === "paused") {
-              displayStatus = "paused";
-            } else if (end && end < now) {
-              displayStatus = "expired";
-            }
+            const displayStatus = getDealComputedStatus(deal, now);
             
             const badge = STATUS_BADGE[displayStatus] || STATUS_BADGE.pending;
             const canPause =
@@ -367,7 +353,7 @@ function PartnerDeals() {
                     <span
                       className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase backdrop-blur-sm ${badge}`}
                     >
-                      {displayStatus}
+                      {formatDealStatusLabel(displayStatus)}
                     </span>
                   </div>
                   <div className="absolute top-3 right-3">

@@ -1,20 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Navigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
-import { useSearchParams } from "react-router-dom";
+import {
+  formatDealStatusLabel,
+  getDealComputedStatus,
+} from "../../lib/comingSoon";
 
-const STATUS_TABS = [
+const CATALOGUE_TABS = [
   { value: "all", label: "All" },
   { value: "active", label: "Active" },
   { value: "scheduled", label: "Scheduled" },
-  { value: "expired", label: "Expired" },
   { value: "paused", label: "Paused" },
 ];
 
 const STATUS_BADGE = {
   active: "bg-emerald-50 text-emerald-700 border-emerald-200",
   scheduled: "bg-blue-50 text-blue-700 border-blue-200",
+  finished: "bg-surface-container-high text-on-surface-variant border-outline-variant/50",
   expired: "bg-surface-container-high text-on-surface-variant border-outline-variant/50",
   paused: "bg-red-50 text-red-600 border-red-200",
   pending: "bg-amber-50 text-amber-700 border-amber-200",
@@ -22,15 +26,17 @@ const STATUS_BADGE = {
 
 const PAGE_LIMIT = 500;
 
-function AdminAllDeals() {
+function AdminAllDeals({ finishedOnly = false }) {
   const { role, loading: roleLoading } = useRoleContext();
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialFilter = searchParams.get("filter") || "all";
-  
+  const urlFilter = searchParams.get("filter") || "all";
+
   const [deals, setDeals] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [statusFilter, setStatusFilter] = useState(initialFilter);
+  const [statusFilter, setStatusFilter] = useState(
+    finishedOnly ? "all" : urlFilter === "expired" ? "all" : urlFilter,
+  );
   const [searchQuery, setSearchQuery] = useState("");
   const [inputValue, setInputValue] = useState("");
   const [message, setMessage] = useState("");
@@ -70,49 +76,54 @@ function AdminAllDeals() {
 
     // Parallel fetch for timing data to support dynamic time states
     const { data: timingData, error: timingError } = await supabase
-      .from('deals')
-      .select('id, start_time, end_time, status');
+      .from("deals")
+      .select("id, start_time, end_time, status");
 
     if (timingError) {
       console.error("Failed to load deal timing data:", timingError);
-      setError("Couldn't load deal schedules, so status filters may be inaccurate. Please refresh.");
+      setError(
+        "Couldn't load deal schedules, so status filters may be inaccurate. Please refresh.",
+      );
       setLoading(false);
       return;
     }
 
-    const timingMap = new Map((timingData || []).map(t => [t.id, t]));
+    const timingMap = new Map((timingData || []).map((t) => [t.id, t]));
 
-    let processedDeals = (data || []).map(d => {
-       const t = timingMap.get(d.id);
-       return { ...d, start_time: t?.start_time, end_time: t?.end_time, db_status: t?.status || d.status };
+    let processedDeals = (data || []).map((d) => {
+      const t = timingMap.get(d.id);
+      return {
+        ...d,
+        start_time: t?.start_time,
+        end_time: t?.end_time,
+        db_status: t?.status || d.status,
+      };
     });
 
-    const now = new Date();
-    
-    // Apply time-based filter locally
-    if (statusFilter && statusFilter !== "all") {
-      processedDeals = processedDeals.filter(d => {
-         const start = d.start_time ? new Date(d.start_time) : new Date(0);
-         const end = d.end_time ? new Date(d.end_time) : null;
-         const st = d.db_status;
-         
-         let computedStatus = st;
-         if (st === "active" || st === "approved") {
-           if (start > now) computedStatus = "scheduled";
-           else if (end && end < now) computedStatus = "expired";
-           else computedStatus = "active";
-         } else if (end && end < now) {
-           computedStatus = "expired";
-         }
-         
-         return computedStatus === statusFilter;
+    processedDeals = processedDeals.filter((d) => {
+      const computed = getDealComputedStatus(d);
+      if (finishedOnly) return computed === "finished";
+      return computed !== "finished";
+    });
+
+    if (!finishedOnly && statusFilter && statusFilter !== "all") {
+      processedDeals = processedDeals.filter(
+        (d) => getDealComputedStatus(d) === statusFilter,
+      );
+    }
+
+    if (finishedOnly) {
+      processedDeals.sort((a, b) => {
+        const aEnd = a.end_time ? new Date(a.end_time).getTime() : 0;
+        const bEnd = b.end_time ? new Date(b.end_time).getTime() : 0;
+        return bEnd - aEnd;
       });
     }
 
     setDeals(processedDeals || []);
     setListTruncated((data || []).length >= PAGE_LIMIT);
     setLoading(false);
-  }, [role, statusFilter, searchQuery]);
+  }, [role, statusFilter, searchQuery, finishedOnly]);
 
   useEffect(() => {
     if (roleLoading) return;
@@ -191,15 +202,20 @@ function AdminAllDeals() {
     );
   }
 
+  if (!finishedOnly && urlFilter === "expired") {
+    return <Navigate to="/admin/finished-deals" replace />;
+  }
+
   return (
     <PortalLayout portalType="admin">
       <div className="mb-6">
         <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
-          All Deals
+          {finishedOnly ? "Finished Deals" : "All Deals"}
         </h1>
         <p className="text-on-surface-variant text-sm">
-          Full deal catalogue with status management, search, and tracking
-          stats.
+          {finishedOnly
+            ? "Ended offers hidden from students. Newest end date first."
+            : "Current catalogue with status management, search, and tracking stats."}
         </p>
       </div>
 
@@ -231,8 +247,9 @@ function AdminAllDeals() {
         </div>
 
         {/* Status Tabs */}
+        {!finishedOnly && (
         <div className="flex bg-surface-container-low rounded-xl border border-outline-variant/15 p-1 gap-0.5">
-          {STATUS_TABS.map((tab) => (
+          {CATALOGUE_TABS.map((tab) => (
             <button
               key={tab.label}
               onClick={() => {
@@ -249,6 +266,7 @@ function AdminAllDeals() {
             </button>
           ))}
         </div>
+        )}
       </div>
 
       {/* Deals Table */}
@@ -259,7 +277,9 @@ function AdminAllDeals() {
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
             search_off
           </span>
-          <p className="text-on-surface-variant text-sm">No deals found.</p>
+          <p className="text-on-surface-variant text-sm">
+            {finishedOnly ? "No finished deals." : "No deals found."}
+          </p>
         </div>
       ) : (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
@@ -296,20 +316,7 @@ function AdminAllDeals() {
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {deals.map((deal) => {
                   const isActing = actingDealId === deal.id;
-                  
-                  const start = deal.start_time ? new Date(deal.start_time) : new Date(0);
-                  const end = deal.end_time ? new Date(deal.end_time) : null;
-                  const now = new Date();
-                  
-                  let displayStatus = deal.db_status || deal.status;
-                  if (displayStatus === "active" || displayStatus === "approved") {
-                    if (start > now) displayStatus = "scheduled";
-                    else if (end && end < now) displayStatus = "expired";
-                    else displayStatus = "active";
-                  } else if (end && end < now) {
-                    displayStatus = "expired";
-                  }
-                  
+                  const displayStatus = getDealComputedStatus(deal);
                   const badge =
                     STATUS_BADGE[displayStatus] || STATUS_BADGE.pending;
 
@@ -355,7 +362,7 @@ function AdminAllDeals() {
                         <span
                           className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${badge}`}
                         >
-                          {displayStatus}
+                          {formatDealStatusLabel(displayStatus)}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-surface-variant">

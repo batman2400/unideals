@@ -2,8 +2,9 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
+import { isComingSoonEvent, isFinishedEvent } from "../../lib/comingSoon";
 
-function AdminAllEvents() {
+function AdminAllEvents({ finishedOnly = false }) {
   const { role, loading: roleLoading } = useRoleContext();
   
   const [events, setEvents] = useState([]);
@@ -41,11 +42,23 @@ function AdminAllEvents() {
     if (fetchError) {
       setError(fetchError.message);
     } else {
-      setEvents(data || []);
+      const rows = data || [];
+      const filtered = rows.filter((event) => {
+        const finished = isFinishedEvent(event);
+        return finishedOnly ? finished : !finished;
+      });
+      if (finishedOnly) {
+        filtered.sort((a, b) => {
+          const aT = new Date(a.end_time || a.start_time).getTime();
+          const bT = new Date(b.end_time || b.start_time).getTime();
+          return bT - aT;
+        });
+      }
+      setEvents(filtered);
     }
     
     setLoading(false);
-  }, [role, searchQuery]);
+  }, [role, searchQuery, finishedOnly]);
 
   useEffect(() => {
     if (roleLoading) return;
@@ -102,10 +115,12 @@ function AdminAllEvents() {
     <PortalLayout portalType="admin">
       <div className="mb-6">
         <h1 className="font-headline font-extrabold text-2xl md:text-3xl tracking-tight text-on-background mb-1">
-          All Events
+          {finishedOnly ? "Finished Events" : "All Events"}
         </h1>
         <p className="text-on-surface-variant text-sm">
-          Full event catalogue with search and deletion capabilities.
+          {finishedOnly
+            ? "Past events hidden from students. Newest first."
+            : "Current event catalogue with search and deletion capabilities."}
         </p>
       </div>
 
@@ -145,7 +160,9 @@ function AdminAllEvents() {
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
             search_off
           </span>
-          <p className="text-on-surface-variant text-sm">No events found.</p>
+          <p className="text-on-surface-variant text-sm">
+            {finishedOnly ? "No finished events." : "No events found."}
+          </p>
         </div>
       ) : (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 shadow-sm overflow-hidden">
@@ -182,6 +199,22 @@ function AdminAllEvents() {
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
                 {events.map((event) => {
                   const isActing = actingEventId === event.id;
+                  const comingSoon = isComingSoonEvent(event);
+                  const finished = isFinishedEvent(event);
+                  const statusLabel = comingSoon
+                    ? "coming soon"
+                    : finished
+                      ? "finished"
+                      : event.status || "pending";
+                  const statusClass = comingSoon
+                    ? "text-sky-700 bg-sky-50 border-sky-200"
+                    : finished
+                      ? "text-on-surface-variant bg-surface-container-high border-outline-variant/50"
+                      : event.status === "approved"
+                        ? "text-emerald-600 bg-emerald-50 border-emerald-200"
+                        : event.status === "rejected"
+                          ? "text-red-600 bg-red-50 border-red-200"
+                          : "text-amber-600 bg-amber-50 border-amber-200";
 
                   return (
                     <tr
@@ -257,23 +290,9 @@ function AdminAllEvents() {
                           Status
                         </span>
                         <span
-                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${
-                            event.status === "approved" &&
-                            event.publish_at &&
-                            new Date(event.publish_at) > new Date()
-                              ? "text-sky-700 bg-sky-50 border-sky-200"
-                              : event.status === "approved"
-                                ? "text-emerald-600 bg-emerald-50 border-emerald-200"
-                                : event.status === "rejected"
-                                  ? "text-red-600 bg-red-50 border-red-200"
-                                  : "text-amber-600 bg-amber-50 border-amber-200"
-                          }`}
+                          className={`inline-flex items-center rounded-lg border px-2.5 py-1 text-[10px] font-bold tracking-wider uppercase ${statusClass}`}
                         >
-                          {event.status === "approved" &&
-                          event.publish_at &&
-                          new Date(event.publish_at) > new Date()
-                            ? "coming soon"
-                            : event.status || "pending"}
+                          {statusLabel}
                         </span>
                       </td>
                       <td className="flex justify-between items-center md:table-cell px-0 md:px-4 py-2 md:py-3 border-b border-outline-variant/5 md:border-none text-sm text-on-background font-bold md:text-center tabular-nums">

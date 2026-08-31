@@ -1,8 +1,11 @@
 -- ============================================================
 -- Uni Deals - Phase 5: Automated Student Verification
 -- ============================================================
--- Run this AFTER supabase_partner_access.sql.
--- This script is idempotent and safe to re-run.
+-- DO NOT RE-RUN IN PRODUCTION.
+-- This auto-verifies .edu / .ac.lk on signup and skips the admin
+-- queue. Use supabase_student_verification_admin_gate.sql instead.
+--
+-- Run this AFTER supabase_partner_access.sql (legacy bootstrap only).
 --
 -- What this migration does:
 -- 1) Adds public.user_roles.is_verified (default false)

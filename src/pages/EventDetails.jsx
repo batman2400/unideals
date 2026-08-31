@@ -2,7 +2,11 @@ import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
-import { formatLaunchDate, isComingSoonEvent } from "../lib/comingSoon";
+import {
+  formatLaunchDate,
+  isComingSoonEvent,
+  isFinishedEvent,
+} from "../lib/comingSoon";
 import { asHttpUrl } from "../lib/httpUrl";
 import { SITE_URL } from "../lib/seo";
 import { useRoleContext } from "../lib/RoleContext";
@@ -43,6 +47,17 @@ export default function EventDetails() {
       const { data, error: fetchError } = await query.single();
 
       if (fetchError) throw fetchError;
+
+      const canViewFinished =
+        role === "admin" ||
+        role === "partner" ||
+        (user?.id && data?.organizer_id === user.id);
+
+      if (data && isFinishedEvent(data) && !canViewFinished) {
+        setEvent(null);
+        setError("This event has ended and is no longer listed.");
+        return;
+      }
 
       setEvent(data);
     } catch (err) {
@@ -115,6 +130,9 @@ export default function EventDetails() {
     <div className="max-w-5xl mx-auto px-4 md:px-8 py-8 md:py-12 animate-fade-in">
       <Helmet>
         <title>{metaTitle}</title>
+        {isFinishedEvent(event) ? (
+          <meta name="robots" content="noindex, nofollow" />
+        ) : null}
         <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:type" content="article" />

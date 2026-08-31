@@ -41,7 +41,16 @@ function FileDrop({ label, file, onChange }) {
   );
 }
 
-function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, formOpen: formOpenProp, onFormOpenChange }) {
+function StudentVerificationCard({
+  user,
+  isSchoolStudent,
+  onInFlightChange,
+  formOpen: formOpenProp,
+  onFormOpenChange,
+  onSubmitted,
+  renewal = false,
+  expiresOn,
+}) {
   const [internalFormOpen, setInternalFormOpen] = useState(false);
   const formOpen = formOpenProp ?? internalFormOpen;
   const setFormOpen = onFormOpenChange ?? setInternalFormOpen;
@@ -202,6 +211,7 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
       if (error) throw error;
       if (data?.success) {
         await refreshRequest();
+        onSubmitted?.();
       } else {
         setUniError(data?.error || "Verification failed.");
       }
@@ -241,6 +251,7 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
       if (error) throw error;
       if (data?.success) {
         await refreshRequest();
+        onSubmitted?.();
       } else {
         setManualError(data?.error || "Failed to submit verification request.");
       }
@@ -264,11 +275,13 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
           school
         </span>
         <div>
-          <h3 className="font-headline font-bold text-base text-on-background">Get verified</h3>
+          <h3 className="font-headline font-bold text-base text-on-background">
+            {renewal ? "Re-verify for this year" : "Get verified"}
+          </h3>
           <p className="text-on-surface-variant text-sm mt-1">
             {isSchoolStudent
-              ? "School students send both sides of a student ID for admin review."
-              : "Use a university email so we can confirm your inbox, then an admin checks your ID."}
+              ? "School students send both sides of a student ID for admin review. Status is valid for 12 months."
+              : "Use a university email so we can confirm your inbox, then an admin checks your ID. Status is valid for 12 months."}
           </p>
         </div>
       </div>
@@ -293,7 +306,11 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
             </div>
           ) : (
             <p className="text-sm text-on-surface-variant mb-4">
-              Verify your student status to unlock deal codes and in-store tickets.
+              {renewal
+                ? expiresOn
+                  ? `Student status is valid for 12 months. Re-verify by ${expiresOn} to keep deal codes and in-store tickets.`
+                  : "Student status is valid for 12 months. Re-verify to keep deal codes and in-store tickets."
+                : "Verify your student status to unlock deal codes and in-store tickets. Status is valid for 12 months."}
             </p>
           )}
           <button
@@ -301,7 +318,7 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
             onClick={() => setFormOpen(true)}
             className="w-full min-h-[44px] px-6 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90"
           >
-            {isRejected ? "Resubmit verification" : "Get verified"}
+            {isRejected ? "Resubmit verification" : renewal ? "Re-verify now" : "Get verified"}
           </button>
         </>
       ) : (
@@ -352,7 +369,7 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
             >
               <p className="text-sm text-on-surface-variant">
                 We confirm the inbox first, then an admin checks both sides of your student ID.
-                You are not verified until an admin approves.
+                You are not verified until an admin approves. Status lasts 12 months.
               </p>
               <input
                 type="email"
@@ -430,7 +447,7 @@ function StudentVerificationCard({ user, isSchoolStudent, onInFlightChange, form
             <form onSubmit={handleManualVerify} className="space-y-4">
               <p className="text-sm text-on-surface-variant">
                 Upload both sides of your student ID for admin review. You are not verified until
-                an admin approves.
+                an admin approves. Status lasts 12 months.
               </p>
               <div className="flex flex-wrap gap-2">
                 <button

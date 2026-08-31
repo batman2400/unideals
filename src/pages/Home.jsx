@@ -4,6 +4,7 @@ import HeroSection from "../components/HeroSection";
 import ExploreFeed from "../components/ExploreFeed";
 import FAQSchema from "../components/FAQSchema";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
+import { slugify } from "../lib/seo";
 
 const categories = [
   { emoji: "✨", label: "All", filter: null },
@@ -61,8 +62,7 @@ function Home({ searchQuery, onSearchChange }) {
                   navigate("/");
                   return;
                 }
-                const params = new URLSearchParams({ filter: cat.filter });
-                navigate(`/categories?${params.toString()}`);
+                navigate(`/category/${slugify(cat.filter)}`);
               }}
               className="flex-shrink-0 rounded-full bg-surface-container px-3.5 py-1.5 text-xs font-semibold text-on-surface-variant transition hover:bg-primary hover:text-on-primary active:scale-[0.98]"
             >
