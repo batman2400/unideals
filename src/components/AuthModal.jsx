@@ -18,6 +18,7 @@
  *   - onClose    : function — called to close the modal
  *   - initialError : string — optional error to show when the modal opens
  *                    (e.g. OAuth redirect failure)
+ *   - initialTab : "login" | "signup" | null — tab to open on (e.g. /signup)
  */
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
@@ -58,7 +59,7 @@ function GoogleMark({ className }) {
   );
 }
 
-function AuthModal({ isOpen, onClose, initialError = "" }) {
+function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
   // Toggle between "login" and "signup" tabs
   const [activeTab, setActiveTab] = useState("login");
 
@@ -88,6 +89,15 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
       setExistingAccount(false);
     }
   }, [isOpen, initialError]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (initialTab !== "login" && initialTab !== "signup") return;
+    setActiveTab(initialTab);
+    setShowForgot(false);
+    setSignupSuccess(false);
+    setResetSent(false);
+  }, [isOpen, initialTab]);
 
   // Reset form when switching tabs
   const switchTab = (tab) => {
@@ -267,6 +277,7 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
     try {
       if (activeTab === "signup") {
         // ── Sign Up ──────────────────────────────────────
+        const requestStartedAt = Date.now();
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
@@ -279,7 +290,7 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
           },
         });
 
-        if (isExistingAccountSignup(error, data)) {
+        if (isExistingAccountSignup(error, data, requestStartedAt)) {
           showExistingAccountNotice();
           return;
         }

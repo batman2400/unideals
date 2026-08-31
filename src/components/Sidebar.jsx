@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 
-export default function Sidebar({ onLogout, isLoggedIn }) {
+export default function Sidebar({ onLogout, isLoggedIn, authReady = true }) {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
   const { role, loading } = useRoleContext();
@@ -165,7 +165,9 @@ export default function Sidebar({ onLogout, isLoggedIn }) {
             <NavItem key={link.path} link={link} />
           ))}
 
-          {isLoggedIn ? (
+          {!authReady ? (
+            <div className="h-[44px] w-full rounded-xl skeleton-shimmer bg-surface-container-low mt-2" />
+          ) : isLoggedIn ? (
             <button
               onClick={() => {
                 if (onLogout) onLogout();

@@ -6,12 +6,13 @@
  *    https://www.unideals.co so Bing/Google stop ranking the deploy URL
  *    for branded searches like "unideals co".
  *
- * 2) /deals/:id validity guard: invalid/missing deal IDs get a real
- *    HTTP 404 instead of a soft SPA 200.
+ * 2) /deals/:id validity guard: invalid/missing deal IDs get HTTP 404
+ *    while rewriting to the SPA shell (Uni Deals chrome, not Vercel's
+ *    default 404 page).
  *
- * 3) Unknown HTML paths also get HTTP 404 (SPA NotFound still renders).
+ * 3) Unknown HTML paths also get HTTP 404 via the same SPA rewrite.
  */
-import { next } from "@vercel/functions";
+import { next, rewrite } from "@vercel/functions";
 
 const CANONICAL_ORIGIN = "https://www.unideals.co";
 
@@ -37,6 +38,8 @@ const EXACT_PATHS = new Set([
   "/reset-password",
   "/auth/callback",
   "/perks",
+  "/login",
+  "/signup",
 ]);
 
 const ONE_SEGMENT_PREFIXES = new Set([
@@ -51,6 +54,11 @@ const ONE_SEGMENT_PREFIXES = new Set([
 function normalizePath(pathname) {
   if (!pathname || pathname === "/") return "/";
   return pathname.replace(/\/+$/, "") || "/";
+}
+
+/** SPA index with HTTP 404 — Uni Deals chrome, not Vercel's default page. */
+function spaNotFound(request) {
+  return rewrite(new URL("/", request.url), { status: 404 });
 }
 
 function isKnownAppPath(pathname) {
@@ -100,7 +108,7 @@ export default async function middleware(request) {
       id.length > 0 && Number.isInteger(numericId) && numericId > 0;
 
     if (!isValidIdShape) {
-      return next({ status: 404 });
+      return spaNotFound(request);
     }
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -129,14 +137,14 @@ export default async function middleware(request) {
       const data = await res.json();
       const dealExists = Array.isArray(data) ? data.length > 0 : Boolean(data);
 
-      return dealExists ? next() : next({ status: 404 });
+      return dealExists ? next() : spaNotFound(request);
     } catch {
       return next();
     }
   }
 
   if (!isKnownAppPath(path)) {
-    return next({ status: 404 });
+    return spaNotFound(request);
   }
 
   return next();

@@ -720,6 +720,9 @@ function DealDetails() {
   if (loading) {
     return (
       <section className="mx-auto max-w-[1440px] animate-fade-in px-4 py-10 md:px-8 md:py-16">
+        <Helmet>
+          <title>Deal | Uni Deals</title>
+        </Helmet>
         <DealsLoader loading={true} error={null} />
       </section>
     );

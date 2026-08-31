@@ -26,6 +26,16 @@
       "source": "/perks/:id",
       "destination": "/deals/:id",
       "statusCode": 301
+    },
+    {
+      "source": "/signup",
+      "destination": "/?auth=signup",
+      "statusCode": 302
+    },
+    {
+      "source": "/login",
+      "destination": "/?auth=login",
+      "statusCode": 302
     }
   ],
   "rewrites": [

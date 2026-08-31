@@ -26,7 +26,9 @@ import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
 import ProtectedRoute from "./components/ProtectedRoute";
 
-const Home = lazy(() => import("./pages/Home"));
+const loadHome = () => import("./pages/Home");
+const Home = lazy(loadHome);
+loadHome();
 const Deals = lazy(() => import("./pages/Deals"));
 const DealDetails = lazy(() => import("./pages/DealDetails"));
 const Categories = lazy(() => import("./pages/Categories"));
@@ -93,6 +95,7 @@ function App() {
   // ── Global UI State ──────────────────────────────────
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalError, setAuthModalError] = useState("");
+  const [authModalTab, setAuthModalTab] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
 
   // ── Supabase Auth State ──────────────────────────────
@@ -149,13 +152,34 @@ function App() {
 
   // ── Global Event Listener for Auth Modal ─────────────
   useEffect(() => {
-    const handleOpenAuth = () => {
+    const handleOpenAuth = (event) => {
       setAuthModalError("");
+      const tab = event?.detail?.tab;
+      setAuthModalTab(
+        tab === "signup" || tab === "login" ? tab : null,
+      );
       setAuthModalOpen(true);
     };
     window.addEventListener("open-auth-modal", handleOpenAuth);
     return () => window.removeEventListener("open-auth-modal", handleOpenAuth);
   }, []);
+
+  // /signup and /login land here via ?auth= so the modal opens on the
+  // right tab without a dedicated auth page.
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const auth = params.get("auth");
+    if (auth !== "login" && auth !== "signup") return;
+
+    setAuthModalError("");
+    setAuthModalTab(auth);
+    setAuthModalOpen(true);
+
+    params.delete("auth");
+    const cleaned = params.toString();
+    const nextUrl = `${location.pathname}${cleaned ? `?${cleaned}` : ""}${location.hash}`;
+    window.history.replaceState({}, document.title, nextUrl);
+  }, [location.pathname, location.search, location.hash]);
 
   // Surface OAuth errors returned in the URL (e.g. user cancelled Google),
   // then strip the query params so a refresh doesn't reopen the modal.
@@ -219,26 +243,21 @@ function App() {
     );
   }
 
-  // Don't render until initial session check is done
-  // This prevents a flash of unauthenticated UI
-  if (authLoading) {
-    return (
-      <div className="min-h-[100dvh] flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-3">
-          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-on-surface-variant text-sm font-headline font-bold">
-            Loading...
-          </p>
-        </div>
-      </div>
-    );
-  }
+  const authReady = !authLoading;
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
       <div className="flex flex-1 w-full flex-col">
-        <Navbar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
-        <Sidebar onLogout={handleLogout} isLoggedIn={isLoggedIn} />
+        <Navbar
+          onLogout={handleLogout}
+          isLoggedIn={isLoggedIn}
+          authReady={authReady}
+        />
+        <Sidebar
+          onLogout={handleLogout}
+          isLoggedIn={isLoggedIn}
+          authReady={authReady}
+        />
 
         {/* Page Content */}
         <main
@@ -248,7 +267,6 @@ function App() {
         >
         <Suspense fallback={<RouteSkeleton />}>
           <div
-            key={`${location.pathname}${location.search}`}
             className={`animate-route-fade flex flex-col flex-1 ${
               isDealDetailsPage ? "lg:min-h-0 lg:overflow-hidden" : ""
             }`}
@@ -306,6 +324,14 @@ function App() {
               {/* Public: the recovery link must open for signed-out users. */}
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
+              <Route
+                path="/signup"
+                element={<Navigate to="/?auth=signup" replace />}
+              />
+              <Route
+                path="/login"
+                element={<Navigate to="/?auth=login" replace />}
+              />
               <Route
                 path="/profile"
                 element={
@@ -385,9 +411,11 @@ function App() {
       <AuthModal
         isOpen={authModalOpen}
         initialError={authModalError}
+        initialTab={authModalTab}
         onClose={() => {
           setAuthModalOpen(false);
           setAuthModalError("");
+          setAuthModalTab(null);
         }}
       />
     </div>

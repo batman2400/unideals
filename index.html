@@ -15,6 +15,23 @@
       social bots that don't execute JS.
     -->
     <title>Uni Deals | Student Discounts & Perks in Sri Lanka</title>
+    <script>
+      (function () {
+        var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
+        var title = "";
+        if (path === "/deals") title = "Student Deals | Uni Deals";
+        else if (path.indexOf("/deals/") === 0) title = "Deal | Uni Deals";
+        else if (path === "/categories") title = "Categories | Uni Deals";
+        else if (path.indexOf("/category/") === 0) title = "Category | Uni Deals";
+        else if (path === "/brands") title = "Brands | Uni Deals";
+        else if (path.indexOf("/brand/") === 0) title = "Brand | Uni Deals";
+        else if (path === "/blog") title = "Blog | Uni Deals";
+        else if (path.indexOf("/blog/") === 0) title = "Blog | Uni Deals";
+        else if (path === "/events") title = "Student Events in Sri Lanka | Uni Deals";
+        else if (path === "/login" || path === "/signup") title = "Uni Deals";
+        if (title) document.title = title;
+      })();
+    </script>
     <link rel="canonical" href="https://www.unideals.co/" />
     <meta
       name="description"

@@ -1,7 +1,7 @@
 import { Link, useLocation } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 
-export default function Navbar({ onLogout, isLoggedIn }) {
+export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
   const location = useLocation();
   const { role, loading } = useRoleContext();
 
@@ -74,7 +74,18 @@ export default function Navbar({ onLogout, isLoggedIn }) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-4">
-        {isLoggedIn ? (
+        {!authReady ? (
+          <>
+            <Link
+              to="/support"
+              title="Help / Support"
+              className="p-2 text-on-surface-variant hover:text-on-background hover:bg-surface-container rounded-full transition-colors flex items-center justify-center"
+            >
+              <span className="material-symbols-outlined text-[22px]">help</span>
+            </Link>
+            <div className="w-[88px] h-9 rounded-full skeleton-shimmer bg-surface-container-low" />
+          </>
+        ) : isLoggedIn ? (
           <>
             {loading ? (
               <div className="hidden lg:block w-[140px] h-[36px] rounded-full skeleton-shimmer bg-surface-container-low" />

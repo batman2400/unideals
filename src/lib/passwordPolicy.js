@@ -20,13 +20,25 @@ export function validatePasswordStrength(password) {
 }
 
 export const EXISTING_ACCOUNT_MESSAGE =
-  "An account already exists for this email. Log in, or reset your password.";
+  "An account already exists for this email. Log in, confirm your email if you haven't, or reset your password.";
+
+/** Allow a few seconds of client/server clock drift on created_at checks. */
+const EXISTING_USER_CLOCK_SKEW_MS = 5000;
 
 /**
- * Duplicate signup surfaces two ways: GoTrue error, or a fake success with
- * an empty identities array (email-confirm projects hide existence that way).
+ * Duplicate signup surfaces three ways:
+ *   1. GoTrue error (`user_already_exists` / "already registered")
+ *   2. Fake success with an empty identities array (confirmed users —
+ *      email-confirm projects hide existence that way)
+ *   3. Fake success that resends the confirm email for an unconfirmed
+ *      account. Identities are still set, so (2) misses it; created_at
+ *      is from the original signup, before this request started.
  */
-export function isExistingAccountSignup(error, data) {
+export function isExistingAccountSignup(
+  error,
+  data,
+  requestStartedAt = Date.now(),
+) {
   const code = String(error?.code ?? "").toLowerCase();
   const message = String(error?.message ?? "").toLowerCase();
   if (
@@ -45,6 +57,26 @@ export function isExistingAccountSignup(error, data) {
     data.user.identities.length === 0
   ) {
     return true;
+  }
+
+  const user = data?.user;
+  const createdAt = Date.parse(user?.created_at ?? "");
+  if (!error && Number.isFinite(createdAt)) {
+    if (createdAt < requestStartedAt - EXISTING_USER_CLOCK_SKEW_MS) {
+      return true;
+    }
+
+    // Same-clock check: a resend updates confirmation_sent_at / updated_at
+    // while created_at stays on the original insert.
+    const resentAt = Date.parse(
+      user?.confirmation_sent_at ?? user?.updated_at ?? "",
+    );
+    if (
+      Number.isFinite(resentAt) &&
+      resentAt - createdAt > EXISTING_USER_CLOCK_SKEW_MS
+    ) {
+      return true;
+    }
   }
 
   return false;
