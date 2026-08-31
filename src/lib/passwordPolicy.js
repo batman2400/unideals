@@ -19,10 +19,42 @@ export function validatePasswordStrength(password) {
   return null;
 }
 
+export const EXISTING_ACCOUNT_MESSAGE =
+  "An account already exists for this email. Log in, or reset your password.";
+
+/**
+ * Duplicate signup surfaces two ways: GoTrue error, or a fake success with
+ * an empty identities array (email-confirm projects hide existence that way).
+ */
+export function isExistingAccountSignup(error, data) {
+  const code = String(error?.code ?? "").toLowerCase();
+  const message = String(error?.message ?? "").toLowerCase();
+  if (
+    code === "user_already_exists" ||
+    code === "email_exists" ||
+    (message.includes("already") && message.includes("registered")) ||
+    message.includes("already exists")
+  ) {
+    return true;
+  }
+
+  if (
+    !error &&
+    data?.user &&
+    Array.isArray(data.user.identities) &&
+    data.user.identities.length === 0
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 /**
  * Server faults and rate limits say nothing about whether an account exists,
  * so naming them is safe and stops an outage from looking like a typo.
- * Anything else stays deliberately vague to prevent email enumeration.
+ * Duplicate signup is handled separately in AuthModal so returning users
+ * are sent to login instead of a fake confirmation screen.
  */
 export function describeAuthFailure(error, fallback) {
   if (!error.status || error.status >= 500) {

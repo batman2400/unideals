@@ -26,8 +26,10 @@ import {
   rememberReturnPath,
 } from "../lib/authRedirect";
 import {
+  EXISTING_ACCOUNT_MESSAGE,
   PASSWORD_HINT,
   describeAuthFailure,
+  isExistingAccountSignup,
   validatePasswordStrength,
 } from "../lib/passwordPolicy";
 
@@ -74,6 +76,7 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
   const [signupSuccess, setSignupSuccess] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
   const [resetSent, setResetSent] = useState(false);
+  const [existingAccount, setExistingAccount] = useState(false);
   const inFlightRef = useRef(false);
 
   useEffect(() => {
@@ -82,6 +85,7 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
       setShowForgot(false);
       setSignupSuccess(false);
       setResetSent(false);
+      setExistingAccount(false);
     }
   }, [isOpen, initialError]);
 
@@ -97,7 +101,20 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
     setSignupSuccess(false);
     setShowForgot(false);
     setResetSent(false);
+    setExistingAccount(false);
     setOauthLoading(false);
+  };
+
+  const showExistingAccountNotice = () => {
+    setActiveTab("login");
+    setFullName("");
+    setUsername("");
+    setErrors({});
+    setAuthError("");
+    setSignupSuccess(false);
+    setShowForgot(false);
+    setResetSent(false);
+    setExistingAccount(true);
   };
 
   // ── Google OAuth ──────────────────────────────────────
@@ -151,6 +168,7 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
     setPassword("");
     setErrors({});
     setAuthError("");
+    setExistingAccount(false);
   };
 
   // ── Password Reset Request ────────────────────────────
@@ -241,13 +259,15 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
 
     if (!validate()) return;
 
+    setExistingAccount(false);
+
     inFlightRef.current = true;
     setLoading(true);
 
     try {
       if (activeTab === "signup") {
         // ── Sign Up ──────────────────────────────────────
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
           password,
           options: {
@@ -259,10 +279,13 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
           },
         });
 
+        if (isExistingAccountSignup(error, data)) {
+          showExistingAccountNotice();
+          return;
+        }
+
         if (error) {
           console.error("Signup failed:", error);
-          // Deliberately generic: a message like "User already registered"
-          // lets an attacker enumerate which emails hold accounts.
           setAuthError(
             describeAuthFailure(
               error,
@@ -497,6 +520,26 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
                 </button>
               </div>
 
+              {existingAccount && (
+                <div className="flex items-start gap-2 bg-primary-container/30 border border-primary/20 rounded-lg px-4 py-3 mb-4 animate-modal-enter">
+                  <span className="material-symbols-outlined text-primary text-lg flex-shrink-0 mt-0.5">
+                    info
+                  </span>
+                  <div>
+                    <p className="text-on-background text-sm font-bold leading-relaxed">
+                      {EXISTING_ACCOUNT_MESSAGE}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={openForgot}
+                      className="text-primary text-xs font-bold hover:underline mt-1.5"
+                    >
+                      Reset password
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {/* Supabase auth error banner */}
               {authError && (
                 <div className="flex items-start gap-2 bg-error/10 border border-error/20 rounded-lg px-4 py-3 mb-4 animate-modal-enter">
@@ -601,7 +644,10 @@ function AuthModal({ isOpen, onClose, initialError = "" }) {
                     autoComplete="email"
                     placeholder="you@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (existingAccount) setExistingAccount(false);
+                    }}
                     disabled={loading}
                     className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
                       errors.email
