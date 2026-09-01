@@ -35,3 +35,29 @@ export function brandHubPath(name) {
   const slug = slugify(name);
   return slug ? `/brand/${slug}` : "/brands";
 }
+
+/**
+ * Home “explore brands” search: empty → directory, unique match → hub,
+ * otherwise a filtered directory URL.
+ */
+export function resolveBrandExplorePath(query, brandNames) {
+  const trimmed = String(query ?? "").trim();
+  if (!trimmed) return "/brands";
+
+  const names = Array.isArray(brandNames)
+    ? [...new Set(brandNames.filter(Boolean))]
+    : [];
+  const needle = trimmed.toLowerCase();
+  const exact = names.find((name) => name.toLowerCase() === needle);
+  if (exact) return brandHubPath(exact);
+
+  const startsWith = names.filter((name) =>
+    name.toLowerCase().startsWith(needle),
+  );
+  if (startsWith.length === 1) return brandHubPath(startsWith[0]);
+
+  const contains = names.filter((name) => name.toLowerCase().includes(needle));
+  if (contains.length === 1) return brandHubPath(contains[0]);
+
+  return `/brands?q=${encodeURIComponent(trimmed)}`;
+}

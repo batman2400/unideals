@@ -5,7 +5,7 @@
  * derived from Supabase deals, with deal count and a link to
  * view their deals.
  */
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDeals } from "../lib/useDeals";
@@ -14,6 +14,8 @@ import DealsLoader from "../components/DealsLoader";
 
 function Brands() {
   const { deals, loading, error } = useDeals();
+  const [searchParams] = useSearchParams();
+  const query = (searchParams.get("q") || "").trim();
 
   // Build a map of unique brands with their deals
   const brands = useMemo(() => {
@@ -32,6 +34,16 @@ function Brands() {
 
     return Object.values(brandMap);
   }, [deals]);
+
+  const visibleBrands = useMemo(() => {
+    if (!query) return brands;
+    const needle = query.toLowerCase();
+    return brands.filter(
+      (brand) =>
+        brand.name.toLowerCase().includes(needle) ||
+        brand.category?.toLowerCase().includes(needle),
+    );
+  }, [brands, query]);
 
   return (
     <section className="max-w-[1440px] mx-auto px-8 py-16">
@@ -55,15 +67,38 @@ function Brands() {
         <p className="text-on-surface-variant text-lg max-w-xl">
           Meet the brands that bring exclusive perks to students like you.
         </p>
+        {query ? (
+          <p className="mt-4 text-sm text-on-surface-variant">
+            Showing matches for “{query}”.{" "}
+            <Link to="/brands" className="font-bold text-primary hover:underline">
+              Clear
+            </Link>
+          </p>
+        ) : null}
       </div>
 
       {/* Show loader / error */}
       {loading || error ? (
         <DealsLoader loading={loading} error={error} />
+      ) : visibleBrands.length === 0 && query ? (
+        <div className="rounded-2xl border border-outline-variant/15 bg-surface-container-low px-6 py-16 text-center">
+          <p className="font-headline font-bold text-lg text-on-background mb-1">
+            No brands match “{query}”
+          </p>
+          <p className="text-sm text-on-surface-variant mb-6">
+            Try another name, or browse the full directory.
+          </p>
+          <Link
+            to="/brands"
+            className="inline-flex items-center gap-2 rounded-lg emerald-gradient px-6 py-2.5 font-headline text-sm font-bold text-on-primary shadow-sm hover:shadow-md transition-all"
+          >
+            Browse all brands
+          </Link>
+        </div>
       ) : (
         /* Brand Cards Grid */
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {brands.map((brand, index) => (
+          {visibleBrands.map((brand, index) => (
             <div
               key={brand.name}
               className="group bg-surface-container-low rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-300 border border-outline-variant/10 animate-stagger-in"

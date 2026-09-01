@@ -14,8 +14,10 @@
  *   - searchQuery    : string — current search text
  *   - onSearchChange : function — updates search text
  */
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+import { useDeals } from "../lib/useDeals";
+import { resolveBrandExplorePath } from "../lib/seo";
 
 const SLIDE_INTERVAL = 5000; // 5 seconds per slide
 
@@ -80,6 +82,11 @@ const slides = [
 
 function HeroSection({ searchQuery, onSearchChange }) {
   const navigate = useNavigate();
+  const { deals } = useDeals();
+  const brandNames = useMemo(
+    () => deals.map((deal) => deal.brand).filter(Boolean),
+    [deals],
+  );
   const [activeIndex, setActiveIndex] = useState(0);
   const [exitIndex, setExitIndex] = useState(null);
   const [isPaused, setIsPaused] = useState(false);
@@ -128,8 +135,7 @@ function HeroSection({ searchQuery, onSearchChange }) {
   }, [activeIndex]);
 
   const handleSearchSubmit = () => {
-    const trimmed = searchQuery.trim();
-    navigate(trimmed ? `/deals?q=${encodeURIComponent(trimmed)}` : "/deals");
+    navigate(resolveBrandExplorePath(searchQuery, brandNames));
   };
 
   const currentSlide = slides[activeIndex];
@@ -205,13 +211,26 @@ function HeroSection({ searchQuery, onSearchChange }) {
 
       {/* ── Search Bar (fixed below slides) ─────────────── */}
       <div className="w-full max-w-2xl mx-auto mt-10 md:mt-12">
-        <label className="block text-xs font-bold tracking-[0.2em] text-on-surface-variant uppercase mb-3 text-left pl-1">
-          Search for your favorite brands
-        </label>
+        <div className="mb-3 flex items-baseline justify-between gap-3 pl-1">
+          <label
+            htmlFor="home-brand-search"
+            className="block text-xs font-bold tracking-[0.2em] text-on-surface-variant uppercase"
+          >
+            Explore your favourite brands
+          </label>
+          <button
+            type="button"
+            onClick={() => navigate("/brands")}
+            className="text-xs font-headline font-bold text-primary hover:underline shrink-0"
+          >
+            Browse all
+          </button>
+        </div>
         <div className="flex items-center border-b border-outline-variant/30 pb-4">
           <input
+            id="home-brand-search"
             className="bg-transparent border-none w-full text-2xl font-headline placeholder:text-on-surface-variant/30 focus:ring-0 px-0"
-            placeholder="e.g. Spa Ceylon, campus events"
+            placeholder="e.g. Spa Ceylon"
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
@@ -220,7 +239,9 @@ function HeroSection({ searchQuery, onSearchChange }) {
             }}
           />
           <button
+            type="button"
             onClick={handleSearchSubmit}
+            aria-label="Explore brands"
             className="text-primary p-2 hover:scale-110 active:scale-95 transition-transform"
           >
             <span className="material-symbols-outlined text-4xl">
