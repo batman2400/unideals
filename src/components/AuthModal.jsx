@@ -354,6 +354,7 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     >
       {/* Modal Card — stop clicks from bubbling to backdrop */}
       <div
+        data-clarity-mask="true"
         className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-modal-enter"
         onClick={(e) => e.stopPropagation()}
       >

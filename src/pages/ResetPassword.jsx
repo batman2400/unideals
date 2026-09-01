@@ -22,7 +22,10 @@ function Shell({ children }) {
         <title>Reset Password | Uni Deals</title>
         <meta name="robots" content="noindex, nofollow" />
       </Helmet>
-      <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-6 md:p-8 shadow-sm">
+      <div
+        data-clarity-mask="true"
+        className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-6 md:p-8 shadow-sm"
+      >
         {children}
       </div>
     </div>

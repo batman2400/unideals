@@ -266,7 +266,10 @@ function StudentVerificationCard({
     "w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all";
 
   return (
-    <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20">
+    <div
+      data-clarity-mask="true"
+      className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-outline-variant/20"
+    >
       <div className="flex items-start gap-3 mb-4">
         <span
           className="material-symbols-outlined text-primary text-2xl mt-0.5"

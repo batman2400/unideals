@@ -92,7 +92,10 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
   };
 
   return (
-    <div className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8">
+    <div
+      data-clarity-mask="true"
+      className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8"
+    >
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">

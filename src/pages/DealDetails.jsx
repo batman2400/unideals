@@ -23,6 +23,7 @@ import DealsLoader from "../components/DealsLoader";
 import DealOfferSchema from "../components/DealOfferSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
 import RelatedDeals from "../components/RelatedDeals";
+import { trackDealEvent } from "../lib/analytics";
 
 function formatDealDate(value) {
   const date = new Date(value);
@@ -253,6 +254,7 @@ function InStoreTicketDisplay({
             Ticket Code
           </p>
           <p
+            data-clarity-mask="true"
             className={`mb-4 max-w-full break-all text-center font-headline text-lg font-black tracking-[0.12em] sm:text-xl sm:tracking-[0.2em] ${
               alreadyRedeemed
                 ? "text-emerald-600"
@@ -363,7 +365,7 @@ function parseRevealCode(data) {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function OnlineRedemption({ dealId, brand, storeUrl }) {
+function OnlineRedemption({ dealId, brand, category, storeUrl }) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
   const [revealedCode, setRevealedCode] = useState("");
@@ -406,13 +408,15 @@ function OnlineRedemption({ dealId, brand, storeUrl }) {
 
     setRevealedCode(code);
     setRevealed(true);
-  }, [dealId]);
+    trackDealEvent("deal_reveal", { dealId, brand, category });
+  }, [dealId, brand, category]);
 
   const handleCopy = useCallback(async () => {
     try {
       await navigator.clipboard.writeText(revealedCode);
       setCopied(true);
       logEvent("copy");
+      trackDealEvent("deal_copy", { dealId, brand, category });
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const textarea = document.createElement("textarea");
@@ -423,13 +427,15 @@ function OnlineRedemption({ dealId, brand, storeUrl }) {
       document.body.removeChild(textarea);
       setCopied(true);
       logEvent("copy");
+      trackDealEvent("deal_copy", { dealId, brand, category });
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [revealedCode, logEvent]);
+  }, [revealedCode, logEvent, dealId, brand, category]);
 
   const handleClickThrough = useCallback(() => {
     logEvent("click_through");
-  }, [logEvent]);
+    trackDealEvent("affiliate_clickout", { dealId, brand, category });
+  }, [logEvent, dealId, brand, category]);
 
   if (!revealed) {
     return (
@@ -465,7 +471,10 @@ function OnlineRedemption({ dealId, brand, storeUrl }) {
           </span>
           Your Promo Code
         </p>
-        <p className="mb-5 max-w-full break-all font-mono text-2xl font-bold tracking-[0.12em] text-primary select-all sm:text-3xl md:text-4xl">
+        <p
+          data-clarity-mask="true"
+          className="mb-5 max-w-full break-all font-mono text-2xl font-bold tracking-[0.12em] text-primary select-all sm:text-3xl md:text-4xl"
+        >
           {revealedCode}
         </p>
 
@@ -504,7 +513,10 @@ function OnlineRedemption({ dealId, brand, storeUrl }) {
 
       <p className="text-center text-xs leading-relaxed text-on-surface-variant/60">
         Apply code{" "}
-        <span className="break-all font-mono font-bold text-on-surface-variant">
+        <span
+          data-clarity-mask="true"
+          className="break-all font-mono font-bold text-on-surface-variant"
+        >
           {revealedCode}
         </span>{" "}
         at checkout on {brand}&apos;s website.
@@ -852,6 +864,7 @@ function DealDetails() {
     <OnlineRedemption
       dealId={deal.id}
       brand={brand}
+      category={category}
       storeUrl={storeUrl}
     />
   );

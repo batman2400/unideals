@@ -168,7 +168,11 @@ export default function Contact() {
             {/* Decorative background element */}
             <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
-            <form onSubmit={handleSubmit} className="relative z-10 flex flex-col gap-6">
+            <form
+              data-clarity-mask="true"
+              onSubmit={handleSubmit}
+              className="relative z-10 flex flex-col gap-6"
+            >
               {error && (
                 <div className="bg-error/10 text-error px-4 py-3 rounded-xl text-sm font-medium flex items-start gap-2">
                   <span className="material-symbols-outlined text-lg shrink-0">error</span>

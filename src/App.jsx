@@ -25,6 +25,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Telemetry from "./components/Telemetry";
 
 const loadHome = () => import("./pages/Home");
 const Home = lazy(loadHome);
@@ -247,6 +248,7 @@ function App() {
 
   return (
     <div className="flex flex-col min-h-screen w-full bg-background">
+      <Telemetry />
       <div className="flex flex-1 w-full flex-col">
         <Navbar
           onLogout={handleLogout}

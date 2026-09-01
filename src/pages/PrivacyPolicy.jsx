@@ -20,7 +20,7 @@ function PrivacyPolicy() {
           Privacy Policy
         </h1>
         <p className="mt-3 text-sm text-on-surface-variant/70 font-body">
-          Last updated: April 20, 2026
+          Last updated: September 1, 2026
         </p>
       </header>
 
@@ -107,8 +107,11 @@ function PrivacyPolicy() {
           </h2>
           <p>
             We may use cookies or similar technologies for login persistence,
-            security, and analytics. You can manage browser preferences, but
-            disabling certain cookies may affect platform functionality.
+            security, and analytics. On the live site we use Google Analytics 4
+            and Microsoft Clarity to understand how pages are used; Clarity
+            session recordings mask typed input, including student emails and
+            registration IDs. You can manage browser preferences, but disabling
+            certain cookies may affect platform functionality.
           </p>
         </section>
 
