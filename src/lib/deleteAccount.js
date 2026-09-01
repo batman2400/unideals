@@ -18,7 +18,14 @@ async function messageFromFunctionError(error) {
  * Edge Function. The function never accepts a target user id.
  */
 export async function deleteOwnAccount() {
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+  const accessToken = sessionData?.session?.access_token;
+  if (sessionError || !accessToken) {
+    throw new Error("Not authenticated");
+  }
+
   const { data, error } = await supabase.functions.invoke("delete-account", {
+    headers: { Authorization: `Bearer ${accessToken}` },
     body: {},
   });
 
