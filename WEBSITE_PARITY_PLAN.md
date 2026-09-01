@@ -1,5 +1,7 @@
 # Website implementation plan
 
+**What to do next:** [REMAINING_WORK.md](REMAINING_WORK.md) (website leftovers, then the app). This file is the locked product rules; phases 0–4 are already in code.
+
 Website-only. Shared Supabase. Do not change the mobile app in this work.
 
 Local/uncommitted files and SQL not run in Supabase do not count as shipped.

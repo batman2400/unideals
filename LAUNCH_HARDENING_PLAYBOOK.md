@@ -1,5 +1,7 @@
 # UniDeals Launch Hardening Playbook
 
+**What to do next:** [REMAINING_WORK.md](REMAINING_WORK.md). Batches A–D are in code. Do **not** apply cutover SQL until Play Reveal works.
+
 Three-phase launch checklist mapped onto the **actual** stack: Vite 8 + React 19 SPA on Vercel, Supabase RLS/RPCs, and a handful of serverless routes. The original list assumed Next.js (`NEXT_PUBLIC_`, `@next/third-parties`, MDX, `next.config`). Do not treat those items as literal.
 
 **Campus hubs (`/campuses/kdu`) are out of scope.** Internal linking uses existing category hubs (`/category/:slug`) and brand hubs (`/brand/:slug`).

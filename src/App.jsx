@@ -14,6 +14,9 @@
  *   /categories  → Deals grouped by category
  *   /brands      → Partner directory
  *   /profile     → User dashboard & settings
+ *   /privacy     → Privacy Policy
+ *   /terms       → Terms of Service
+ *   /delete-account → Public account deletion (Play Store URL)
  *   /auth/callback → Google OAuth PKCE return
  */
 import { lazy, Suspense, useState, useEffect } from "react";
@@ -36,6 +39,7 @@ const Categories = lazy(() => import("./pages/Categories"));
 const Brands = lazy(() => import("./pages/Brands"));
 const TermsOfService = lazy(() => import("./pages/TermsOfService"));
 const PrivacyPolicy = lazy(() => import("./pages/PrivacyPolicy"));
+const DeleteAccount = lazy(() => import("./pages/DeleteAccount"));
 const Profile = lazy(() => import("./pages/Profile"));
 const SavedDeals = lazy(() => import("./pages/SavedDeals"));
 const UniversityEvents = lazy(() => import("./pages/UniversityEvents"));
@@ -297,6 +301,7 @@ function App() {
               <Route path="/brand/:brandId" element={<BrandPage />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
+              <Route path="/delete-account" element={<DeleteAccount />} />
               <Route
                 path="/saved"
                 element={

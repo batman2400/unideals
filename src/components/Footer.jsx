@@ -46,6 +46,12 @@ function Footer() {
             Terms of Service
           </Link>
           <Link
+            to="/delete-account"
+            className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
+          >
+            Delete account
+          </Link>
+          <Link
             to="/contact"
             className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40 hover:text-[#323233] dark:hover:text-[#fcf9f8] transition-opacity duration-300"
           >

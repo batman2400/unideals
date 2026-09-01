@@ -1,4 +1,5 @@
 import { Helmet } from "react-helmet-async";
+import { Link } from "react-router-dom";
 import { SITE_URL } from "../lib/seo";
 
 function TermsOfService() {
@@ -20,7 +21,7 @@ function TermsOfService() {
           Terms of Service
         </h1>
         <p className="mt-3 text-sm text-on-surface-variant/70 font-body">
-          Last updated: April 20, 2026
+          Last updated: September 1, 2026
         </p>
       </header>
 
@@ -34,7 +35,7 @@ function TermsOfService() {
             software platform that connects verified students with promotions
             published by third-party merchants and institutional partners in Sri
             Lanka. By creating an account, browsing deals, or using any Uni
-            Deals feature, you agree to these Terms.
+            Deals website or app feature, you agree to these Terms.
           </p>
         </section>
 
@@ -43,14 +44,15 @@ function TermsOfService() {
             2. Eligibility and Accounts
           </h2>
           <p>
-            You must provide accurate account information and maintain the
-            security of your login credentials. Student eligibility requires
-            verification of enrolment (university email and/or student ID).
-            Verified student status is valid for 12 months from approval and
-            must be renewed each year to keep unlocking partner offers. Uni
-            Deals uses role-based access controls, including student, partner,
-            and administrator roles, to protect platform integrity and ensure
-            users only access permitted features.
+            You must be at least 13 years old. Uni Deals is not designed for
+            children under 13. You must provide accurate account information
+            and maintain the security of your login credentials. Student
+            eligibility requires verification of enrolment (university email
+            and/or student ID). Verified student status is valid for 12 months
+            from approval and must be renewed each year to keep unlocking
+            partner offers. Uni Deals uses role-based access controls, including
+            student, partner, and administrator roles, to protect platform
+            integrity and ensure users only access permitted features.
           </p>
         </section>
 
@@ -82,21 +84,61 @@ function TermsOfService() {
 
         <section>
           <h2 className="text-xl font-headline font-extrabold mb-2">
-            5. Privacy and Data Protection
+            5. Device Permissions
           </h2>
           <p>
-            Uni Deals applies reasonable technical and organizational safeguards
-            for personal data, including account authentication, email
-            verification checks, and role-based authorization. Our data handling
-            practices are described in the Privacy Policy and align with
-            applicable Sri Lankan data protection obligations, including the
-            Personal Data Protection Act, where applicable.
+            Partners who redeem in-store offers may be asked for camera access
+            so the scanner can read student QR tickets on the device. Students
+            who use the Uni Deals mobile app may be asked for notification
+            permission so we can send optional deal or event alerts. You can
+            refuse or revoke those permissions in your device settings; some
+            partner or app features will not work without them.
           </p>
         </section>
 
         <section>
           <h2 className="text-xl font-headline font-extrabold mb-2">
-            6. Intellectual Property
+            6. Privacy and Data Protection
+          </h2>
+          <p>
+            Uni Deals applies reasonable technical and organizational safeguards
+            for personal data, including account authentication, email
+            verification checks, and role-based authorization. Student ID photos
+            are stored privately and shown to reviewers through short-lived
+            signed URLs. Our data handling practices are described in the{" "}
+            <Link
+              to="/privacy"
+              className="text-primary font-semibold hover:underline"
+            >
+              Privacy Policy
+            </Link>{" "}
+            and align with applicable Sri Lankan data protection obligations,
+            including the Personal Data Protection Act, where applicable.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-headline font-extrabold mb-2">
+            7. Account Deletion
+          </h2>
+          <p>
+            You may delete your account at any time on{" "}
+            <Link
+              to="/delete-account"
+              className="text-primary font-semibold hover:underline"
+            >
+              {SITE_URL}/delete-account
+            </Link>
+            . Deletion is permanent. It removes your login and associated
+            personal records as described in the Privacy Policy. Offers you
+            already redeemed with a partner remain subject to that partner’s
+            own terms.
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-headline font-extrabold mb-2">
+            8. Intellectual Property
           </h2>
           <p>
             Uni Deals branding, software, and platform content are protected by
@@ -108,7 +150,7 @@ function TermsOfService() {
 
         <section>
           <h2 className="text-xl font-headline font-extrabold mb-2">
-            7. Service Availability and Changes
+            9. Service Availability and Changes
           </h2>
           <p>
             We may update, suspend, or discontinue features to improve
@@ -120,19 +162,20 @@ function TermsOfService() {
 
         <section>
           <h2 className="text-xl font-headline font-extrabold mb-2">
-            8. Disclaimers and Liability Limits
+            10. Disclaimers and Liability Limits
           </h2>
           <p>
-            The platform is provided on an "as is" and "as available" basis. To
-            the extent permitted by law, Uni Deals is not liable for indirect,
-            incidental, or consequential losses arising from partner actions,
-            offer changes, delays, or service interruptions.
+            The platform is provided on an &quot;as is&quot; and &quot;as
+            available&quot; basis. To the extent permitted by law, Uni Deals is
+            not liable for indirect, incidental, or consequential losses arising
+            from partner actions, offer changes, delays, or service
+            interruptions.
           </p>
         </section>
 
         <section>
           <h2 className="text-xl font-headline font-extrabold mb-2">
-            9. Governing Law
+            11. Governing Law
           </h2>
           <p>
             These Terms are governed by the laws of Sri Lanka. Any dispute
@@ -143,7 +186,7 @@ function TermsOfService() {
 
         <section>
           <h2 className="text-xl font-headline font-extrabold mb-2">
-            10. Contact
+            12. Contact
           </h2>
           <p>
             For legal, compliance, or account concerns, contact the Uni Deals

@@ -13,7 +13,7 @@
  *   - user       : object|null — Supabase user object
  */
 import { useState, useEffect, useRef } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { useRoleContext } from "../lib/RoleContext";
 import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
@@ -1158,6 +1158,22 @@ function Profile({ isLoggedIn, user }) {
               )}
             </form>
           </div>
+        </div>
+
+        <div className="w-full bg-gray-50 rounded-2xl p-6 shadow-sm border border-error/20">
+          <h3 className="font-headline font-bold text-base text-on-background mb-2">
+            Delete account
+          </h3>
+          <p className="text-sm text-on-surface-variant leading-relaxed mb-4">
+            Permanently remove your login, ID documents, and related tickets.
+            Sign out stays separate — this cannot be undone.
+          </p>
+          <Link
+            to="/delete-account"
+            className="inline-flex min-h-[44px] items-center justify-center px-6 py-3 rounded-xl border border-error/30 text-error font-headline font-bold text-sm hover:bg-error/10 transition-all"
+          >
+            Delete account
+          </Link>
         </div>
 
         {role !== "admin" && !hasLinkedBrand && (!isVerified || isVerificationExpiringSoon) && (

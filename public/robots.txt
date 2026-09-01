@@ -5,6 +5,7 @@ Disallow: /partner
 Disallow: /profile
 Disallow: /saved
 Disallow: /reset-password
+Disallow: /delete-account
 Disallow: /events/new
 
 # AI crawlers
