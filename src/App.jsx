@@ -262,15 +262,11 @@ function App() {
         {/* Page Content */}
         <main
           className={`flex-1 pt-16 md:pt-0 min-w-0 flex flex-col ${
-            isDealDetailsPage ? "pb-16 md:pb-0 lg:min-h-0 lg:overflow-hidden" : "pb-16"
+            isDealDetailsPage ? "pb-16 md:pb-0" : "pb-16"
           }`}
         >
         <Suspense fallback={<RouteSkeleton />}>
-          <div
-            className={`animate-route-fade flex flex-col flex-1 ${
-              isDealDetailsPage ? "lg:min-h-0 lg:overflow-hidden" : ""
-            }`}
-          >
+          <div className="animate-route-fade flex flex-col flex-1">
             <Routes location={location}>
               <Route
                 path="/"

@@ -66,6 +66,10 @@ export default function DealOfferSchema({ deal, canonicalUrl }) {
         value: "Verified Sri Lankan university students (.ac.lk email required)",
       },
     ],
+    eligibleCustomerType: {
+      "@type": "Audience",
+      audienceType: "Verified Sri Lankan university students",
+    },
     ...(isInStore
       ? { availableAtOrFrom: { "@type": "Place", name: `${brand} Stores in Sri Lanka` } }
       : {}),

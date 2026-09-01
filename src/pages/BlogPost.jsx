@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import ReactMarkdown from "react-markdown";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
+import BlogMarkdown from "../components/BlogMarkdown";
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -88,10 +88,13 @@ export default function BlogPost() {
   const metaDescription = post.excerpt || `Read ${post.title} on the Uni Deals Blog.`;
   const ogImage = post.cover_image_url || DEFAULT_OG_IMAGE;
   const publishedIso = post.created_at ? new Date(post.created_at).toISOString() : undefined;
+  const modifiedIso = post.updated_at
+    ? new Date(post.updated_at).toISOString()
+    : publishedIso;
 
   const articleSchema = {
     "@context": "https://schema.org",
-    "@type": "Article",
+    "@type": "BlogPosting",
     headline: post.title,
     description: metaDescription,
     image: [ogImage],
@@ -104,7 +107,8 @@ export default function BlogPost() {
       name: "Uni Deals",
       logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512-v9.png` },
     },
-    ...(publishedIso ? { datePublished: publishedIso, dateModified: publishedIso } : {}),
+    ...(publishedIso ? { datePublished: publishedIso } : {}),
+    ...(modifiedIso ? { dateModified: modifiedIso } : {}),
     mainEntityOfPage: { "@type": "WebPage", "@id": canonicalUrl },
   };
 
@@ -130,8 +134,8 @@ export default function BlogPost() {
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />
         <meta name="twitter:image" content={ogImage} />
+        <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
       </Helmet>
-      <script type="application/ld+json">{JSON.stringify(articleSchema)}</script>
       <BreadcrumbSchema
         items={[
           { name: "Home", url: `${SITE_URL}/` },
@@ -178,40 +182,29 @@ export default function BlogPost() {
 
         {/* Hero Image Display */}
         <div className="max-w-4xl mx-auto px-4 sm:px-6 my-6 md:my-8">
-          {post.cover_image_url ? (
-            <img
-              src={post.cover_image_url}
-              alt={post.title}
-              className="w-full h-[280px] sm:h-[400px] md:h-[500px] object-cover rounded-2xl shadow-md border border-slate-100"
-            />
-          ) : (
-            <div className="w-full h-[280px] sm:h-[400px] md:h-[500px] rounded-2xl shadow-md border border-slate-100 bg-slate-200 flex flex-col items-center justify-center text-slate-400">
-              <span className="material-symbols-outlined text-6xl mb-2">image</span>
-              <span className="text-sm font-medium">No cover image available</span>
-            </div>
-          )}
+          <div className="aspect-[16/9] w-full overflow-hidden rounded-2xl border border-slate-100 bg-slate-200 shadow-md">
+            {post.cover_image_url ? (
+              <img
+                src={post.cover_image_url}
+                alt={post.title}
+                width={1200}
+                height={675}
+                fetchPriority="high"
+                decoding="async"
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full flex-col items-center justify-center text-slate-400">
+                <span className="material-symbols-outlined mb-2 text-6xl">image</span>
+                <span className="text-sm font-medium">No cover image available</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Article Body (Typography Zone) */}
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-6 md:py-10">
-          <ReactMarkdown 
-            className="prose prose-lg md:prose-xl max-w-none text-slate-700" 
-            components={{
-              h1: ({ node, ...props }) => <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mt-8 mb-4 tracking-tight" {...props} />,
-              h2: ({ node, ...props }) => <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 mt-8 mb-4 border-b border-slate-200 pb-2" {...props} />,
-              h3: ({ node, ...props }) => <h3 className="text-xl sm:text-2xl font-bold text-slate-900 mt-6 mb-3" {...props} />,
-              h4: ({ node, ...props }) => <h4 className="text-lg sm:text-xl font-semibold text-slate-800 mt-4 mb-2" {...props} />,
-              p: ({ node, ...props }) => <p className="text-base sm:text-lg leading-relaxed text-slate-700 my-4" {...props} />,
-              ul: ({ node, ...props }) => <ul className="list-disc list-outside pl-6 space-y-2 my-4 text-slate-700" {...props} />,
-              ol: ({ node, ...props }) => <ol className="list-decimal list-outside pl-6 space-y-2 my-4 text-slate-700" {...props} />,
-              li: ({ node, ...props }) => <li className="text-base sm:text-lg leading-relaxed pl-1" {...props} />,
-              strong: ({ node, ...props }) => <strong className="font-semibold text-slate-900" {...props} />,
-              a: ({ node, ...props }) => <a className="text-emerald-600 font-medium hover:underline transition-colors" {...props} />,
-              blockquote: ({ node, ...props }) => <blockquote className="border-l-4 border-emerald-500 pl-4 py-1 my-6 italic bg-slate-50 text-slate-600 rounded-r" {...props} />,
-            }}
-          >
-            {post.content}
-          </ReactMarkdown>
+          <BlogMarkdown content={post.content} />
 
           {/* Article Footer */}
           <footer className="mt-16">

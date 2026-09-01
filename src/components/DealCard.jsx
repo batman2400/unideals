@@ -185,6 +185,8 @@ function DealCard({
           ? "absolute inset-0 h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           : "h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
       }
+      width={isHero ? 800 : 640}
+      height={isHero ? 1000 : 640}
     />
   ) : (
     <div

@@ -18,10 +18,11 @@ import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
 import { formatLaunchDate, isComingSoonDeal, isExpiredDeal } from "../lib/comingSoon";
 import { asHttpUrl } from "../lib/httpUrl";
-import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
+import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT, categoryHubPath, brandHubPath } from "../lib/seo";
 import DealsLoader from "../components/DealsLoader";
 import DealOfferSchema from "../components/DealOfferSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
+import RelatedDeals from "../components/RelatedDeals";
 
 function formatDealDate(value) {
   const date = new Date(value);
@@ -856,9 +857,20 @@ function DealDetails() {
   );
 
   const brandInitial = (brand || "?").trim().charAt(0).toUpperCase();
+  const categoryHref = category ? categoryHubPath(category) : "/categories";
+  const brandHref = brand ? brandHubPath(brand) : "/brands";
+  const breadcrumbItems = [
+    { name: "Home", url: `${SITE_URL}/` },
+    ...(category
+      ? [{ name: category, url: `${SITE_URL}${categoryHref}` }]
+      : [{ name: "Deals", url: `${SITE_URL}/deals` }]),
+    ...(brand ? [{ name: brand, url: `${SITE_URL}${brandHref}` }] : []),
+    { name: title || headline, url: canonicalUrl },
+  ];
 
   return (
-    <article className="animate-fade-in pb-8 lg:flex lg:h-[calc(100dvh-5rem)] lg:flex-col lg:overflow-hidden lg:pb-0">
+    <div className="animate-fade-in pb-8">
+    <article>
       <Helmet>
         <title>{metaTitle}</title>
         {expired ? <meta name="robots" content="noindex, nofollow" /> : null}
@@ -884,13 +896,7 @@ function DealDetails() {
       </Helmet>
 
       <DealOfferSchema deal={deal} canonicalUrl={canonicalUrl} />
-      <BreadcrumbSchema
-        items={[
-          { name: "Home", url: `${SITE_URL}/` },
-          { name: "Deals", url: `${SITE_URL}/deals` },
-          { name: brand || title, url: canonicalUrl },
-        ]}
-      />
+      <BreadcrumbSchema items={breadcrumbItems} />
 
       {saveError && (
         <div className="mx-auto max-w-[1440px] px-4 pt-3 md:px-8">
@@ -900,21 +906,59 @@ function DealDetails() {
         </div>
       )}
 
-      <div className="mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-3 md:px-8 md:pt-4 lg:min-h-0 lg:pt-5">
+      <div className="mx-auto max-w-[1440px] px-4 pt-3 md:px-8 md:pt-4 lg:pt-5">
         {/* Breadcrumb + back — shared top row */}
         <nav className="mb-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-2 text-sm text-on-surface-variant/60 lg:mb-4">
-          <div className="flex min-w-0 items-center gap-2">
+          <div className="flex min-w-0 flex-wrap items-center gap-2">
             <Link
-              to="/deals"
+              to="/"
               className="font-headline font-bold transition-colors hover:text-primary"
             >
-              Deals
+              Home
             </Link>
+            {category ? (
+              <>
+                <span className="material-symbols-outlined text-sm">
+                  chevron_right
+                </span>
+                <Link
+                  to={categoryHref}
+                  className="truncate font-headline font-bold transition-colors hover:text-primary"
+                >
+                  {category}
+                </Link>
+              </>
+            ) : (
+              <>
+                <span className="material-symbols-outlined text-sm">
+                  chevron_right
+                </span>
+                <Link
+                  to="/deals"
+                  className="font-headline font-bold transition-colors hover:text-primary"
+                >
+                  Deals
+                </Link>
+              </>
+            )}
+            {brand ? (
+              <>
+                <span className="material-symbols-outlined text-sm">
+                  chevron_right
+                </span>
+                <Link
+                  to={brandHref}
+                  className="truncate font-headline font-bold transition-colors hover:text-primary"
+                >
+                  {brand}
+                </Link>
+              </>
+            ) : null}
             <span className="material-symbols-outlined text-sm">
               chevron_right
             </span>
             <span className="truncate font-headline font-bold text-on-surface">
-              {brand}
+              {headline}
             </span>
           </div>
           <Link
@@ -927,17 +971,28 @@ function DealDetails() {
         </nav>
 
         {/* Two-column stage — items-start so image keeps its natural height */}
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12 lg:items-start lg:gap-10 lg:pb-5">
-          {/* LEFT — natural-aspect hero (no crop / stretch) */}
+        <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12 lg:items-start lg:gap-10 lg:pb-5">
+          {/* LEFT — reserved-aspect hero (CLS-safe, no crop) */}
           <div className="min-w-0 lg:col-span-5">
-            <div className="relative h-fit w-full -mx-4 sm:mx-0">
-              <img
-                src={imageUrl}
-                alt={title}
-                className="h-auto w-full rounded-2xl object-contain"
-                loading="eager"
-                decoding="async"
-              />
+            <div className="relative aspect-[4/5] w-full -mx-4 overflow-hidden bg-surface-container sm:mx-0 sm:rounded-2xl">
+              {imageUrl ? (
+                <img
+                  src={imageUrl}
+                  alt={title}
+                  width={800}
+                  height={1000}
+                  fetchPriority="high"
+                  className="absolute inset-0 h-full w-full object-contain"
+                  loading="eager"
+                  decoding="async"
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">
+                    image
+                  </span>
+                </div>
+              )}
 
               <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/80 px-3 py-1.5 text-[11px] font-bold text-on-surface shadow-sm backdrop-blur-md sm:left-4 sm:top-4">
                 {isInStore ? "🏪 In-Store" : "🌐 Online"}
@@ -978,17 +1033,26 @@ function DealDetails() {
             </div>
           </div>
 
-          {/* RIGHT — flex column; T&C pinned with mt-auto when column is taller */}
-          <div className="flex min-h-0 min-w-0 flex-col lg:col-span-7 lg:overflow-y-auto">
+          {/* RIGHT — info / redemption / T&Cs */}
+          <div className="flex min-w-0 flex-col lg:col-span-7">
             <div className="mb-3 min-w-0">
-              <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary">
-                {brand}
-              </p>
+              {brand ? (
+                <Link
+                  to={brandHref}
+                  className="mb-1.5 inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary transition-colors hover:text-primary/80"
+                >
+                  {brand}
+                </Link>
+              ) : (
+                <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary">
+                  {brand}
+                </p>
+              )}
               <h1 className="font-headline text-3xl font-extrabold tracking-tight text-on-background sm:text-4xl lg:text-[2.35rem] lg:leading-tight">
                 {headline}
               </h1>
               {title && title !== discount ? (
-                <p className="mt-1.5 text-base text-on-surface-variant lg:line-clamp-1">
+                <p className="mt-1.5 text-base text-on-surface-variant">
                   {title}
                 </p>
               ) : null}
@@ -996,9 +1060,12 @@ function DealDetails() {
 
             {category ? (
               <div className="mb-3 flex flex-wrap gap-2">
-                <span className="inline-flex items-center rounded-full border border-outline-variant/20 bg-surface-container px-3 py-1 text-xs font-bold text-on-surface-variant">
+                <Link
+                  to={categoryHref}
+                  className="inline-flex items-center rounded-full border border-outline-variant/20 bg-surface-container px-3 py-1 text-xs font-bold text-on-surface-variant transition-colors hover:border-primary/40 hover:text-primary"
+                >
                   {category}
-                </span>
+                </Link>
               </div>
             ) : null}
 
@@ -1032,12 +1099,12 @@ function DealDetails() {
             )}
 
             {description ? (
-              <p className="mb-4 text-sm leading-relaxed text-on-surface-variant sm:text-base lg:mb-3 lg:line-clamp-2 lg:text-sm">
+              <p className="mb-4 text-sm leading-relaxed text-on-surface-variant sm:text-base lg:mb-3">
                 {description}
               </p>
             ) : null}
 
-            <div className="mb-4 lg:mb-0">
+            <div className="mb-4">
               <h2 className="mb-2 font-headline text-base font-extrabold tracking-tight text-on-background">
                 {comingSoon
                   ? "Coming Soon"
@@ -1048,7 +1115,7 @@ function DealDetails() {
               {redemptionBlock}
             </div>
 
-            <div className="mt-auto rounded-xl border border-outline-variant/20 bg-surface-container-low p-3 shadow-sm lg:p-3.5">
+            <div className="rounded-xl border border-outline-variant/20 bg-surface-container-low p-3 shadow-sm lg:p-3.5">
               <h3 className="mb-2 flex items-center gap-2 font-headline text-xs font-bold text-on-background sm:text-sm">
                 <span className="material-symbols-outlined text-base text-primary">
                   gavel
@@ -1094,6 +1161,8 @@ function DealDetails() {
         </div>
       </div>
     </article>
+    <RelatedDeals deal={deal} />
+    </div>
   );
 }
 

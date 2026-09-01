@@ -345,9 +345,12 @@ export default function AdminBlog() {
                     rows={10}
                     value={formData.content}
                     onChange={(e) => setFormData({...formData, content: e.target.value})}
-                    placeholder="Write your article content here..."
+                    placeholder="Write your article content here. Use [deal:21] on its own line to embed a live deal card."
                     className="w-full bg-surface-container-low border border-outline-variant/30 rounded-xl p-4 text-on-background focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-y font-mono text-sm"
                   />
+                  <p className="text-xs text-on-surface-variant">
+                    Use <code className="rounded bg-surface-container px-1 font-mono">[deal:ID]</code> on its own line to embed a live deal card.
+                  </p>
                 </div>
 
                 {/* Publish Toggle */}

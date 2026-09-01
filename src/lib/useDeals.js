@@ -17,7 +17,7 @@ import { isExpiredDeal } from "./comingSoon";
 /**
  * Maps a Supabase row (snake_case) to the frontend deal shape (camelCase).
  */
-function mapDeal(row) {
+export function mapDeal(row) {
   return {
     id: row.id,
     title: row.title,
@@ -141,6 +141,59 @@ export function useDeal(id, accessKey = "") {
   }, [id, accessKey]);
 
   return { deal, loading, error };
+}
+
+/**
+ * Fetch specific public deals by id (blog `[deal:123]` embeds).
+ * Uses the same RPC as the deal page so unpublished/expired rows stay hidden.
+ */
+export function usePublicDealsByIds(ids) {
+  const key = Array.isArray(ids) && ids.length
+    ? [...new Set(ids.filter((id) => Number.isInteger(id) && id > 0))].join(",")
+    : "";
+  const [dealsById, setDealsById] = useState({});
+  const [loading, setLoading] = useState(Boolean(key));
+
+  useEffect(() => {
+    if (!key) {
+      setDealsById({});
+      setLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    const parsedIds = key.split(",").map(Number);
+    setLoading(true);
+
+    Promise.all(
+      parsedIds.map(async (id) => {
+        const { data, error: fetchError } = await supabase.rpc(
+          "get_public_deal_by_id",
+          { target_deal_id: id },
+        );
+        if (fetchError) {
+          console.error("[usePublicDealsByIds]", id, fetchError.message);
+          return [id, null];
+        }
+        const row = Array.isArray(data) ? (data[0] ?? null) : data;
+        return [id, row ? mapDeal(row) : null];
+      }),
+    ).then((entries) => {
+      if (cancelled) return;
+      setDealsById(Object.fromEntries(entries));
+      setLoading(false);
+    }).catch((err) => {
+      if (cancelled) return;
+      console.error("[usePublicDealsByIds]", err);
+      setLoading(false);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [key]);
+
+  return { dealsById, loading };
 }
 
 /**

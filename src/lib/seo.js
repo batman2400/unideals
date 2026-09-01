@@ -23,3 +23,15 @@ export function slugify(value) {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
 }
+
+/** Crawlable hub for a category name (`/category/food-drink`). */
+export function categoryHubPath(name) {
+  const slug = slugify(name);
+  return slug ? `/category/${slug}` : "/categories";
+}
+
+/** Crawlable hub for a brand name (`/brand/spa-ceylon`). */
+export function brandHubPath(name) {
+  const slug = slugify(name);
+  return slug ? `/brand/${slug}` : "/brands";
+}
