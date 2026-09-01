@@ -4,7 +4,7 @@ import HeroSection from "../components/HeroSection";
 import ExploreFeed from "../components/ExploreFeed";
 import FAQSchema from "../components/FAQSchema";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
-import { slugify } from "../lib/seo";
+import { slugify, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 
 const categories = [
   { emoji: "✨", label: "All", filter: null },
@@ -33,11 +33,13 @@ function Home({ searchQuery, onSearchChange }) {
         <meta property="og:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.unideals.co/" />
-        <meta property="og:image" content="https://www.unideals.co/icon-512-v9.png" />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
         <meta name="twitter:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
-        <meta name="twitter:image" content="https://www.unideals.co/icon-512-v9.png" />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
       
       <FAQSchema />

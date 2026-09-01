@@ -7,4 +7,7 @@ Disallow: /saved
 Disallow: /reset-password
 Disallow: /events/new
 
+# AI crawlers
+Allow: /llms.txt
+
 Sitemap: https://www.unideals.co/sitemap.xml

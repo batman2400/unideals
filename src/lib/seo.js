@@ -7,6 +7,11 @@
  */
 export const SITE_URL = "https://www.unideals.co";
 
+/** Default 1200×630 social card (WhatsApp / iMessage / Twitter). */
+export const DEFAULT_OG_IMAGE = `${SITE_URL}/og-default.png`;
+export const DEFAULT_OG_IMAGE_WIDTH = "1200";
+export const DEFAULT_OG_IMAGE_HEIGHT = "630";
+
 /**
  * Turns a free-text name into a URL-safe, lowercase, hyphenated slug.
  * e.g. "Tech & Mobile" -> "tech-mobile", "Domino's Pizza" -> "dominos-pizza"

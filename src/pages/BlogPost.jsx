@@ -3,10 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
-import { SITE_URL } from "../lib/seo";
+import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
-
-const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 export default function BlogPost() {
   const { slug } = useParams();
@@ -122,6 +120,12 @@ export default function BlogPost() {
         <meta property="og:description" content={metaDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={ogImage} />
+        {ogImage === DEFAULT_OG_IMAGE ? (
+          <>
+            <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+            <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+          </>
+        ) : null}
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />
         <meta name="twitter:description" content={metaDescription} />

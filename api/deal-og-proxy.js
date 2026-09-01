@@ -23,7 +23,7 @@ const escapeHtml = (value) =>
     .replace(/'/g, "&#39;");
 
 const SITE_URL = "https://www.unideals.co";
-const DEFAULT_IMAGE = `${SITE_URL}/icon-512-v9.png`;
+const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
 
 export default async function handler(req, res) {
   const { id } = req.query;
@@ -83,6 +83,8 @@ export default async function handler(req, res) {
     <meta property="og:description" content="${description}" />
     <meta property="og:url" content="${canonicalUrl}" />
     <meta property="og:image" content="${image}" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />

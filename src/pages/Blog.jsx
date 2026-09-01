@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
-import { SITE_URL } from "../lib/seo";
+import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 
 export default function Blog() {
   const [posts, setPosts] = useState([]);
@@ -54,7 +54,9 @@ export default function Blog() {
           content="Tips, guides, and student life hacks to help Sri Lankan university students make the most of discounts and campus life."
         />
         <meta property="og:url" content={`${SITE_URL}/blog`} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v9.png`} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
       </Helmet>
 
       {/* Header */}

@@ -10,7 +10,7 @@ import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import { isComingSoonDeal } from "../lib/comingSoon";
-import { slugify, SITE_URL } from "../lib/seo";
+import { slugify, SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import { supabase } from "../lib/supabaseClient";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
@@ -106,7 +106,7 @@ export default function BrandPage() {
     brandRecord?.logo_url ||
     brandDeals[0]?.imageUrl ||
     brandDeals[0]?.image_url ||
-    `${SITE_URL}/icon-512-v9.png`;
+    DEFAULT_OG_IMAGE;
 
   return (
     <div className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-16">
@@ -121,6 +121,12 @@ export default function BrandPage() {
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={brandImage} />
+        {brandImage === DEFAULT_OG_IMAGE ? (
+          <>
+            <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+            <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+          </>
+        ) : null}
       </Helmet>
 
       {brandName && (

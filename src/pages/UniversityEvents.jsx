@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { partitionEvents } from "../lib/comingSoon";
 import { useEvents } from "../lib/useEvents";
-import { SITE_URL } from "../lib/seo";
+import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import EventCard from "../components/EventCard";
 import ItemListSchema from "../components/ItemListSchema";
 
@@ -45,7 +45,9 @@ export default function UniversityEvents() {
           content="Discover university events, tech fests, networking sessions, and society gatherings across Sri Lanka."
         />
         <meta property="og:url" content={`${SITE_URL}/events`} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v9.png`} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
       </Helmet>
 
       {activeEvents.length > 0 && (

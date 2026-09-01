@@ -4,7 +4,7 @@
  * Lets Google render campus events with rich results (date, location,
  * registration link) in Search.
  */
-const SITE_URL = "https://www.unideals.co";
+import { SITE_URL, DEFAULT_OG_IMAGE } from "../lib/seo";
 
 function toIsoDate(value) {
   if (!value) return null;
@@ -53,7 +53,7 @@ export default function EventSchema({ event, canonicalUrl }) {
       ? "https://schema.org/OfflineEventAttendanceMode"
       : "https://schema.org/OnlineEventAttendanceMode",
     eventStatus: "https://schema.org/EventScheduled",
-    image: [event.cover_image_url || `${SITE_URL}/icon-512-v9.png`],
+    image: [event.cover_image_url || DEFAULT_OG_IMAGE],
     url: canonicalUrl,
     location,
     organizer: {

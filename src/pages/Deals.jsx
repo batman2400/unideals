@@ -12,7 +12,7 @@ import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import { partitionDeals } from "../lib/comingSoon";
-import { SITE_URL } from "../lib/seo";
+import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
@@ -127,7 +127,9 @@ function Deals({ searchQuery }) {
           content="Browse every exclusive student discount on Uni Deals — online promo codes and in-store deals across tech, food, fashion, and more in Sri Lanka."
         />
         <meta property="og:url" content={`${SITE_URL}/deals`} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v9.png`} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
       </Helmet>
 
       {/* Page Header */}

@@ -18,12 +18,10 @@ import { useDeal, checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
 import { formatLaunchDate, isComingSoonDeal, isExpiredDeal } from "../lib/comingSoon";
 import { asHttpUrl } from "../lib/httpUrl";
+import { SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import DealsLoader from "../components/DealsLoader";
 import DealOfferSchema from "../components/DealOfferSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
-
-const SITE_URL = "https://www.unideals.co";
-const DEFAULT_OG_IMAGE = `${SITE_URL}/icon-512-v9.png`;
 
 function formatDealDate(value) {
   const date = new Date(value);
@@ -872,6 +870,12 @@ function DealDetails() {
         <meta property="og:description" content={metaDescription} />
         <meta property="og:url" content={canonicalUrl} />
         <meta property="og:image" content={ogImage} />
+        {ogImage === DEFAULT_OG_IMAGE ? (
+          <>
+            <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+            <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+          </>
+        ) : null}
         <meta property="og:image:alt" content={`${brand} — ${title}`} />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={metaTitle} />

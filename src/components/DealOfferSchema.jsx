@@ -1,7 +1,7 @@
+import { SITE_URL, DEFAULT_OG_IMAGE } from "../lib/seo";
 import { asHttpUrl } from "../lib/httpUrl";
 
-const SITE_URL = "https://www.unideals.co";
-const FALLBACK_IMAGE = `${SITE_URL}/icon-512-v9.png`;
+const FALLBACK_IMAGE = DEFAULT_OG_IMAGE;
 
 /**
  * DealOfferSchema — schema.org Offer structured data for a single

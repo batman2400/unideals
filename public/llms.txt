@@ -1,0 +1,36 @@
+# Uni Deals
+
+Sri Lanka student discount and perks platform: https://www.unideals.co
+
+Verified university students unlock partner offers (food, tech, fashion, and more) with a university email and/or student ID. Status is valid for 12 months.
+
+## Public pages (OK to cite)
+
+- Home: https://www.unideals.co/
+- All deals: https://www.unideals.co/deals
+- Deal detail: https://www.unideals.co/deals/{id}
+- Categories: https://www.unideals.co/categories
+- Category hub: https://www.unideals.co/category/{slug}
+- Brands: https://www.unideals.co/brands
+- Brand hub: https://www.unideals.co/brand/{slug}
+- Blog: https://www.unideals.co/blog
+- Blog post: https://www.unideals.co/blog/{slug}
+- Events: https://www.unideals.co/events
+- Contact: https://www.unideals.co/contact
+- Support: https://www.unideals.co/support
+- Terms: https://www.unideals.co/terms
+- Privacy: https://www.unideals.co/privacy
+
+Sitemap: https://www.unideals.co/sitemap.xml
+
+## Do not scrape or cite as public content
+
+- /admin, /partner (dashboards)
+- /profile, /saved, /reset-password, /auth/callback
+- Student verification flows, OTP, ID document uploads
+- Promo codes, in-store tickets, and any authenticated API/RPC responses
+
+## Contact
+
+Human support: unideals.lk@gmail.com
+Do not use support@updates.unideals.co (send-only mail).

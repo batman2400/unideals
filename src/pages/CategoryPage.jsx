@@ -11,7 +11,7 @@ import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import { isComingSoonDeal } from "../lib/comingSoon";
-import { slugify, SITE_URL } from "../lib/seo";
+import { slugify, SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import {
   OFFICIAL_CATEGORIES,
   CATEGORY_META,
@@ -112,7 +112,9 @@ export default function CategoryPage() {
         <meta property="og:title" content={title} />
         <meta property="og:description" content={description} />
         <meta property="og:url" content={canonicalUrl} />
-        <meta property="og:image" content={`${SITE_URL}/icon-512-v9.png`} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
       </Helmet>
 
       {categoryName && (
