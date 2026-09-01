@@ -86,6 +86,7 @@ serve(async (req) => {
 
     return json({ success: true });
   } catch (error) {
-    return json({ error: error.message }, 500);
+    console.error("send-inquiry-notification failed:", error);
+    return json({ error: "An unexpected error occurred." }, 500);
   }
 });

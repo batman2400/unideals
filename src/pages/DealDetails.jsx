@@ -5,9 +5,9 @@
  *   • Mobile  → full-bleed portrait hero + stacked content
  *   • Desktop → sticky portrait image + info / redemption column
  *
- * Redemption UX unchanged:
+ * Redemption UX:
  *   • In-Store  → QR ticket with live 10-minute countdown
- *   • Online    → Reveal / copy promo code + store link
+ *   • Online    → Reveal RPC (`reveal_online_deal_code`) / copy + store link
  */
 import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
@@ -357,9 +357,17 @@ function InStoreTicketDisplay({
   );
 }
 
-function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
+function parseRevealCode(data) {
+  const row = Array.isArray(data) ? data[0] : data;
+  if (typeof row === "string") return row.trim();
+  const value = row?.redemption_code;
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function OnlineRedemption({ dealId, brand, storeUrl }) {
   const [copied, setCopied] = useState(false);
   const [revealed, setRevealed] = useState(false);
+  const [revealedCode, setRevealedCode] = useState("");
   const [revealError, setRevealError] = useState("");
   const [revealing, setRevealing] = useState(false);
 
@@ -375,37 +383,41 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
   );
 
   const handleReveal = useCallback(async () => {
-    const code =
-      typeof redemptionCode === "string" ? redemptionCode.trim() : "";
-    if (!code) {
-      setRevealError("This offer does not currently have a valid redemption code.");
-      return;
-    }
-
     setRevealing(true);
     setRevealError("");
-    const { error } = await logEvent("reveal");
+    const { data, error } = await supabase.rpc("reveal_online_deal_code", {
+      target_deal_id: dealId,
+    });
     setRevealing(false);
 
     if (error) {
       setRevealError(
-        error.message || "This offer is not available to redeem right now.",
+        error.message || "Could not reveal this code. Try again.",
       );
       return;
     }
 
+    const code = parseRevealCode(data);
+    if (!code) {
+      setRevealError(
+        "This offer does not currently have a valid redemption code.",
+      );
+      return;
+    }
+
+    setRevealedCode(code);
     setRevealed(true);
-  }, [logEvent, redemptionCode]);
+  }, [dealId]);
 
   const handleCopy = useCallback(async () => {
     try {
-      await navigator.clipboard.writeText(redemptionCode);
+      await navigator.clipboard.writeText(revealedCode);
       setCopied(true);
       logEvent("copy");
       setTimeout(() => setCopied(false), 2000);
     } catch {
       const textarea = document.createElement("textarea");
-      textarea.value = redemptionCode;
+      textarea.value = revealedCode;
       document.body.appendChild(textarea);
       textarea.select();
       document.execCommand("copy");
@@ -414,7 +426,7 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
       logEvent("copy");
       setTimeout(() => setCopied(false), 2000);
     }
-  }, [redemptionCode, logEvent]);
+  }, [revealedCode, logEvent]);
 
   const handleClickThrough = useCallback(() => {
     logEvent("click_through");
@@ -455,7 +467,7 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
           Your Promo Code
         </p>
         <p className="mb-5 max-w-full break-all font-mono text-2xl font-bold tracking-[0.12em] text-primary select-all sm:text-3xl md:text-4xl">
-          {redemptionCode}
+          {revealedCode}
         </p>
 
         <button
@@ -494,7 +506,7 @@ function OnlineRedemption({ dealId, redemptionCode, brand, storeUrl }) {
       <p className="text-center text-xs leading-relaxed text-on-surface-variant/60">
         Apply code{" "}
         <span className="break-all font-mono font-bold text-on-surface-variant">
-          {redemptionCode}
+          {revealedCode}
         </span>{" "}
         at checkout on {brand}&apos;s website.
       </p>
@@ -774,7 +786,6 @@ function DealDetails() {
     category,
     imageUrl,
     description,
-    redemptionCode,
     storeUrl,
     startTime,
     endTime,
@@ -788,8 +799,6 @@ function DealDetails() {
   const canRevealRedemption =
     isPrivilegedRole || (isAuthenticated && isVerified);
   const showVerificationWall = !comingSoon && !expired && !canRevealRedemption;
-  const hasRedemptionCode =
-    typeof redemptionCode === "string" && redemptionCode.trim().length > 0;
   const headline = discount || title;
   const launchLabel = comingSoon && startTime ? formatLaunchDate(startTime) : "";
   const visibleStartLabel =
@@ -838,27 +847,14 @@ function DealDetails() {
       verificationLoading={roleLoading && isAuthenticated}
       onOpenAuthModal={handleOpenAuthModal}
     />
-  ) : isInStore || hasRedemptionCode ? (
-    isInStore ? (
-      <InStoreRedemption dealId={deal.id} brand={brand} />
-    ) : (
-      <OnlineRedemption
-        dealId={deal.id}
-        redemptionCode={redemptionCode}
-        brand={brand}
-        storeUrl={storeUrl}
-      />
-    )
+  ) : isInStore ? (
+    <InStoreRedemption dealId={deal.id} brand={brand} />
   ) : (
-    <div className="rounded-2xl border border-outline-variant/20 bg-surface-container-low p-5 text-sm text-on-surface-variant sm:p-6 md:p-8">
-      <p className="mb-2 font-headline font-bold text-on-surface">
-        Redemption code unavailable
-      </p>
-      <p>
-        This offer does not currently have a valid redemption code. Please try
-        again later or contact support.
-      </p>
-    </div>
+    <OnlineRedemption
+      dealId={deal.id}
+      brand={brand}
+      storeUrl={storeUrl}
+    />
   );
 
   const brandInitial = (brand || "?").trim().charAt(0).toUpperCase();

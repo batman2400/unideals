@@ -36,6 +36,16 @@
       "source": "/login",
       "destination": "/?auth=login",
       "statusCode": 302
+    },
+    {
+      "source": "/.env",
+      "destination": "/404.html",
+      "statusCode": 404
+    },
+    {
+      "source": "/.env.:path*",
+      "destination": "/404.html",
+      "statusCode": 404
     }
   ],
   "rewrites": [
@@ -71,6 +81,25 @@
     }
   ],
   "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "microphone=(), geolocation=(), payment=(), usb=()"
+        }
+      ]
+    },
     {
       "source": "/favicon.ico",
       "headers": [
