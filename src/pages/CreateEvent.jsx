@@ -3,26 +3,43 @@ import { useNavigate } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
 import { supabase } from "../lib/supabaseClient";
 import { uploadEventImage } from "../lib/eventImageUpload";
+import { asHttpUrl } from "../lib/httpUrl";
+import DateTimeFields, { combineLocalDateAndTime } from "../components/DateTimeFields";
+
+const EMPTY_FORM = {
+  title: "",
+  description: "",
+  start_date: "",
+  start_clock: "",
+  end_date: "",
+  end_clock: "",
+  publish_date: "",
+  publish_clock: "",
+  location_name: "",
+  category: "social",
+  university_name: "",
+  club_name: "",
+  cover_image_url: "",
+  target_audience: "all_students",
+  external_registration_url: "",
+};
+
+function explainSubmitError(error) {
+  const message = error?.message || "";
+  if (/row-level security/i.test(message) || error?.code === "42501") {
+    return "Could not save this event (permission denied). Sign out, sign back in, and try again. If you added a cover image, try submitting once without it.";
+  }
+  if (/could not find the function/i.test(message)) {
+    return "Event submission is not enabled on the server yet. Please try again after the latest database update.";
+  }
+  return message || "Failed to create event. Please try again.";
+}
 
 function CreateEvent() {
   const { user, loading: roleLoading, isAuthenticated } = useRoleContext();
   const navigate = useNavigate();
 
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    start_time: "",
-    end_time: "",
-    publish_at: "",
-    location_name: "",
-    category: "social",
-    university_name: "",
-    club_name: "",
-    cover_image_url: "",
-    target_audience: "all_students",
-    external_registration_url: "",
-  });
-  
+  const [formData, setFormData] = useState(EMPTY_FORM);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -93,19 +110,39 @@ function CreateEvent() {
     try {
       if (!user) throw new Error("You must be logged in to create an event.");
 
-      if (formData.end_time && formData.start_time) {
-        const start = new Date(formData.start_time);
-        const end = new Date(formData.end_time);
-        if (
-          Number.isNaN(start.getTime()) ||
-          Number.isNaN(end.getTime()) ||
-          end.getTime() < start.getTime()
-        ) {
-          throw new Error("End time must be on or after the start time.");
-        }
+      const startIso = combineLocalDateAndTime(formData.start_date, formData.start_clock);
+      if (!startIso) {
+        throw new Error("Please pick a start date and time.");
       }
 
-      // Prefer the live auth uid so organizer_id always matches RLS (auth.uid()).
+      const hasEnd = Boolean(formData.end_date || formData.end_clock);
+      const endIso = hasEnd
+        ? combineLocalDateAndTime(formData.end_date, formData.end_clock)
+        : null;
+      if (hasEnd && !endIso) {
+        throw new Error("Please pick both an end date and an end time, or leave both blank.");
+      }
+
+      const start = new Date(startIso);
+      const end = endIso ? new Date(endIso) : null;
+      if (end && end.getTime() < start.getTime()) {
+        throw new Error("End time must be on or after the start time.");
+      }
+
+      const hasPublish = Boolean(formData.publish_date || formData.publish_clock);
+      const publishIso = hasPublish
+        ? combineLocalDateAndTime(formData.publish_date, formData.publish_clock)
+        : null;
+      if (hasPublish && !publishIso) {
+        throw new Error("Please pick both a publish date and time, or leave both blank.");
+      }
+
+      const registrationUrl = formData.external_registration_url.trim();
+      const safeRegistrationUrl = registrationUrl ? asHttpUrl(registrationUrl) : null;
+      if (registrationUrl && !safeRegistrationUrl) {
+        throw new Error("Registration link must start with http:// or https://.");
+      }
+
       const {
         data: { user: authUser },
         error: authError,
@@ -114,74 +151,91 @@ function CreateEvent() {
       const organizerId = authUser?.id || user.id;
       if (!organizerId) throw new Error("You must be logged in to create an event.");
 
-      let finalImageUrl = formData.cover_image_url;
+      let finalImageUrl = formData.cover_image_url || null;
 
       if (selectedImageFile) {
-        const { publicUrl } = await uploadEventImage({
-          file: selectedImageFile,
-          userId: organizerId,
-        });
-        finalImageUrl = publicUrl;
+        try {
+          const { publicUrl } = await uploadEventImage({
+            file: selectedImageFile,
+            userId: organizerId,
+          });
+          finalImageUrl = publicUrl;
+        } catch (uploadErr) {
+          if (/row-level security/i.test(uploadErr?.message || "")) {
+            throw new Error(
+              "Cover image could not be uploaded. Try a JPEG or PNG under 5MB, or submit without an image.",
+            );
+          }
+          throw uploadErr;
+        }
       }
 
-      const eventData = {
-        ...formData,
-        cover_image_url: finalImageUrl,
-        organizer_id: organizerId,
-        status: "pending",
-        publish_at: formData.publish_at
-          ? new Date(formData.publish_at).toISOString()
-          : new Date().toISOString(),
+      const rpcArgs = {
+        p_title: formData.title.trim(),
+        p_description: formData.description.trim() || null,
+        p_start_time: startIso,
+        p_end_time: endIso,
+        p_publish_at: publishIso,
+        p_location_name: formData.location_name.trim() || null,
+        p_category: formData.category || "social",
+        p_university_name: formData.university_name.trim() || null,
+        p_club_name: formData.club_name.trim() || null,
+        p_cover_image_url: finalImageUrl,
+        p_target_audience: formData.target_audience || "all_students",
+        p_external_registration_url: safeRegistrationUrl,
       };
 
-      // Optional: convert end_time to null if empty
-      if (!eventData.end_time) {
-        delete eventData.end_time;
+      const { error: rpcError } = await supabase.rpc("submit_pending_event", rpcArgs);
+
+      if (rpcError && /could not find the function/i.test(rpcError.message || "")) {
+        const { error: insertError } = await supabase.from("events").insert([
+          {
+            title: rpcArgs.p_title,
+            description: rpcArgs.p_description,
+            start_time: rpcArgs.p_start_time,
+            end_time: rpcArgs.p_end_time,
+            publish_at: rpcArgs.p_publish_at || new Date().toISOString(),
+            location_name: rpcArgs.p_location_name,
+            category: rpcArgs.p_category,
+            university_name: rpcArgs.p_university_name,
+            club_name: rpcArgs.p_club_name,
+            cover_image_url: rpcArgs.p_cover_image_url,
+            target_audience: rpcArgs.p_target_audience,
+            external_registration_url: rpcArgs.p_external_registration_url,
+            organizer_id: organizerId,
+            status: "pending",
+          },
+        ]);
+        if (insertError) throw insertError;
+      } else if (rpcError) {
+        throw rpcError;
       }
 
-      const { error: insertError } = await supabase.from("events").insert([eventData]);
-      
-      if (insertError) throw insertError;
-
       setSuccess(true);
-      // Reset form on success
-      setFormData({
-        title: "",
-        description: "",
-        start_time: "",
-        end_time: "",
-        publish_at: "",
-        location_name: "",
-        category: "social",
-        university_name: "",
-        club_name: "",
-        cover_image_url: "",
-        target_audience: "all_students",
-        external_registration_url: "",
-      });
+      setFormData(EMPTY_FORM);
       setSelectedImageFile(null);
       setSelectedImagePreviewUrl("");
 
-      // Redirect to the events feed after a short delay
       setTimeout(() => {
         if (isMountedRef.current) {
-          navigate('/events');
+          navigate("/events");
         }
       }, 2500);
-
     } catch (err) {
       console.error("Error creating event:", err);
-      setError(err.message || "Failed to create event. Please try again.");
+      setError(explainSubmitError(err));
     } finally {
       setSubmitting(false);
     }
   };
 
+  const previewStartIso = combineLocalDateAndTime(formData.start_date, formData.start_clock);
+
   return (
     <div className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 animate-fade-in">
       <div className="mb-8">
         <button
-          onClick={() => navigate('/events')}
+          onClick={() => navigate("/events")}
           className="text-on-surface-variant/70 hover:text-on-background transition-colors cursor-pointer inline-flex items-center gap-1 mb-4 text-sm font-bold tracking-wider"
         >
           <span className="material-symbols-outlined text-[18px]">chevron_left</span>
@@ -196,7 +250,6 @@ function CreateEvent() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-        {/* Left Form Column */}
         <div className="lg:col-span-7 xl:col-span-8">
           <div className="bg-white rounded-3xl p-6 md:p-8 shadow-sm border border-outline-variant/20">
         {success && (
@@ -208,7 +261,7 @@ function CreateEvent() {
             </div>
           </div>
         )}
-        
+
         {error && (
           <div className="mb-6 p-4 bg-error/10 text-error rounded-2xl flex items-center gap-3">
             <span className="material-symbols-outlined">error</span>
@@ -217,7 +270,6 @@ function CreateEvent() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Title & Category */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Event Title</label>
@@ -248,7 +300,6 @@ function CreateEvent() {
             </div>
           </div>
 
-          {/* University and Club */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">University Name</label>
@@ -275,48 +326,64 @@ function CreateEvent() {
             </div>
           </div>
 
-          {/* Date and Time */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Event Start Date & Time</label>
-              <input
-                type="datetime-local"
-                name="start_time"
-                value={formData.start_time}
-                onChange={handleChange}
-                required
-                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Event End Date & Time (Optional)</label>
-              <input
-                type="datetime-local"
-                name="end_time"
-                value={formData.end_time}
-                onChange={handleChange}
-                className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
-              />
-            </div>
+          <div>
+            <p className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+              Event Start Date & Time
+            </p>
+            <DateTimeFields
+              dateValue={formData.start_date}
+              timeValue={formData.start_clock}
+              onDateChange={(start_date) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  start_date,
+                  start_clock: prev.start_clock || "09:00",
+                }))
+              }
+              onTimeChange={(start_clock) => setFormData((prev) => ({ ...prev, start_clock }))}
+              required
+            />
           </div>
 
           <div>
-            <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+            <p className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+              Event End Date & Time (Optional)
+            </p>
+            <DateTimeFields
+              dateValue={formData.end_date}
+              timeValue={formData.end_clock}
+              onDateChange={(end_date) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  end_date,
+                  end_clock: prev.end_clock || "17:00",
+                }))
+              }
+              onTimeChange={(end_clock) => setFormData((prev) => ({ ...prev, end_clock }))}
+            />
+          </div>
+
+          <div>
+            <p className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
               Listing Go-Live / Publish At (Optional)
-            </label>
-            <input
-              type="datetime-local"
-              name="publish_at"
-              value={formData.publish_at}
-              onChange={handleChange}
-              className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
+            </p>
+            <DateTimeFields
+              dateValue={formData.publish_date}
+              timeValue={formData.publish_clock}
+              onDateChange={(publish_date) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  publish_date,
+                  publish_clock: prev.publish_clock || "09:00",
+                }))
+              }
+              onTimeChange={(publish_clock) => setFormData((prev) => ({ ...prev, publish_clock }))}
             />
             <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
               Leave blank to publish when approved. A future date shows as Coming Soon until then.
             </p>
           </div>
 
-          {/* Location & Audience */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Location</label>
@@ -344,7 +411,6 @@ function CreateEvent() {
             </div>
           </div>
 
-          {/* Ext Link & Image */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">External Registration Link (Optional)</label>
@@ -397,7 +463,6 @@ function CreateEvent() {
             </div>
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Event Description</label>
             <textarea
@@ -440,7 +505,6 @@ function CreateEvent() {
           </div>
         </div>
 
-        {/* Right Live Preview Column */}
         <div className="lg:col-span-5 xl:col-span-4 hidden lg:block">
           <div className="sticky top-28">
             <h3 className="text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-4 flex items-center gap-2">
@@ -450,7 +514,6 @@ function CreateEvent() {
             <div className="bg-white rounded-3xl p-6 border border-outline-variant/20 shadow-sm relative">
               <div className="pointer-events-none">
                 <div className="bg-surface rounded-3xl overflow-hidden border border-outline-variant/20 shadow-sm flex flex-col h-full">
-                  {/* Cover Image Placeholder or Real */}
                   <div className="relative w-full aspect-video bg-surface-container-high/30 overflow-hidden flex-shrink-0">
                     {(selectedImagePreviewUrl || formData.cover_image_url) ? (
                       <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Cover" className="w-full h-full object-cover" />
@@ -460,8 +523,7 @@ function CreateEvent() {
                          <span className="text-xs font-bold uppercase tracking-wider">Cover Image</span>
                       </div>
                     )}
-                    
-                    {/* Category Badge over image */}
+
                     {formData.category && (
                       <div className="absolute top-4 left-4 bg-background/90 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider text-on-background shadow-sm">
                         {formData.category.replace('_', ' ')}
@@ -470,29 +532,24 @@ function CreateEvent() {
                   </div>
 
                   <div className="p-5 flex flex-col flex-1">
-                    {/* Date/Time */}
                     <div className="flex items-center gap-2 mb-3 text-primary text-xs font-bold uppercase tracking-wider">
                       <span className="material-symbols-outlined text-[16px]">calendar_month</span>
-                      <span>{formData.start_time ? new Date(formData.start_time).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : 'Date & Time'}</span>
+                      <span>{previewStartIso ? new Date(previewStartIso).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit'}) : 'Date & Time'}</span>
                     </div>
 
-                    {/* Title */}
                     <h3 className="font-headline font-bold text-xl text-on-background mb-2 line-clamp-2">
                       {formData.title || "Your Event Title"}
                     </h3>
 
-                    {/* Location */}
                     <div className="flex items-center gap-2 text-on-surface-variant text-sm mb-4">
                       <span className="material-symbols-outlined text-[18px]">location_on</span>
                       <span className="truncate">{formData.location_name || "Event Location"}</span>
                     </div>
 
-                    {/* Description (Preview) */}
                     <p className="text-on-surface-variant text-sm line-clamp-3 mb-6 flex-1 min-h-[60px]">
                       {formData.description || "Provide the exciting details about your event to attract students..."}
                     </p>
 
-                    {/* Action button */}
                     <div className="mt-auto">
                       <div className="w-full py-3 rounded-xl bg-surface-container-low text-on-surface-variant font-bold text-sm border border-outline-variant/30 flex items-center justify-center gap-2">
                         <span className="material-symbols-outlined text-[18px]">local_activity</span>

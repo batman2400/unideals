@@ -14,7 +14,7 @@ export const DEFAULT_OG_IMAGE_HEIGHT = "630";
 
 /**
  * Turns a free-text name into a URL-safe, lowercase, hyphenated slug.
- * e.g. "Tech & Mobile" -> "tech-mobile", "Domino's Pizza" -> "dominos-pizza"
+ * e.g. "Tech & Mobile" -> "tech-mobile", "Domino's Pizza" -> "domino-s-pizza"
  */
 export function slugify(value) {
   return String(value ?? "")

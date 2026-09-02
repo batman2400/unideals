@@ -674,7 +674,7 @@ function CreateDeal() {
                     value={formData.start_time}
                     onChange={onChange}
                     disabled={submitting}
-                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-auto"
                   />
                   <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
                     When the deal starts and students can redeem. Leave blank for now. Future date = Coming Soon until then.
@@ -703,7 +703,7 @@ function CreateDeal() {
                     value={formData.end_time}
                     onChange={onChange}
                     disabled={submitting}
-                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
+                    className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-auto"
                   />
                   <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
                     <input

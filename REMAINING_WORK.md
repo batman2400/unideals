@@ -83,10 +83,10 @@ Details: [LAUNCH.md](../unideals-app/LAUNCH.md), [SECURITY.md](../unideals-app/S
 
 ### IN
 
-- [ ] **7.** Sync `unideals-app/src/lib/legalContent.ts` with website privacy/terms (same 13+, camera, push, `https://www.unideals.co/delete-account`)
-- [ ] **8.** **SecureStore** for the Supabase session (replace AsyncStorage in `src/lib/supabase.ts`)
-- [ ] **9.** **Cap ID upload** size/type in `src/lib/verificationDocuments.ts`
-- [ ] **10.** **Profile delete account** — same Edge Function as the website; Sign out stays separate
+- [x] **7.** Sync `unideals-app/src/lib/legalContent.ts` with website privacy/terms (same 13+, camera, push, `https://www.unideals.co/delete-account`)
+- [x] **8.** **SecureStore** for the Supabase session (replace AsyncStorage in `src/lib/supabase.ts`)
+- [x] **9.** **Cap ID upload** size/type in `src/lib/verificationDocuments.ts`
+- [x] **10.** **Profile delete account** — same Edge Function as the website; Sign out stays separate
 
 ### OUT
 

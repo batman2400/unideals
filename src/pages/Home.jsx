@@ -5,16 +5,28 @@ import ExploreFeed from "../components/ExploreFeed";
 import FAQSchema from "../components/FAQSchema";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
 import { slugify, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
+import { OFFICIAL_CATEGORIES } from "../lib/categories";
+
+const CATEGORY_PILL_EMOJI = {
+  "Food & Drink": "🍔",
+  Fashion: "👗",
+  "Tech & Mobile": "💻",
+  Learning: "📚",
+  "Beauty & Care": "💄",
+  "Travel & Auto": "✈️",
+  "Health & Fitness": "💪",
+  Household: "🏠",
+  Finance: "💳",
+  "Events & Tickets": "🎫",
+};
 
 const categories = [
   { emoji: "✨", label: "All", filter: null },
-  { emoji: "🍔", label: "Food & Drink", filter: "Food & Drink" },
-  { emoji: "👗", label: "Fashion", filter: "Fashion" },
-  { emoji: "💻", label: "Tech & Mobile", filter: "Tech & Mobile" },
-  { emoji: "📚", label: "Learning", filter: "Learning" },
-  { emoji: "💄", label: "Beauty & Care", filter: "Beauty & Care" },
-  { emoji: "✈️", label: "Travel & Auto", filter: "Travel & Auto" },
-  { emoji: "💪", label: "Health & Fitness", filter: "Health & Fitness" },
+  ...OFFICIAL_CATEGORIES.map((name) => ({
+    emoji: CATEGORY_PILL_EMOJI[name] || "✨",
+    label: name,
+    filter: name,
+  })),
 ];
 
 function Home({ searchQuery, onSearchChange }) {

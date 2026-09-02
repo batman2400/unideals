@@ -27,7 +27,9 @@ export function mapDeal(row) {
     category: row.category,
     imageUrl: row.image_url,
     description: row.description,
-    redemptionCode: row.redemption_code,
+    // Public deal-load RPCs may still include this until the Play cutover
+    // SQL. Students unlock codes only via reveal_online_deal_code.
+    redemptionCode: undefined,
     storeUrl: row.store_url,
     // Optional — only present if the RPC's return set includes them.
     // Dates are null from public RPCs when the partner hid them.
