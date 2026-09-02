@@ -59,6 +59,7 @@ import {
 } from "../../src/lib/comingSoon.js";
 
 import { formatVerificationRejectReason } from "../../src/lib/verificationRejectReasons.js";
+import { formatScannedCode } from "../../src/lib/scannedPayload.js";
 
 test("Password Policy Unit Tests", async (t) => {
   await t.test("validatePasswordStrength: length and composition checks", () => {
@@ -386,5 +387,19 @@ test("Verification Reject Reasons Unit Tests", async (t) => {
       formatVerificationRejectReason("other", ""),
       "Other"
     );
+  });
+});
+
+test("Scanned Code Payload Formatting Unit Tests", async (t) => {
+  await t.test("formatScannedCode parses and strips unideals protocol prefixes", () => {
+    assert.equal(formatScannedCode("unideals://ticket/A7X9K2"), "A7X9K2");
+    assert.equal(formatScannedCode("UNIDEALS://TICKET/B3W1P0"), "B3W1P0");
+    assert.equal(
+      formatScannedCode("unideals://student/8be55b01-1234-5678-9abc-def012345678"),
+      "Student Pass (8be55b01…)"
+    );
+    assert.equal(formatScannedCode("PLAIN-COUPON-CODE"), "PLAIN-COUPON-CODE");
+    assert.equal(formatScannedCode(""), "—");
+    assert.equal(formatScannedCode(null), "—");
   });
 });

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import PortalLayout from "../../layouts/PortalLayout";
@@ -19,7 +20,8 @@ const ROLE_FILTER_TABS = [
 const PAGE_LIMIT = 100;
 
 function AdminUsers() {
-  const { role, loading: roleLoading } = useRoleContext();
+  const { role, loading: roleLoading, setImpersonatedPartnerId } = useRoleContext();
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -183,6 +185,13 @@ function AdminUsers() {
     }, 400);
     return () => clearTimeout(timer);
   }, [inputValue]);
+
+  const handleImpersonate = (partnerUserId) => {
+    if (typeof setImpersonatedPartnerId === "function") {
+      setImpersonatedPartnerId(partnerUserId);
+    }
+    navigate("/partner");
+  };
 
   if (roleLoading) {
     return (
@@ -418,17 +427,29 @@ function AdminUsers() {
                       <td className="flex justify-end items-center md:table-cell px-0 md:px-4 py-3 md:py-3 mt-2 md:mt-0">
                         <div className="flex justify-end gap-1.5 w-full md:w-auto">
                           {u.role === "partner" && (
-                            <button
-                              onClick={() => handleDemote(u.user_id, u.email)}
-                              disabled={isActing}
-                              title="Demote to student"
-                              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
-                            >
-                              <span className="material-symbols-outlined text-sm">
-                                arrow_downward
-                              </span>
-                              Demote
-                            </button>
+                            <>
+                              <button
+                                onClick={() => handleImpersonate(u.user_id)}
+                                title="Impersonate brand portal"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-primary bg-primary/10 border border-primary/20 hover:bg-primary/20 transition-colors"
+                              >
+                                <span className="material-symbols-outlined text-sm">
+                                  visibility
+                                </span>
+                                Impersonate
+                              </button>
+                              <button
+                                onClick={() => handleDemote(u.user_id, u.email)}
+                                disabled={isActing}
+                                title="Demote to student"
+                                className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 hover:bg-amber-100 transition-colors disabled:opacity-50"
+                              >
+                                <span className="material-symbols-outlined text-sm">
+                                  arrow_downward
+                                </span>
+                                Demote
+                              </button>
+                            </>
                           )}
                           {u.role === "student" && (
                             <button

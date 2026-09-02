@@ -72,7 +72,7 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
 
   const needsRole = allowedRoles.length > 0;
 
-  if (!authReady || (needsRole && loading)) {
+  if (!authReady || (needsRole && loading) || (needsRole && isAuthenticated && !role)) {
     return <AccessSpinner />;
   }
 
@@ -80,7 +80,7 @@ function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
     return <SignInRequired />;
   }
 
-  if (needsRole && error) {
+  if (needsRole && error && !role) {
     return (
       <section className="max-w-[760px] mx-auto px-6 py-16">
         <NoIndexTag />

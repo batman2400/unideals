@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
-import { getPartnerBrand } from "../../lib/partnerBrand";
+import { getPartnerBrand, formatScannedCode } from "../../lib/partnerBrand";
 import PortalLayout from "../../layouts/PortalLayout";
 import { getDealComputedStatus } from "../../lib/comingSoon";
 
@@ -25,7 +25,7 @@ function PartnerOverview() {
   const [error, setError] = useState("");
 
   useEffect(() => {
-    if (roleLoading) return;
+    if (roleLoading || !role) return;
 
     if (!user?.id || (role !== "partner" && role !== "admin")) {
       setError("You don't have access to the partner portal.");
@@ -318,8 +318,8 @@ function PartnerOverview() {
                   className="px-4 md:px-5 py-3 md:py-3.5 flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3"
                 >
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-on-background truncate">
-                      {event.scanned_code || "—"}
+                    <p className="text-sm font-bold text-on-background truncate font-mono tracking-wide">
+                      {formatScannedCode(event.scanned_code)}
                     </p>
                     <p className="text-[10px] text-on-surface-variant">
                       {event.scan_method} ·{" "}

@@ -13,12 +13,43 @@ import {
  * (same source as get_user_role()). Do not block first paint on the yearly
  * expiry sweep — cron plus client-side isStudentVerificationCurrent cover it.
  */
+const ROLE_CACHE_KEY = "unideals_cached_role_v1";
+
+function readRoleCache() {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(ROLE_CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed.role === "string") {
+      return parsed;
+    }
+  } catch {
+    // Ignore storage parse errors
+  }
+  return null;
+}
+
+function writeRoleCache(data) {
+  if (typeof window === "undefined") return;
+  try {
+    if (!data) {
+      sessionStorage.removeItem(ROLE_CACHE_KEY);
+    } else {
+      sessionStorage.setItem(ROLE_CACHE_KEY, JSON.stringify(data));
+    }
+  } catch {
+    // Ignore storage write errors
+  }
+}
+
 export function useRole() {
+  const initialCache = readRoleCache();
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [isVerified, setIsVerified] = useState(false);
-  const [verifiedAt, setVerifiedAt] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [role, setRole] = useState(initialCache?.role || null);
+  const [isVerified, setIsVerified] = useState(initialCache?.isVerified || false);
+  const [verifiedAt, setVerifiedAt] = useState(initialCache?.verifiedAt || null);
+  const [loading, setLoading] = useState(!initialCache);
   const [authReady, setAuthReady] = useState(false);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -135,6 +166,7 @@ export function useRole() {
         setAuthReady(true);
 
         if (!nextUser) {
+          writeRoleCache(null);
           setRole(null);
           setIsVerified(false);
           setVerifiedAt(null);
@@ -148,9 +180,9 @@ export function useRole() {
           void supabase.rpc("expire_stale_student_verifications").catch(() => {});
         }
 
-        let resolvedRole = "student";
-        let resolvedIsVerified = false;
-        let resolvedVerifiedAt = null;
+        let resolvedRole = initialCache?.role || null;
+        let resolvedIsVerified = initialCache?.isVerified || false;
+        let resolvedVerifiedAt = initialCache?.verifiedAt || null;
 
         let { data: roleRow, error: roleQueryError } = await supabase
           .from("user_roles")
@@ -168,7 +200,7 @@ export function useRole() {
           roleQueryError = retry.error;
         }
 
-        if (roleQueryError) {
+        if (roleQueryError || !roleRow?.role) {
           const { data: rpcRole, error: rpcError } =
             await supabase.rpc("get_user_role");
           const { data: legacyRoleRow, error: legacyRoleError } = await supabase
@@ -181,9 +213,9 @@ export function useRole() {
             throw legacyRoleError;
           }
 
-          resolvedRole = rpcRole ?? legacyRoleRow?.role ?? "student";
+          resolvedRole = rpcRole ?? legacyRoleRow?.role ?? resolvedRole ?? "student";
         } else {
-          resolvedRole = roleRow?.role ?? "student";
+          resolvedRole = roleRow.role;
           resolvedVerifiedAt =
             typeof roleRow?.verified_at === "string" ? roleRow.verified_at : null;
           const verifiedFlag = !!roleRow?.is_verified;
@@ -194,6 +226,13 @@ export function useRole() {
         }
 
         if (!active) return;
+
+        writeRoleCache({
+          userId: nextUser.id,
+          role: resolvedRole,
+          isVerified: resolvedIsVerified,
+          verifiedAt: resolvedVerifiedAt,
+        });
 
         setRole(resolvedRole);
         setIsVerified(resolvedIsVerified);
@@ -217,6 +256,9 @@ export function useRole() {
         event === "TOKEN_REFRESHED" || event === "USER_UPDATED";
       void resolveRole(session, isBackground);
     });
+
+    // Run initial resolution immediately on mount
+    void resolveRole(null, false);
 
     return () => {
       active = false;

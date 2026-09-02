@@ -73,3 +73,5 @@ export async function getPartnerBrand(userId) {
 
 export const PARTNER_BRAND_REQUIRED_MESSAGE =
   "No brand is assigned to this partner account yet. Please contact an admin to be assigned a brand before creating deals.";
+
+export { formatScannedCode } from "./scannedPayload.js";
