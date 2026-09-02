@@ -99,8 +99,8 @@ function Footer() {
           </Link>
         </div>
 
-        {/* Action / Share Icons */}
-        <div className="flex items-center gap-3">
+        {/* Action / Share Icon */}
+        <div className="flex items-center">
           <button
             type="button"
             onClick={handleShare}
@@ -112,16 +112,6 @@ function Footer() {
               {copied ? "check" : "share"}
             </span>
           </button>
-          <a
-            href="https://www.unideals.co"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Visit Uni Deals"
-            aria-label="Visit Uni Deals"
-            className="flex items-center justify-center h-9 w-9 rounded-full text-[#323233]/40 hover:text-primary hover:bg-black/5 dark:text-[#fcf9f8]/40 dark:hover:text-primary dark:hover:bg-white/5 transition-all"
-          >
-            <span className="material-symbols-outlined text-xl">language</span>
-          </a>
         </div>
       </div>
 
