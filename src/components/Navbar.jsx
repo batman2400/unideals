@@ -25,9 +25,9 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
   };
 
   return (
-    <nav className="hidden md:flex items-center justify-between h-20 px-8 border-b border-outline-variant/10 bg-surface/80 backdrop-blur-md sticky top-0 z-50">
+    <nav className="hidden md:flex items-center justify-between h-20 px-4 lg:px-8 border-b border-outline-variant/10 bg-surface/80 backdrop-blur-md sticky top-0 z-50">
       {/* Left: Logo */}
-      <Link to="/" className="flex items-center gap-2">
+      <Link to="/" className="flex items-center gap-2 shrink-0">
         <img src="/images/logo.png" alt="Uni Deals" className="h-8 w-auto" />
         <span className="font-headline font-black text-2xl tracking-tighter text-on-background">
           Uni<span className="text-primary">Deals</span>
@@ -35,7 +35,7 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
       </Link>
 
       {/* Center: Links */}
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-3 lg:gap-6 xl:gap-8">
         {navLinks.map((link) => {
           const active = isActive(link.path);
           const requiresAuth = link.path === "/saved";
@@ -73,7 +73,7 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
       </div>
 
       {/* Right: Actions */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 lg:gap-3 xl:gap-4">
         {!authReady ? (
           <>
             <Link
@@ -88,22 +88,23 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
         ) : isLoggedIn ? (
           <>
             {loading ? (
-              <div className="hidden lg:block w-[140px] h-[36px] rounded-full skeleton-shimmer bg-surface-container-low" />
+              <div className="w-[100px] lg:w-[130px] h-[36px] rounded-full skeleton-shimmer bg-surface-container-low" />
             ) : (role === "admin" || role === "partner") ? (
               <>
                 <Link
                   to="/partner/scanner"
-                  className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100 rounded-full transition-colors shadow-sm"
+                  title="Ticket Scanner"
+                  className="flex items-center gap-1.5 px-2.5 lg:px-3.5 py-2 bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100 rounded-full transition-colors shadow-sm shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
-                  <span className="font-headline font-bold text-sm">Scanner</span>
+                  <span className="hidden xl:inline font-headline font-bold text-sm">Scanner</span>
                 </Link>
                 <Link
                   to={role === "admin" ? "/admin" : "/partner"}
-                  className="hidden lg:flex items-center gap-1.5 px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-full transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 px-3.5 lg:px-4 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-full transition-colors shadow-sm shrink-0"
                 >
                   <span className="material-symbols-outlined text-[18px]">dashboard</span>
-                  <span className="font-headline font-bold text-sm">
+                  <span className="font-headline font-bold text-sm whitespace-nowrap">
                     {role === "admin" ? "Admin Portal" : "Partner Portal"}
                   </span>
                 </Link>
@@ -111,10 +112,10 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
             ) : null}
             <Link
               to="/profile"
-              className="flex items-center gap-2 px-4 py-2 rounded-full border border-outline-variant/20 hover:bg-surface-container transition-colors"
+              className="flex items-center gap-1.5 lg:gap-2 px-3 lg:px-4 py-2 rounded-full border border-outline-variant/20 hover:bg-surface-container transition-colors shrink-0"
             >
               <span className="material-symbols-outlined text-lg">person</span>
-              <span className="font-headline font-bold text-sm">My Profile</span>
+              <span className="font-headline font-bold text-sm whitespace-nowrap">My Profile</span>
             </Link>
             <Link
               to="/support"

@@ -643,6 +643,22 @@ function Profile({ isLoggedIn, user }) {
                 Online
               </p>
             </div>
+            <div className="pt-2 border-t border-outline-variant/10 flex flex-col gap-2">
+              <Link
+                to="/admin"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl font-headline font-bold text-sm hover:bg-primary/90 transition-all shadow-sm"
+              >
+                <span className="material-symbols-outlined text-[18px]">dashboard</span>
+                Open Admin Portal
+              </Link>
+              <Link
+                to="/partner/scanner"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200/60 rounded-xl font-headline font-bold text-sm hover:bg-amber-100 transition-colors"
+              >
+                <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+                Open Ticket Scanner
+              </Link>
+            </div>
           </div>
         </div>
       ) : hasLinkedBrand ? (
@@ -671,6 +687,22 @@ function Profile({ isLoggedIn, user }) {
               <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Live deals</p>
               <p className="font-headline font-bold text-on-background">{activeDealsCount}</p>
             </div>
+          </div>
+          <div className="pt-2 border-t border-outline-variant/10 flex flex-col gap-2 w-full">
+            <Link
+              to="/partner"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-primary text-on-primary rounded-xl font-headline font-bold text-sm hover:bg-primary/90 transition-all shadow-sm"
+            >
+              <span className="material-symbols-outlined text-[18px]">storefront</span>
+              Open Partner Portal
+            </Link>
+            <Link
+              to="/partner/scanner"
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-amber-50 text-amber-800 border border-amber-200/60 rounded-xl font-headline font-bold text-sm hover:bg-amber-100 transition-colors"
+            >
+              <span className="material-symbols-outlined text-[18px]">qr_code_scanner</span>
+              Open Ticket Scanner
+            </Link>
           </div>
         </div>
       ) : (

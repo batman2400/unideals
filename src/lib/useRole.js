@@ -180,9 +180,12 @@ export function useRole() {
           void supabase.rpc("expire_stale_student_verifications").catch(() => {});
         }
 
-        let resolvedRole = initialCache?.role || null;
-        let resolvedIsVerified = initialCache?.isVerified || false;
-        let resolvedVerifiedAt = initialCache?.verifiedAt || null;
+        const isCacheValidForUser = Boolean(
+          initialCache?.userId && initialCache.userId === nextUser.id,
+        );
+        let resolvedRole = isCacheValidForUser ? initialCache?.role : null;
+        let resolvedIsVerified = isCacheValidForUser ? (initialCache?.isVerified || false) : false;
+        let resolvedVerifiedAt = isCacheValidForUser ? (initialCache?.verifiedAt || null) : null;
 
         let { data: roleRow, error: roleQueryError } = await supabase
           .from("user_roles")
