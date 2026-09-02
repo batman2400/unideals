@@ -26,6 +26,7 @@ import {
   getOAuthRedirectUrl,
   rememberReturnPath,
 } from "../lib/authRedirect";
+import PasswordInput from "./PasswordInput";
 import {
   EXISTING_ACCOUNT_MESSAGE,
   PASSWORD_HINT,
@@ -692,8 +693,7 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                   <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
                     Password
                   </label>
-                  <input
-                    type="password"
+                  <PasswordInput
                     autoComplete={activeTab === "signup" ? "new-password" : "current-password"}
                     placeholder="••••••••"
                     value={password}

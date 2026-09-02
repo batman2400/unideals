@@ -10,6 +10,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
+import PasswordInput from "../components/PasswordInput";
 
 // If the credential in the URL cannot be exchanged within this window,
 // something is wrong with it and waiting longer just looks like a hang.
@@ -263,8 +264,7 @@ export default function ResetPassword() {
           <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
             New Password
           </label>
-          <input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             placeholder="••••••••"
             value={password}
@@ -282,8 +282,7 @@ export default function ResetPassword() {
           <label className="block text-xs font-bold tracking-[0.15em] text-on-surface-variant uppercase mb-2">
             Confirm New Password
           </label>
-          <input
-            type="password"
+          <PasswordInput
             autoComplete="new-password"
             placeholder="••••••••"
             value={confirmPassword}

@@ -21,6 +21,7 @@ import { OFFICIAL_CATEGORIES } from "../lib/categories";
 import { asHttpUrl } from "../lib/httpUrl";
 import { uploadBrandLogo } from "../lib/brandLogoUpload";
 import StudentVerificationCard from "../components/StudentVerificationCard";
+import PasswordInput from "../components/PasswordInput";
 import { formatVerificationExpiry } from "../lib/studentVerification";
 import { QRCodeSVG } from "qrcode.react";
 
@@ -490,6 +491,7 @@ function Profile({ isLoggedIn, user }) {
   };
 
   // ── Settings form state ─────────────────────────────
+  const [settingsCurrentPassword, setSettingsCurrentPassword] = useState("");
   const [settingsPassword, setSettingsPassword] = useState("");
   const [settingsSaved, setSettingsSaved] = useState(false);
 
@@ -501,6 +503,10 @@ function Profile({ isLoggedIn, user }) {
     setSettingsError("");
 
     if (settingsPassword) {
+      if (!settingsCurrentPassword) {
+        setSettingsError("Enter your current password to set a new one.");
+        return;
+      }
       const strengthError = validatePasswordStrength(settingsPassword);
       if (strengthError) {
         setSettingsError(strengthError);
@@ -513,11 +519,13 @@ function Profile({ isLoggedIn, user }) {
       const updates = {};
       if (settingsPassword) {
         updates.password = settingsPassword;
+        updates.current_password = settingsCurrentPassword;
       }
       if (Object.keys(updates).length > 0) {
         const { error } = await supabase.auth.updateUser(updates);
         if (error) throw error;
       }
+      setSettingsCurrentPassword("");
       setSettingsPassword("");
       flashSaved(setSettingsSaved);
     } catch (err) {
@@ -1142,8 +1150,12 @@ function Profile({ isLoggedIn, user }) {
             <h3 className="font-headline font-bold text-base text-on-background mb-4">Account Security</h3>
             <form onSubmit={handleSettingsSave} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Change Password</label>
-                <input type="password" autoComplete="new-password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">Current password</label>
+                <PasswordInput autoComplete="current-password" placeholder="Required to change password" value={settingsCurrentPassword} onChange={(e) => setSettingsCurrentPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-1.5">New password</label>
+                <PasswordInput autoComplete="new-password" placeholder="Leave blank to keep current" value={settingsPassword} onChange={(e) => setSettingsPassword(e.target.value)} className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[44px] text-sm text-on-background focus:outline-none focus:border-primary transition-all" />
                 <p className="text-[11px] text-on-surface-variant/70 mt-1.5">{PASSWORD_HINT}</p>
               </div>
               <button type="submit" disabled={settingsSaving} className="min-h-[44px] px-6 py-3 bg-primary/10 text-primary hover:bg-primary/20 font-bold text-sm rounded-xl transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
