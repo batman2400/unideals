@@ -3,7 +3,7 @@
  *
  * A dynamic, auto-rotating hero carousel with 4 themed slides.
  * Features:
- *   - Crossfade + blur transitions between slides
+ *   - Horizontal GPU slide (no blur / scale jitter)
  *   - Auto-advance every 5 seconds with progress bar
  *   - Pause on hover for accessibility
  *   - Swipe / drag plus manual dot navigation
@@ -14,12 +14,15 @@
  *   - searchQuery    : string — current search text
  *   - onSearchChange : function — updates search text
  */
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useDeals } from "../lib/useDeals";
 import { resolveBrandExplorePath } from "../lib/seo";
 
-const SLIDE_INTERVAL = 5000; // 5 seconds per slide
+const SLIDE_INTERVAL = 5000;
+const SWIPE_THRESHOLD_PX = 48;
+const SLIDE_EASE = "cubic-bezier(0.22, 1, 0.36, 1)";
+const SLIDE_MS = 480;
 
 const slides = [
   {
@@ -31,7 +34,6 @@ const slides = [
     cta: "Browse All Deals",
     link: "/deals",
     icon: "school",
-    gradient: "from-[#29695b] to-[#1a5c4f]",
     accentColor: "#afefdd",
     bgAccent:
       "radial-gradient(ellipse at 20% 80%, rgba(175,239,221,0.15) 0%, transparent 60%)",
@@ -45,7 +47,6 @@ const slides = [
     cta: "See What's New",
     link: "/deals",
     icon: "local_fire_department",
-    gradient: "from-[#c7522a] to-[#e8734a]",
     accentColor: "#ffd4c4",
     bgAccent:
       "radial-gradient(ellipse at 80% 20%, rgba(199,82,42,0.1) 0%, transparent 60%)",
@@ -59,7 +60,6 @@ const slides = [
     cta: "Explore Brands",
     link: "/brands",
     icon: "verified",
-    gradient: "from-[#2d5aa0] to-[#4a7fd4]",
     accentColor: "#c4deff",
     bgAccent:
       "radial-gradient(ellipse at 70% 70%, rgba(45,90,160,0.1) 0%, transparent 60%)",
@@ -73,12 +73,20 @@ const slides = [
     cta: "Find In-Store Deals",
     link: "/deals",
     icon: "storefront",
-    gradient: "from-[#7c4dab] to-[#a872d9]",
     accentColor: "#e4d4ff",
     bgAccent:
       "radial-gradient(ellipse at 30% 30%, rgba(124,77,171,0.1) 0%, transparent 60%)",
   },
 ];
+
+const SLIDE_COUNT = slides.length;
+const TRACK_SLIDES = [slides[SLIDE_COUNT - 1], ...slides, slides[0]];
+
+function displayIndexFromTrack(trackIndex) {
+  if (trackIndex <= 0) return SLIDE_COUNT - 1;
+  if (trackIndex >= SLIDE_COUNT + 1) return 0;
+  return trackIndex - 1;
+}
 
 function HeroSection({ searchQuery, onSearchChange }) {
   const navigate = useNavigate();
@@ -87,38 +95,43 @@ function HeroSection({ searchQuery, onSearchChange }) {
     () => deals.map((deal) => deal.brand).filter(Boolean),
     [deals],
   );
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [exitIndex, setExitIndex] = useState(null);
+  const [trackIndex, setTrackIndex] = useState(1);
+  const [withTransition, setWithTransition] = useState(true);
+  const [dragOffset, setDragOffset] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const timerRef = useRef(null);
   const progressRef = useRef(null);
-  const exitTimeoutRef = useRef(null);
-  const activeIndexRef = useRef(0);
+  const trackIndexRef = useRef(1);
   const swipeRef = useRef({ x: 0, y: 0, tracking: false, swiped: false });
 
-  const goToSlide = useCallback((nextIndex) => {
-    const current = activeIndexRef.current;
-    const count = slides.length;
-    const normalized = ((nextIndex % count) + count) % count;
-    if (normalized === current) return;
-    setExitIndex(current);
-    activeIndexRef.current = normalized;
-    setActiveIndex(normalized);
-    clearTimeout(exitTimeoutRef.current);
-    exitTimeoutRef.current = setTimeout(() => setExitIndex(null), 500);
+  const setTrack = useCallback((nextIndex) => {
+    trackIndexRef.current = nextIndex;
+    setTrackIndex(nextIndex);
   }, []);
 
+  const goToSlide = useCallback(
+    (displayIndex) => {
+      const normalized = ((displayIndex % SLIDE_COUNT) + SLIDE_COUNT) % SLIDE_COUNT;
+      setTrack(normalized + 1);
+    },
+    [setTrack],
+  );
+
   const nextSlide = useCallback(() => {
-    goToSlide(activeIndexRef.current + 1);
-  }, [goToSlide]);
+    const current = trackIndexRef.current;
+    if (current >= SLIDE_COUNT + 1) return;
+    setTrack(current + 1);
+  }, [setTrack]);
 
   const prevSlide = useCallback(() => {
-    goToSlide(activeIndexRef.current - 1);
-  }, [goToSlide]);
+    const current = trackIndexRef.current;
+    if (current <= 0) return;
+    setTrack(current - 1);
+  }, [setTrack]);
 
-  // Auto-rotation timer
   useEffect(() => {
-    if (isPaused) {
+    if (isPaused || dragging) {
       clearInterval(timerRef.current);
       return;
     }
@@ -126,21 +139,39 @@ function HeroSection({ searchQuery, onSearchChange }) {
     timerRef.current = setInterval(nextSlide, SLIDE_INTERVAL);
     return () => {
       clearInterval(timerRef.current);
-      clearTimeout(exitTimeoutRef.current);
     };
-  }, [isPaused, nextSlide]);
+  }, [isPaused, dragging, nextSlide]);
 
-  // Reset progress bar animation on slide change
+  const activeIndex = displayIndexFromTrack(trackIndex);
+
   useEffect(() => {
     if (progressRef.current) {
       progressRef.current.style.animation = "none";
-      // Force reflow
       void progressRef.current.offsetHeight;
       progressRef.current.style.animation = "";
     }
   }, [activeIndex]);
 
-  const SWIPE_THRESHOLD_PX = 48;
+  useLayoutEffect(() => {
+    if (withTransition) return undefined;
+    const frame = requestAnimationFrame(() => {
+      requestAnimationFrame(() => setWithTransition(true));
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [withTransition, trackIndex]);
+
+  const handleTransitionEnd = (event) => {
+    if (event.target !== event.currentTarget) return;
+    if (event.propertyName !== "transform") return;
+    const index = trackIndexRef.current;
+    if (index === 0) {
+      setWithTransition(false);
+      setTrack(SLIDE_COUNT);
+    } else if (index === SLIDE_COUNT + 1) {
+      setWithTransition(false);
+      setTrack(1);
+    }
+  };
 
   const handlePointerDown = (event) => {
     if (event.pointerType === "mouse" && event.button !== 0) return;
@@ -150,6 +181,7 @@ function HeroSection({ searchQuery, onSearchChange }) {
       tracking: true,
       swiped: false,
     };
+    setDragging(true);
     event.currentTarget.setPointerCapture(event.pointerId);
   };
 
@@ -160,13 +192,19 @@ function HeroSection({ searchQuery, onSearchChange }) {
     if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
       swipeRef.current.swiped = true;
     }
+    if (swipeRef.current.swiped) {
+      setDragOffset(dx);
+    }
   };
 
-  const handlePointerUp = (event) => {
+  const finishDrag = (clientX, clientY) => {
     if (!swipeRef.current.tracking) return;
-    const dx = event.clientX - swipeRef.current.x;
-    const dy = event.clientY - swipeRef.current.y;
+    const dx = clientX - swipeRef.current.x;
+    const dy = clientY - swipeRef.current.y;
     swipeRef.current.tracking = false;
+    setDragging(false);
+    setDragOffset(0);
+
     const horizontal = Math.abs(dx) >= SWIPE_THRESHOLD_PX && Math.abs(dx) > Math.abs(dy);
     if (!horizontal) {
       swipeRef.current.swiped = false;
@@ -177,9 +215,15 @@ function HeroSection({ searchQuery, onSearchChange }) {
     else prevSlide();
   };
 
+  const handlePointerUp = (event) => {
+    finishDrag(event.clientX, event.clientY);
+  };
+
   const handlePointerCancel = () => {
     swipeRef.current.tracking = false;
     swipeRef.current.swiped = false;
+    setDragging(false);
+    setDragOffset(0);
   };
 
   const handleCarouselClickCapture = (event) => {
@@ -193,8 +237,7 @@ function HeroSection({ searchQuery, onSearchChange }) {
     navigate(resolveBrandExplorePath(searchQuery, brandNames));
   };
 
-  const currentSlide = slides[activeIndex];
-  const exitSlide = exitIndex !== null ? slides[exitIndex] : null;
+  const animate = withTransition && !dragging;
 
   return (
     <section
@@ -202,42 +245,39 @@ function HeroSection({ searchQuery, onSearchChange }) {
       onMouseEnter={() => setIsPaused(true)}
       onMouseLeave={() => setIsPaused(false)}
     >
-      {/* ── Slide Carousel ──────────────────────────────── */}
       <div
         className="relative overflow-hidden rounded-2xl min-h-[220px] md:min-h-[200px] lg:min-h-[240px] mt-4 md:mt-6 touch-pan-y cursor-grab active:cursor-grabbing select-none"
-        style={{ background: currentSlide.bgAccent }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onPointerCancel={handlePointerCancel}
         onClickCapture={handleCarouselClickCapture}
       >
-        {/* Exit slide (fading out) */}
-        {exitSlide && (
-          <div
-            key={`exit-${exitSlide.id}`}
-            className="hero-slide-exit flex flex-col justify-center px-6 md:px-12 py-6 h-full"
-            style={{ background: exitSlide.bgAccent }}
-          >
-            <SlideContent slide={exitSlide} navigate={navigate} />
-          </div>
-        )}
-
-        {/* Active slide (fading in) */}
         <div
-          key={`active-${currentSlide.id}`}
-          className="hero-slide-active flex flex-col justify-center px-6 md:px-12 py-6 h-full"
+          className="hero-slide-track flex h-full w-full"
+          style={{
+            transform: `translate3d(calc(${-trackIndex * 100}% + ${dragOffset}px), 0, 0)`,
+            transition: animate ? `transform ${SLIDE_MS}ms ${SLIDE_EASE}` : "none",
+          }}
+          onTransitionEnd={handleTransitionEnd}
         >
-          <SlideContent slide={currentSlide} navigate={navigate} />
+          {TRACK_SLIDES.map((slide, index) => (
+            <div
+              key={`${slide.id}-${index}`}
+              className="hero-slide-panel flex h-full min-h-[220px] min-w-full w-full shrink-0 grow-0 basis-full flex-col justify-center px-6 py-6 md:min-h-[200px] md:px-12 lg:min-h-[240px]"
+              style={{ background: slide.bgAccent }}
+            >
+              <SlideContent slide={slide} navigate={navigate} interactive={!dragging} />
+            </div>
+          ))}
         </div>
 
-        {/* ── Bottom Bar: Dots + Progress ───────────────── */}
-        <div className="absolute bottom-0 left-0 right-0 px-6 md:px-12 pb-4 flex items-center gap-4">
-          {/* Dot navigation */}
+        <div className="absolute bottom-0 left-0 right-0 z-10 px-6 md:px-12 pb-4 flex items-center gap-4">
           <div className="flex gap-2">
             {slides.map((s, i) => (
               <button
                 key={s.id}
+                type="button"
                 onClick={() => goToSlide(i)}
                 aria-label={`Go to slide ${i + 1}`}
                 className={`rounded-full transition-all duration-300 ${
@@ -249,27 +289,24 @@ function HeroSection({ searchQuery, onSearchChange }) {
             ))}
           </div>
 
-          {/* Progress bar */}
           <div className="flex-1 h-0.5 bg-outline-variant/15 rounded-full overflow-hidden">
             <div
               ref={progressRef}
               className="h-full bg-primary/50 rounded-full hero-progress-bar"
               style={{
                 animationDuration: `${SLIDE_INTERVAL}ms`,
-                animationPlayState: isPaused ? "paused" : "running",
+                animationPlayState: isPaused || dragging ? "paused" : "running",
               }}
             />
           </div>
 
-          {/* Slide counter */}
           <span className="text-xs font-headline font-bold text-on-surface-variant/40 tabular-nums tracking-wider">
             {String(activeIndex + 1).padStart(2, "0")} /{" "}
-            {String(slides.length).padStart(2, "0")}
+            {String(SLIDE_COUNT).padStart(2, "0")}
           </span>
         </div>
       </div>
 
-      {/* ── Search Bar (fixed below slides) ─────────────── */}
       <div className="w-full max-w-2xl mx-auto mt-10 md:mt-12">
         <div className="mb-3 flex items-baseline justify-between gap-3 pl-1">
           <label
@@ -314,10 +351,9 @@ function HeroSection({ searchQuery, onSearchChange }) {
   );
 }
 
-/* ── Individual Slide Content ──────────────────────────── */
-function SlideContent({ slide, navigate }) {
+function SlideContent({ slide, navigate, interactive = true }) {
   return (
-    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 w-full pb-6 md:pb-8">
+    <div className={`flex flex-col md:flex-row md:items-center justify-between gap-4 w-full pb-6 md:pb-8 ${interactive ? "" : "pointer-events-none"}`}>
       <div className="flex-1">
         <div className="flex items-center gap-2 mb-1.5 md:mb-2">
           <span
@@ -348,6 +384,7 @@ function SlideContent({ slide, navigate }) {
       </div>
 
       <button
+        type="button"
         onClick={() => navigate(slide.link)}
         className="inline-flex items-center justify-center gap-2 w-full md:w-auto emerald-gradient text-on-primary px-5 py-2.5 rounded-xl font-headline font-bold text-xs md:text-sm tracking-tight shadow-md hover:shadow-lg active:scale-[0.97] transition-all whitespace-nowrap mt-2 md:mt-0"
       >
