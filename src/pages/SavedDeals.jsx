@@ -1,50 +1,76 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
-import { useDeals } from "../lib/useDeals";
+import { unsaveDeal, usePublicDealsByIds } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
 import DealGrid from "../components/DealGrid";
 import DealsLoader from "../components/DealsLoader";
 
 export default function SavedDeals() {
-  const { deals, loading: dealsLoading, error: dealsError } = useDeals();
   const { user } = useRoleContext();
+  const userId = user?.id ?? null;
 
   const [savedDealIds, setSavedDealIds] = useState([]);
-  const [savedLoading, setSavedLoading] = useState(true);
+  const [savedLoading, setSavedLoading] = useState(Boolean(userId));
   const [savedError, setSavedError] = useState(null);
 
   useEffect(() => {
-    let active = true;
+    let cancelled = false;
+
     async function fetchSaved() {
-      if (!user) {
+      if (!userId) {
+        setSavedDealIds([]);
         setSavedError(null);
         setSavedLoading(false);
         return;
       }
+
       setSavedLoading(true);
       setSavedError(null);
+
       const { data, error } = await supabase
         .from("saved_deals")
         .select("deal_id")
-        .eq("user_id", user.id);
-      
-      if (active && !error) {
-        setSavedDealIds(data ? data.map((d) => d.deal_id) : []);
-        setSavedError(null);
-        setSavedLoading(false);
-      } else if (active && error) {
+        .eq("user_id", userId);
+
+      if (cancelled) return;
+
+      if (error) {
         setSavedError(error.message || "Could not load your saved deals.");
+        setSavedDealIds([]);
         setSavedLoading(false);
+        return;
       }
+
+      setSavedDealIds(
+        (data ?? [])
+          .map((row) => Number(row.deal_id))
+          .filter((id) => Number.isInteger(id) && id > 0),
+      );
+      setSavedLoading(false);
     }
+
     fetchSaved();
     return () => {
-      active = false;
+      cancelled = true;
     };
-  }, [user]);
+  }, [userId]);
 
-  const savedDeals = deals.filter((d) => savedDealIds.includes(d.id));
+  const { dealsById, loading: detailsLoading } = usePublicDealsByIds(savedDealIds);
+
+  const savedDeals = useMemo(
+    () => savedDealIds.map((id) => dealsById[id]).filter(Boolean),
+    [savedDealIds, dealsById],
+  );
+
+  const savedIdSet = useMemo(() => new Set(savedDealIds), [savedDealIds]);
+
+  const toggleSave = useCallback(async (dealId) => {
+    await unsaveDeal(dealId);
+    setSavedDealIds((previous) => previous.filter((id) => id !== Number(dealId)));
+  }, []);
+
+  const loading = savedLoading || detailsLoading;
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 animate-fade-in">
@@ -68,14 +94,15 @@ export default function SavedDeals() {
         </Link>
       </div>
 
-      {dealsLoading || dealsError || savedLoading ? (
-        <DealsLoader
-          loading={dealsLoading || savedLoading}
-          error={dealsError || savedError}
-        />
+      {loading ? (
+        <DealsLoader loading error={null} />
+      ) : savedError ? (
+        <DealsLoader loading={false} error={savedError} />
       ) : (
         <DealGrid
           deals={savedDeals}
+          savedIds={savedIdSet}
+          onToggleSave={toggleSave}
           emptyTitle="Nothing saved yet"
           emptyMessage="Tap the heart on a deal to keep it here."
         />

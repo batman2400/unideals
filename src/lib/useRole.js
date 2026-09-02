@@ -118,7 +118,13 @@ export function useRole() {
 
         if (!active) return;
 
-        setUser(nextUser);
+        // Keep the same object when the uid is unchanged so pages that
+        // depend on `user` (Saved Deals) do not refetch on every token refresh.
+        setUser((previous) => {
+          if (!nextUser) return null;
+          if (previous?.id === nextUser.id) return previous;
+          return nextUser;
+        });
         attachRoleChannel(nextUser?.id ?? null);
 
         if (!nextUser) {
