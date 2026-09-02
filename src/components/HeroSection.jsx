@@ -6,7 +6,7 @@
  *   - Crossfade + blur transitions between slides
  *   - Auto-advance every 5 seconds with progress bar
  *   - Pause on hover for accessibility
- *   - Manual dot navigation
+ *   - Swipe / drag plus manual dot navigation
  *   - Search bar pinned below the carousel
  *   - Fully responsive
  *
@@ -93,22 +93,28 @@ function HeroSection({ searchQuery, onSearchChange }) {
   const timerRef = useRef(null);
   const progressRef = useRef(null);
   const exitTimeoutRef = useRef(null);
+  const activeIndexRef = useRef(0);
+  const swipeRef = useRef({ x: 0, y: 0, tracking: false, swiped: false });
 
-  const goToSlide = useCallback(
-    (nextIndex) => {
-      if (nextIndex === activeIndex) return;
-      setExitIndex(activeIndex);
-      setActiveIndex(nextIndex);
-      // Clear exit slide after animation completes
-      clearTimeout(exitTimeoutRef.current);
-      exitTimeoutRef.current = setTimeout(() => setExitIndex(null), 500);
-    },
-    [activeIndex],
-  );
+  const goToSlide = useCallback((nextIndex) => {
+    const current = activeIndexRef.current;
+    const count = slides.length;
+    const normalized = ((nextIndex % count) + count) % count;
+    if (normalized === current) return;
+    setExitIndex(current);
+    activeIndexRef.current = normalized;
+    setActiveIndex(normalized);
+    clearTimeout(exitTimeoutRef.current);
+    exitTimeoutRef.current = setTimeout(() => setExitIndex(null), 500);
+  }, []);
 
   const nextSlide = useCallback(() => {
-    goToSlide((activeIndex + 1) % slides.length);
-  }, [activeIndex, goToSlide]);
+    goToSlide(activeIndexRef.current + 1);
+  }, [goToSlide]);
+
+  const prevSlide = useCallback(() => {
+    goToSlide(activeIndexRef.current - 1);
+  }, [goToSlide]);
 
   // Auto-rotation timer
   useEffect(() => {
@@ -134,6 +140,55 @@ function HeroSection({ searchQuery, onSearchChange }) {
     }
   }, [activeIndex]);
 
+  const SWIPE_THRESHOLD_PX = 48;
+
+  const handlePointerDown = (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) return;
+    swipeRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      tracking: true,
+      swiped: false,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event) => {
+    if (!swipeRef.current.tracking) return;
+    const dx = event.clientX - swipeRef.current.x;
+    const dy = event.clientY - swipeRef.current.y;
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy)) {
+      swipeRef.current.swiped = true;
+    }
+  };
+
+  const handlePointerUp = (event) => {
+    if (!swipeRef.current.tracking) return;
+    const dx = event.clientX - swipeRef.current.x;
+    const dy = event.clientY - swipeRef.current.y;
+    swipeRef.current.tracking = false;
+    const horizontal = Math.abs(dx) >= SWIPE_THRESHOLD_PX && Math.abs(dx) > Math.abs(dy);
+    if (!horizontal) {
+      swipeRef.current.swiped = false;
+      return;
+    }
+    swipeRef.current.swiped = true;
+    if (dx < 0) nextSlide();
+    else prevSlide();
+  };
+
+  const handlePointerCancel = () => {
+    swipeRef.current.tracking = false;
+    swipeRef.current.swiped = false;
+  };
+
+  const handleCarouselClickCapture = (event) => {
+    if (!swipeRef.current.swiped) return;
+    event.preventDefault();
+    event.stopPropagation();
+    swipeRef.current.swiped = false;
+  };
+
   const handleSearchSubmit = () => {
     navigate(resolveBrandExplorePath(searchQuery, brandNames));
   };
@@ -149,8 +204,13 @@ function HeroSection({ searchQuery, onSearchChange }) {
     >
       {/* ── Slide Carousel ──────────────────────────────── */}
       <div
-        className="relative overflow-hidden rounded-2xl min-h-[220px] md:min-h-[200px] lg:min-h-[240px] mt-4 md:mt-6"
+        className="relative overflow-hidden rounded-2xl min-h-[220px] md:min-h-[200px] lg:min-h-[240px] mt-4 md:mt-6 touch-pan-y cursor-grab active:cursor-grabbing select-none"
         style={{ background: currentSlide.bgAccent }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerCancel}
+        onClickCapture={handleCarouselClickCapture}
       >
         {/* Exit slide (fading out) */}
         {exitSlide && (
