@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.192.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.39.3";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 
 import {
   MAIL_FOOTER,
@@ -10,9 +10,10 @@ import {
 const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 
-const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+const admin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+  auth: { persistSession: false, autoRefreshToken: false },
+});
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -47,18 +48,18 @@ serve(async (req) => {
 
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
-    if (!authHeader.startsWith("Bearer ")) {
+    const jwt = authHeader.replace(/^Bearer\s+/i, "").trim();
+    if (!jwt) {
       return json({ success: false, error: "Not authenticated" }, 401);
     }
 
     // Resolve the caller from their own JWT so the OTP can never be
-    // requested on behalf of somebody else.
-    const caller = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-
-    const { data: userData, error: userError } = await caller.auth.getUser();
+    // requested on behalf of somebody else. Pass the token into getUser
+    // — a second anon client with only global Authorization headers does
+    // not reliably attach the student session.
+    const { data: userData, error: userError } = await admin.auth.getUser(jwt);
     if (userError || !userData?.user) {
+      console.error("send-verification-otp getUser:", userError?.message);
       return json({ success: false, error: "Not authenticated" }, 401);
     }
 

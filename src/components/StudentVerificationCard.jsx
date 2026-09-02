@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { isAllowedStudentEmail } from "../lib/studentEmailDomain";
+import {
+  SESSION_EXPIRED_MESSAGE,
+  explainAuthFailure,
+  invokeAuthedFunction,
+  promptSignIn,
+  requireAccessToken,
+} from "../lib/authSession";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -14,6 +21,14 @@ function validateImageUpload(file) {
     return `That file is ${(file.size / 1024 / 1024).toFixed(1)}MB. The limit is 5MB.`;
   }
   return null;
+}
+
+function showAuthError(setter, message) {
+  const text = explainAuthFailure(message);
+  setter(text);
+  if (text === SESSION_EXPIRED_MESSAGE) {
+    promptSignIn();
+  }
 }
 
 function FileDrop({ label, file, onChange }) {
@@ -166,8 +181,8 @@ function StudentVerificationCard({
 
     setUniVerifying(true);
     try {
-      const { data, error } = await supabase.functions.invoke("send-verification-otp", {
-        body: { email: normalized },
+      const { data, error } = await invokeAuthedFunction("send-verification-otp", {
+        email: normalized,
       });
       if (data?.success) {
         setVerificationStep(2);
@@ -178,9 +193,12 @@ function StudentVerificationCard({
       if (!reason && error?.context?.json) {
         reason = (await error.context.json().catch(() => null))?.error;
       }
-      setUniError(reason || "Failed to send the verification code.");
+      showAuthError(setUniError, reason || "Failed to send the verification code.");
     } catch (err) {
-      setUniError("Couldn't send the verification code. Please try again.");
+      showAuthError(
+        setUniError,
+        err?.message || "Couldn't send the verification code. Please try again.",
+      );
     } finally {
       setUniVerifying(false);
     }
@@ -195,6 +213,7 @@ function StudentVerificationCard({
     }
     setUniVerifying(true);
     try {
+      await requireAccessToken();
       const [frontPath, backPath] = await Promise.all([
         uploadIdPhoto(emailFrontFile, "front"),
         uploadIdPhoto(emailBackFile, "back"),
@@ -213,10 +232,10 @@ function StudentVerificationCard({
         await refreshRequest();
         onSubmitted?.();
       } else {
-        setUniError(data?.error || "Verification failed.");
+        showAuthError(setUniError, data?.error || "Verification failed.");
       }
     } catch (err) {
-      setUniError(err.message || "An error occurred.");
+      showAuthError(setUniError, err.message || "An error occurred.");
     } finally {
       setUniVerifying(false);
     }
@@ -235,6 +254,7 @@ function StudentVerificationCard({
     }
     setManualVerifying(true);
     try {
+      await requireAccessToken();
       const [frontPath, backPath] = await Promise.all([
         uploadIdPhoto(manualFrontFile, "front"),
         uploadIdPhoto(manualBackFile, "back"),
@@ -253,10 +273,16 @@ function StudentVerificationCard({
         await refreshRequest();
         onSubmitted?.();
       } else {
-        setManualError(data?.error || "Failed to submit verification request.");
+        showAuthError(
+          setManualError,
+          data?.error || "Failed to submit verification request.",
+        );
       }
     } catch (err) {
-      setManualError(err.message || "An error occurred during submission.");
+      showAuthError(
+        setManualError,
+        err.message || "An error occurred during submission.",
+      );
     } finally {
       setManualVerifying(false);
     }
