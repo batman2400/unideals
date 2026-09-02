@@ -148,7 +148,7 @@ export default function Contact() {
             <div className="space-y-4">
               <div>
                 <p className="font-bold text-sm text-on-background mb-1">How do I verify my student status?</p>
-                <p className="text-xs text-on-surface-variant">Sign up, then verify from Profile with a university email or student ID. Status is valid for 12 months and must be renewed each year.</p>
+                <p className="text-xs text-on-surface-variant">Sign up, then verify from Profile. A university email code verifies you immediately; otherwise upload a student ID. Status is valid for 12 months and must be renewed each year.</p>
               </div>
               <div>
                 <p className="font-bold text-sm text-on-background mb-1">Can I submit an event for my society?</p>

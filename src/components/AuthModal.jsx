@@ -674,7 +674,7 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                           mail
                         </span>
                         Sign up with any email — then verify from Profile.
-                        An admin must approve before you can redeem deals.
+                        A university email code verifies you immediately; ID review is only if you do not have one.
                       </p>
                     </div>
                   )}

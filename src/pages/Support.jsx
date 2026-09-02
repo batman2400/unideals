@@ -53,7 +53,7 @@ export default function Support() {
               How do I verify my student status?
             </h3>
             <p className="text-on-surface-variant text-sm leading-relaxed">
-              Open Profile and complete verification. Institute emails use a one-time code to prove inbox ownership; Gmail and school students upload ID. An admin must approve before you can redeem — OTP alone does not verify you. Verification is valid for 12 months.
+              Open Profile and complete verification. A correct code sent to your university email verifies you immediately. Gmail and school students upload a student ID for admin review. Verification is valid for 12 months.
             </p>
           </div>
           <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">

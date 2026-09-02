@@ -189,8 +189,8 @@ function AdminVerifications() {
           Student Moderation
         </h1>
         <p className="text-on-surface-variant text-sm">
-          Email OTP is the fast lane after inbox confirmation. Manual includes school students
-          and anyone without an institute email.
+          University-email students are verified by OTP automatically. This page is for
+          leftover email requests and anyone who uploaded a student ID.
         </p>
       </div>
 
@@ -250,7 +250,7 @@ function AdminVerifications() {
           </p>
           <p className="text-on-surface-variant text-sm">
             {queue === "email_otp"
-              ? "No university-email requests are waiting for confirmation."
+              ? "No leftover university-email requests need an ID check."
               : "No manual or school requests are waiting for review."}
           </p>
         </div>

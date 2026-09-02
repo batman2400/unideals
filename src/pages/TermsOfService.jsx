@@ -48,8 +48,8 @@ function TermsOfService() {
             children under 13. You must provide accurate account information
             and maintain the security of your login credentials. Student
             eligibility requires verification of enrolment (university email
-            and/or student ID). Verified student status is valid for 12 months
-            from approval and must be renewed each year to keep unlocking
+            OTP and/or student ID). Verified student status is valid for 12 months
+            from verification and must be renewed each year to keep unlocking
             partner offers. Uni Deals uses role-based access controls, including
             student, partner, and administrator roles, to protect platform
             integrity and ensure users only access permitted features.

@@ -13,7 +13,7 @@ export default function FAQSchema() {
       "name": "How do I claim student offers in Sri Lanka?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Sign up on Uni Deals, then verify from Profile. Institute emails use a one-time code to prove inbox ownership; school students upload ID. An admin must approve before you can redeem — a university email alone does not verify you. Online deals then reveal a promo code; in-store deals generate a timed ticket on the deal page."
+        "text": "Sign up on Uni Deals, then verify from Profile. A correct code sent to your university email verifies you immediately. School students and anyone without an institute email upload a student ID for admin review. Online deals then reveal a promo code; in-store deals generate a timed ticket on the deal page."
       }
     },
     {
@@ -29,7 +29,7 @@ export default function FAQSchema() {
       "name": "Is my university email eligible for student deals?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Institute emails (.ac.lk, .edu, and other listed campuses) can prove inbox ownership with a one-time code, then upload student ID for admin review. Gmail and school students use the manual ID path. Eligibility is confirmed only after an admin approves."
+        "text": "Institute emails (.ac.lk, .edu, and other listed campuses) are verified when you enter the one-time code sent to that inbox. Gmail and school students use the manual ID path, which an admin reviews."
       }
     }
   ]

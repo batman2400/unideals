@@ -1,6 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { isAllowedStudentEmail } from "../lib/studentEmailDomain";
+import {
+  OTHER_UNIVERSITY,
+  emailMatchesUniversity,
+  findUniversityByEmail,
+  mergeUniversityOptions,
+} from "../lib/universities";
 import {
   SESSION_EXPIRED_MESSAGE,
   explainAuthFailure,
@@ -56,6 +62,132 @@ function FileDrop({ label, file, onChange }) {
   );
 }
 
+function UniversitySelect({
+  universities,
+  value,
+  onChange,
+  otherName,
+  onOtherNameChange,
+  inputClass,
+  id,
+}) {
+  return (
+    <div className="space-y-3">
+      <div>
+        <label htmlFor={id} className="sr-only">
+          University
+        </label>
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${inputClass} appearance-none cursor-pointer`}
+        >
+          <option value="">Select your university</option>
+          {universities.map((uni) => (
+            <option key={uni.name} value={uni.name}>
+              {uni.name}
+            </option>
+          ))}
+          <option value={OTHER_UNIVERSITY}>Other / not listed</option>
+        </select>
+      </div>
+      {value === OTHER_UNIVERSITY ? (
+        <input
+          type="text"
+          placeholder="University or institute name"
+          value={otherName}
+          onChange={(e) => onOtherNameChange(e.target.value)}
+          className={inputClass}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function EmailOtpForm({
+  intro,
+  selectId,
+  universities,
+  selectedUni,
+  onSelectedUniChange,
+  otherUniName,
+  onOtherUniNameChange,
+  uniEmail,
+  onUniEmailChange,
+  verificationStep,
+  otpCode,
+  onOtpCodeChange,
+  uniError,
+  uniVerifying,
+  resendCooldown,
+  onRequest,
+  onConfirm,
+  inputClass,
+}) {
+  return (
+    <form
+      onSubmit={verificationStep === 1 ? onRequest : onConfirm}
+      className="space-y-4"
+    >
+      <p className="text-sm text-on-surface-variant">{intro}</p>
+      <UniversitySelect
+        id={selectId}
+        universities={universities}
+        value={selectedUni}
+        onChange={onSelectedUniChange}
+        otherName={otherUniName}
+        onOtherNameChange={onOtherUniNameChange}
+        inputClass={inputClass}
+      />
+      <input
+        type="email"
+        placeholder="you@university.ac.lk"
+        value={uniEmail}
+        onChange={onUniEmailChange}
+        className={inputClass}
+      />
+      {verificationStep === 2 ? (
+        <>
+          <p className="text-sm text-on-surface-variant">
+            Enter the 6-digit code sent to {uniEmail.trim().toLowerCase()}.
+          </p>
+          <input
+            type="text"
+            placeholder="6-digit code"
+            value={otpCode}
+            onChange={onOtpCodeChange}
+            maxLength={6}
+            className={`${inputClass} tracking-widest font-mono`}
+          />
+          <button
+            type="button"
+            onClick={onRequest}
+            disabled={resendCooldown > 0 || uniVerifying}
+            className="text-primary font-bold text-sm hover:underline disabled:opacity-50"
+          >
+            {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
+          </button>
+        </>
+      ) : null}
+      {uniError ? (
+        <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{uniError}</p>
+      ) : null}
+      <button
+        type="submit"
+        disabled={uniVerifying}
+        className="w-full min-h-[44px] px-6 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50"
+      >
+        {uniVerifying
+          ? "Please wait..."
+          : verificationStep === 1
+            ? "Send verification code"
+            : "Confirm code"}
+      </button>
+    </form>
+  );
+}
+
 function StudentVerificationCard({
   user,
   isSchoolStudent,
@@ -72,21 +204,21 @@ function StudentVerificationCard({
   const [path, setPath] = useState(isSchoolStudent ? "manual" : "email_otp");
   const [request, setRequest] = useState(null);
   const [allowedDomains, setAllowedDomains] = useState([]);
+  const [dbUniversities, setDbUniversities] = useState([]);
 
   const [verificationStep, setVerificationStep] = useState(1);
   const [uniEmail, setUniEmail] = useState("");
   const [otpCode, setOtpCode] = useState("");
-  const [emailInstName, setEmailInstName] = useState("");
-  const [emailCourse, setEmailCourse] = useState("");
-  const [emailStudentId, setEmailStudentId] = useState("");
-  const [emailFrontFile, setEmailFrontFile] = useState(null);
-  const [emailBackFile, setEmailBackFile] = useState(null);
+  const [selectedUni, setSelectedUni] = useState("");
+  const [otherUniName, setOtherUniName] = useState("");
   const [uniVerifying, setUniVerifying] = useState(false);
   const [uniError, setUniError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const [manualInstType, setManualInstType] = useState(isSchoolStudent ? "school" : "university");
   const [manualInstName, setManualInstName] = useState("");
+  const [manualSelectedUni, setManualSelectedUni] = useState("");
+  const [manualOtherUniName, setManualOtherUniName] = useState("");
   const [manualCourse, setManualCourse] = useState("");
   const [manualStudentId, setManualStudentId] = useState("");
   const [manualFrontFile, setManualFrontFile] = useState(null);
@@ -94,9 +226,24 @@ function StudentVerificationCard({
   const [manualVerifying, setManualVerifying] = useState(false);
   const [manualError, setManualError] = useState("");
 
-  const inFlight =
-    request?.status === "pending" || request?.status === "awaiting_confirmation";
+  const universities = useMemo(
+    () => mergeUniversityOptions(dbUniversities),
+    [dbUniversities],
+  );
+
+  const inFlight = request?.status === "pending";
   const isRejected = request?.status === "rejected";
+
+  const chosenUniversityName = () => {
+    if (selectedUni === OTHER_UNIVERSITY) return otherUniName.trim();
+    return selectedUni.trim();
+  };
+
+  const chosenManualUniversityName = () => {
+    if (manualInstType === "school") return manualInstName.trim();
+    if (manualSelectedUni === OTHER_UNIVERSITY) return manualOtherUniName.trim();
+    return manualSelectedUni.trim();
+  };
 
   const refreshRequest = async () => {
     if (!user) return null;
@@ -104,16 +251,14 @@ function StudentVerificationCard({
       .from("manual_verifications")
       .select("id, status, method, reject_reason")
       .eq("user_id", user.id)
-      .in("status", ["pending", "awaiting_confirmation", "rejected"])
+      .in("status", ["pending", "rejected"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
     if (error) return null;
     const next = data ?? null;
     setRequest(next);
-    onInFlightChange?.(
-      next?.status === "pending" || next?.status === "awaiting_confirmation",
-    );
+    onInFlightChange?.(next?.status === "pending");
     return next;
   };
 
@@ -132,9 +277,12 @@ function StudentVerificationCard({
   useEffect(() => {
     let active = true;
     async function load() {
-      const { data, error } = await supabase.from("allowed_domains").select("domain");
+      const { data, error } = await supabase
+        .from("allowed_domains")
+        .select("domain, institution_name");
       if (active && !error && data) {
         setAllowedDomains(data.map((d) => d.domain.toLowerCase()));
+        setDbUniversities(data);
       }
     }
     load();
@@ -158,10 +306,23 @@ function StudentVerificationCard({
     return () => clearInterval(timer);
   }, [resendCooldown]);
 
+  const applyEmailUniversityMatch = (email) => {
+    const match = findUniversityByEmail(email, universities);
+    if (match) {
+      setSelectedUni(match.name);
+      setOtherUniName("");
+    }
+  };
+
   const handleRequestVerification = async (e) => {
     e?.preventDefault();
     setUniError("");
     const normalized = uniEmail.trim().toLowerCase();
+    const institution = chosenUniversityName();
+    if (!institution) {
+      setUniError("Please choose your university.");
+      return;
+    }
     if (!normalized.includes("@")) {
       setUniError("Please enter a valid email address.");
       return;
@@ -170,12 +331,13 @@ function StudentVerificationCard({
       setUniError("Please use your official university or institutional student email address.");
       return;
     }
-    if (!emailInstName.trim() || !emailCourse.trim() || !emailStudentId.trim()) {
-      setUniError("Institution, course, and student ID are required.");
-      return;
-    }
-    if (!emailFrontFile || !emailBackFile) {
-      setUniError("Upload the front and back of your student ID.");
+    const selected =
+      selectedUni === OTHER_UNIVERSITY
+        ? { name: institution, domains: [] }
+        : universities.find((uni) => uni.name === selectedUni);
+    if (selected && !emailMatchesUniversity(normalized, selected)) {
+      const hint = selected.domains?.[0] ? ` Use your @${selected.domains[0]} address.` : "";
+      setUniError(`That email does not match ${selected.name}.${hint}`);
       return;
     }
 
@@ -207,6 +369,11 @@ function StudentVerificationCard({
   const handleConfirmVerification = async (e) => {
     e.preventDefault();
     setUniError("");
+    const institution = chosenUniversityName();
+    if (!institution) {
+      setUniError("Please choose your university.");
+      return;
+    }
     if (otpCode.length !== 6) {
       setUniError("Please enter a valid 6-digit code.");
       return;
@@ -214,18 +381,14 @@ function StudentVerificationCard({
     setUniVerifying(true);
     try {
       await requireAccessToken();
-      const [frontPath, backPath] = await Promise.all([
-        uploadIdPhoto(emailFrontFile, "front"),
-        uploadIdPhoto(emailBackFile, "back"),
-      ]);
       const { data, error } = await supabase.rpc("confirm_university_verification", {
         entered_email: uniEmail.trim().toLowerCase(),
         entered_code: otpCode,
-        inst_name: emailInstName.trim(),
-        course: emailCourse.trim(),
-        student_id: emailStudentId.trim(),
-        image_url: frontPath,
-        image_back_url: backPath,
+        inst_name: institution,
+        course: null,
+        student_id: null,
+        image_url: null,
+        image_back_url: null,
       });
       if (error) throw error;
       if (data?.success) {
@@ -244,7 +407,8 @@ function StudentVerificationCard({
   const handleManualVerify = async (e) => {
     e.preventDefault();
     setManualError("");
-    if (!manualInstName.trim() || !manualFrontFile || !manualBackFile) {
+    const institution = chosenManualUniversityName();
+    if (!institution || !manualFrontFile || !manualBackFile) {
       setManualError("Institution name and both sides of your student ID are required.");
       return;
     }
@@ -261,7 +425,7 @@ function StudentVerificationCard({
       ]);
       const { data, error } = await supabase.rpc("submit_manual_verification", {
         inst_type: manualInstType,
-        inst_name: manualInstName.trim(),
+        inst_name: institution,
         course: manualCourse.trim(),
         student_id: manualStudentId.trim(),
         email: user?.email || "unknown@example.com",
@@ -310,19 +474,45 @@ function StudentVerificationCard({
           <p className="text-on-surface-variant text-sm mt-1">
             {isSchoolStudent
               ? "School students send both sides of a student ID for admin review. Status is valid for 12 months."
-              : "Use a university email so we can confirm your inbox, then an admin checks your ID. Status is valid for 12 months."}
+              : "A correct code sent to your university email verifies you immediately. Upload a student ID only if you do not have an institute email."}
           </p>
         </div>
       </div>
 
       {inFlight ? (
-        <div className="flex items-center gap-3 p-4 bg-[#d4a017]/10 text-[#d4a017] rounded-xl">
-          <span className="material-symbols-outlined">pending_actions</span>
-          <p className="text-sm font-bold">
-            {request?.status === "awaiting_confirmation"
-              ? "We confirmed your university inbox. An admin will check both sides of your student ID next."
-              : "Both sides of your student ID are with an admin for review."}
-          </p>
+        <div className="space-y-4">
+          <div className="flex items-center gap-3 p-4 bg-[#d4a017]/10 text-[#d4a017] rounded-xl">
+            <span className="material-symbols-outlined">pending_actions</span>
+            <p className="text-sm font-bold">
+              Both sides of your student ID are with an admin for review.
+            </p>
+          </div>
+          {isSchoolStudent ? null : (
+            <EmailOtpForm
+              intro="Have a university email? Choose your university and enter the code we send to verify immediately without waiting for ID review."
+              selectId="pending-verification-university"
+              universities={universities}
+              selectedUni={selectedUni}
+              onSelectedUniChange={setSelectedUni}
+              otherUniName={otherUniName}
+              onOtherUniNameChange={setOtherUniName}
+              uniEmail={uniEmail}
+              onUniEmailChange={(e) => {
+                const next = e.target.value;
+                setUniEmail(next);
+                applyEmailUniversityMatch(next);
+              }}
+              verificationStep={verificationStep}
+              otpCode={otpCode}
+              onOtpCodeChange={(e) => setOtpCode(e.target.value)}
+              uniError={uniError}
+              uniVerifying={uniVerifying}
+              resendCooldown={resendCooldown}
+              onRequest={handleRequestVerification}
+              onConfirm={handleConfirmVerification}
+              inputClass={inputClass}
+            />
+          )}
         </div>
       ) : !formOpen ? (
         <>
@@ -359,7 +549,8 @@ function StudentVerificationCard({
                 {request?.reject_reason || "Please submit a clearer request."}
               </p>
               <p className="text-xs mt-2">
-                Submit again with a clear photo of the front and back of your student ID.
+                Use your university email if you have one, or submit again with a clear photo of
+                the front and back of your student ID.
               </p>
             </div>
           ) : null}
@@ -392,86 +583,30 @@ function StudentVerificationCard({
           )}
 
           {path === "email_otp" && !isSchoolStudent ? (
-            <form
-              onSubmit={verificationStep === 1 ? handleRequestVerification : handleConfirmVerification}
-              className="space-y-4"
-            >
-              <p className="text-sm text-on-surface-variant">
-                We confirm the inbox first, then an admin checks both sides of your student ID.
-                You are not verified until an admin approves. Status lasts 12 months.
-              </p>
-              <input
-                type="email"
-                placeholder="you@university.ac.lk"
-                value={uniEmail}
-                onChange={(e) => setUniEmail(e.target.value)}
-                className={inputClass}
-              />
-              <input
-                type="text"
-                placeholder="Institution name"
-                value={emailInstName}
-                onChange={(e) => setEmailInstName(e.target.value)}
-                className={inputClass}
-              />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input
-                  type="text"
-                  placeholder="Course / faculty"
-                  value={emailCourse}
-                  onChange={(e) => setEmailCourse(e.target.value)}
-                  className={inputClass}
-                />
-                <input
-                  type="text"
-                  placeholder="Student ID number"
-                  value={emailStudentId}
-                  onChange={(e) => setEmailStudentId(e.target.value)}
-                  className={inputClass}
-                />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <FileDrop label="Student ID — front" file={emailFrontFile} onChange={setEmailFrontFile} />
-                <FileDrop label="Student ID — back" file={emailBackFile} onChange={setEmailBackFile} />
-              </div>
-              {verificationStep === 2 ? (
-                <>
-                  <p className="text-sm text-on-surface-variant">
-                    Enter the 6-digit code sent to {uniEmail.trim().toLowerCase()}.
-                  </p>
-                  <input
-                    type="text"
-                    placeholder="6-digit code"
-                    value={otpCode}
-                    onChange={(e) => setOtpCode(e.target.value)}
-                    maxLength={6}
-                    className={`${inputClass} tracking-widest font-mono`}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleRequestVerification}
-                    disabled={resendCooldown > 0 || uniVerifying}
-                    className="text-primary font-bold text-sm hover:underline disabled:opacity-50"
-                  >
-                    {resendCooldown > 0 ? `Resend in ${resendCooldown}s` : "Resend code"}
-                  </button>
-                </>
-              ) : null}
-              {uniError ? (
-                <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{uniError}</p>
-              ) : null}
-              <button
-                type="submit"
-                disabled={uniVerifying}
-                className="w-full min-h-[44px] px-6 py-3 bg-primary text-on-primary font-bold text-sm rounded-xl hover:bg-primary/90 disabled:opacity-50"
-              >
-                {uniVerifying
-                  ? "Please wait..."
-                  : verificationStep === 1
-                    ? "Send verification code"
-                    : "Confirm code"}
-              </button>
-            </form>
+            <EmailOtpForm
+              intro="Choose your university, then enter the 6-digit code we send. A correct code verifies you straight away. Status lasts 12 months."
+              selectId="verification-university"
+              universities={universities}
+              selectedUni={selectedUni}
+              onSelectedUniChange={setSelectedUni}
+              otherUniName={otherUniName}
+              onOtherUniNameChange={setOtherUniName}
+              uniEmail={uniEmail}
+              onUniEmailChange={(e) => {
+                const next = e.target.value;
+                setUniEmail(next);
+                applyEmailUniversityMatch(next);
+              }}
+              verificationStep={verificationStep}
+              otpCode={otpCode}
+              onOtpCodeChange={(e) => setOtpCode(e.target.value)}
+              uniError={uniError}
+              uniVerifying={uniVerifying}
+              resendCooldown={resendCooldown}
+              onRequest={handleRequestVerification}
+              onConfirm={handleConfirmVerification}
+              inputClass={inputClass}
+            />
           ) : (
             <form onSubmit={handleManualVerify} className="space-y-4">
               <p className="text-sm text-on-surface-variant">
@@ -502,14 +637,26 @@ function StudentVerificationCard({
                   School
                 </button>
               </div>
-              <input
-                type="text"
-                required
-                placeholder="Institution name"
-                value={manualInstName}
-                onChange={(e) => setManualInstName(e.target.value)}
-                className={inputClass}
-              />
+              {manualInstType === "university" ? (
+                <UniversitySelect
+                  id="manual-verification-university"
+                  universities={universities}
+                  value={manualSelectedUni}
+                  onChange={setManualSelectedUni}
+                  otherName={manualOtherUniName}
+                  onOtherNameChange={setManualOtherUniName}
+                  inputClass={inputClass}
+                />
+              ) : (
+                <input
+                  type="text"
+                  required
+                  placeholder="School name"
+                  value={manualInstName}
+                  onChange={(e) => setManualInstName(e.target.value)}
+                  className={inputClass}
+                />
+              )}
               {manualInstType === "university" ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <input

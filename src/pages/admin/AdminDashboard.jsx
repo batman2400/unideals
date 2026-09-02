@@ -672,7 +672,7 @@ function AdminDashboard() {
           Manual Verifications
         </h2>
         <p className="text-on-surface-variant text-sm md:text-base max-w-2xl mb-8">
-          Review email-OTP and manual student ID requests. Full queues live on Student Moderation.
+          Review student ID requests. University-email OTP verifies automatically. Full queues live on Student Moderation.
         </p>
 
         {pendingVerifications.length === 0 ? (
