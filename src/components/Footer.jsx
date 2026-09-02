@@ -5,9 +5,31 @@
  * Uses React Router <Link> for the brand name (routes to /)
  * and proper onClick handlers for all interactive elements.
  */
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { shareLink } from "../lib/share";
+import Toast from "./Toast";
 
 function Footer() {
+  const [copied, setCopied] = useState(false);
+  const [toastMessage, setToastMessage] = useState(null);
+
+  const handleShare = async () => {
+    const result = await shareLink({
+      title: "Uni Deals | Sri Lanka's Student Deals & Perks",
+      text: "Check out Uni Deals for exclusive student discounts and perks in Sri Lanka!",
+      url: window.location.origin,
+    });
+
+    if (result.method === "clipboard" && result.success) {
+      setCopied(true);
+      setToastMessage("Link copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
+    } else if (result.error) {
+      setToastMessage("Could not copy link");
+    }
+  };
+
   return (
     <footer className="mt-auto bg-[#f6f3f2] dark:bg-[#1a1a1b] w-full py-10 md:py-12 px-4 sm:px-6 md:px-8">
       <div className="max-w-[1440px] mx-auto flex flex-col md:flex-row justify-between items-center gap-6">
@@ -77,22 +99,38 @@ function Footer() {
           </Link>
         </div>
 
-        {/* Social Icons — log click for now */}
-        <div className="flex gap-4">
+        {/* Action / Share Icons */}
+        <div className="flex items-center gap-3">
           <button
-            onClick={() => alert("Share link copied!")}
-            className="text-[#323233]/40 hover:text-primary transition-colors"
+            type="button"
+            onClick={handleShare}
+            title="Share Uni Deals"
+            aria-label="Share Uni Deals"
+            className="flex items-center justify-center h-9 w-9 rounded-full text-[#323233]/40 hover:text-primary hover:bg-black/5 dark:text-[#fcf9f8]/40 dark:hover:text-primary dark:hover:bg-white/5 transition-all"
           >
-            <span className="material-symbols-outlined">share</span>
+            <span className="material-symbols-outlined text-xl">
+              {copied ? "check" : "share"}
+            </span>
           </button>
-          <button
-            onClick={() => window.open("https://www.unideals.co", "_blank")}
-            className="text-[#323233]/40 hover:text-primary transition-colors"
+          <a
+            href="https://www.unideals.co"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Visit Uni Deals"
+            aria-label="Visit Uni Deals"
+            className="flex items-center justify-center h-9 w-9 rounded-full text-[#323233]/40 hover:text-primary hover:bg-black/5 dark:text-[#fcf9f8]/40 dark:hover:text-primary dark:hover:bg-white/5 transition-all"
           >
-            <span className="material-symbols-outlined">language</span>
-          </button>
+            <span className="material-symbols-outlined text-xl">language</span>
+          </a>
         </div>
       </div>
+
+      {toastMessage && (
+        <Toast
+          message={toastMessage}
+          onClose={() => setToastMessage(null)}
+        />
+      )}
     </footer>
   );
 }

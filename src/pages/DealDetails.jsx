@@ -24,6 +24,8 @@ import DealOfferSchema from "../components/DealOfferSchema";
 import BreadcrumbSchema from "../components/BreadcrumbSchema";
 import RelatedDeals from "../components/RelatedDeals";
 import { trackDealEvent } from "../lib/analytics";
+import { shareLink } from "../lib/share";
+import Toast from "../components/Toast";
 
 function formatDealDate(value) {
   const date = new Date(value);
@@ -740,6 +742,29 @@ function DealDetails() {
     }
   };
 
+  const [dealShared, setDealShared] = useState(false);
+  const [shareToastMessage, setShareToastMessage] = useState(null);
+
+  const handleShareDeal = useCallback(async (e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+
+    const dealHeadline = deal?.headline || deal?.title || "Exclusive Student Deal";
+    const res = await shareLink({
+      title: `${dealHeadline} | Uni Deals`,
+      text: `Check out this student discount from ${deal?.brand || "Uni Deals"} on Uni Deals!`,
+      url: window.location.href,
+    });
+
+    if (res.method === "clipboard" && res.success) {
+      setDealShared(true);
+      setShareToastMessage("Deal link copied to clipboard!");
+      setTimeout(() => setDealShared(false), 2000);
+    } else if (res.error) {
+      setShareToastMessage("Could not copy deal link");
+    }
+  }, [deal]);
+
   if (loading) {
     return (
       <section className="mx-auto max-w-[1440px] animate-fade-in px-4 py-10 md:px-8 md:py-16">
@@ -1011,24 +1036,38 @@ function DealDetails() {
                 {isInStore ? "🏪 In-Store" : "🌐 Online"}
               </span>
 
-              <button
-                type="button"
-                onClick={handleToggleSave}
-                disabled={loadingSave}
-                aria-label={isSaved ? "Remove from saved" : "Save deal"}
-                className={`absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:scale-105 sm:right-4 sm:top-4 ${
-                  loadingSave ? "opacity-50" : ""
-                } ${isSaved ? "text-primary" : "text-on-surface-variant"}`}
-              >
-                <span
-                  className="material-symbols-outlined text-xl"
-                  style={
-                    isSaved ? { fontVariationSettings: "'FILL' 1" } : undefined
-                  }
+              <div className="absolute right-3 top-3 z-10 flex items-center gap-2 sm:right-4 sm:top-4">
+                <button
+                  type="button"
+                  onClick={handleShareDeal}
+                  aria-label="Share deal"
+                  title="Share deal"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-on-surface-variant shadow-sm transition hover:scale-105 hover:text-primary backdrop-blur-sm"
                 >
-                  favorite
-                </span>
-              </button>
+                  <span className="material-symbols-outlined text-xl">
+                    {dealShared ? "check" : "share"}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleToggleSave}
+                  disabled={loadingSave}
+                  aria-label={isSaved ? "Remove from saved" : "Save deal"}
+                  className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:scale-105 backdrop-blur-sm ${
+                    loadingSave ? "opacity-50" : ""
+                  } ${isSaved ? "text-primary" : "text-on-surface-variant"}`}
+                >
+                  <span
+                    className="material-symbols-outlined text-xl"
+                    style={
+                      isSaved ? { fontVariationSettings: "'FILL' 1" } : undefined
+                    }
+                  >
+                    favorite
+                  </span>
+                </button>
+              </div>
 
               <div className="absolute bottom-3 left-3 z-10 h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-primary-container shadow-md sm:bottom-4 sm:left-4">
                 {brandLogoUrl ? (
@@ -1175,6 +1214,12 @@ function DealDetails() {
       </div>
     </article>
     <RelatedDeals deal={deal} />
+    {shareToastMessage && (
+      <Toast
+        message={shareToastMessage}
+        onClose={() => setShareToastMessage(null)}
+      />
+    )}
     </div>
   );
 }
