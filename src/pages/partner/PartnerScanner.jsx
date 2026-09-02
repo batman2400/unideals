@@ -498,7 +498,7 @@ function PartnerScanner() {
                   type="text"
                   value={manualCode}
                   onChange={(e) => setManualCode(e.target.value.toUpperCase())}
-                  placeholder="Ticket Code (e.g. A7X9K2)"
+                  placeholder="Ticket Code (e.g. UD-3978A6)"
                   className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl pl-12 pr-4 py-3 text-sm font-body font-bold tracking-widest focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none uppercase placeholder:font-normal placeholder:tracking-normal"
                 />
               </div>
