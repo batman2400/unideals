@@ -97,13 +97,22 @@ function isFinishedEvent(event, now = new Date()) {
   return now.getTime() - startTime.getTime() >= 24 * 60 * 60 * 1000;
 }
 
+function escapeXml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
 function urlEntry(loc, { lastmod, changefreq, priority } = {}) {
   return [
     "  <url>",
-    `    <loc>${loc}</loc>`,
-    lastmod ? `    <lastmod>${lastmod}</lastmod>` : null,
-    changefreq ? `    <changefreq>${changefreq}</changefreq>` : null,
-    priority ? `    <priority>${priority}</priority>` : null,
+    `    <loc>${escapeXml(loc)}</loc>`,
+    lastmod ? `    <lastmod>${escapeXml(lastmod)}</lastmod>` : null,
+    changefreq ? `    <changefreq>${escapeXml(changefreq)}</changefreq>` : null,
+    priority ? `    <priority>${escapeXml(priority)}</priority>` : null,
     "  </url>",
   ]
     .filter(Boolean)

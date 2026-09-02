@@ -44,9 +44,21 @@ const markdownComponents = {
   strong: ({ node: _node, ...props }) => (
     <strong className="font-semibold text-slate-900" {...props} />
   ),
-  a: ({ node: _node, ...props }) => (
-    <a className="text-emerald-600 font-medium hover:underline transition-colors" {...props} />
-  ),
+  a: ({ node: _node, href, ...props }) => {
+    const trimmed = String(href ?? "").trim();
+    const isDangerous = /^javascript:|^data:/i.test(trimmed);
+    const safeHref = isDangerous ? "#" : trimmed;
+    const isExternal = safeHref.startsWith("http://") || safeHref.startsWith("https://");
+    return (
+      <a
+        href={safeHref}
+        target={isExternal ? "_blank" : undefined}
+        rel={isExternal ? "noopener noreferrer" : undefined}
+        className="text-emerald-600 font-medium hover:underline transition-colors"
+        {...props}
+      />
+    );
+  },
   blockquote: ({ node: _node, ...props }) => (
     <blockquote
       className="border-l-4 border-emerald-500 pl-4 py-1 my-6 italic bg-slate-50 text-slate-600 rounded-r"

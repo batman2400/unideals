@@ -111,6 +111,9 @@ export function useRole() {
           } = await supabase.auth.getSession();
 
           if (sessionError) {
+            if (sessionError.message?.includes("Refresh Token")) {
+              void supabase.auth.signOut({ scope: "local" }).catch(() => {});
+            }
             throw sessionError;
           }
 

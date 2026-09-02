@@ -135,6 +135,9 @@ export function validateOfferValue(offerType, offerValue) {
   }
 
   if (offerType === "flat_amount_off") {
+    if (raw.includes("-")) {
+      return "Flat amount off must be greater than 0.";
+    }
     const n = Number(raw.replace(/[^0-9.]/g, ""));
     if (!Number.isFinite(n) || n <= 0) {
       return "Flat amount off must be greater than 0.";

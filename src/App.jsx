@@ -117,6 +117,9 @@ function App() {
         if (!active) return;
         if (error) {
           console.error("[App] Failed to load session:", error.message);
+          if (error.message?.includes("Refresh Token")) {
+            void supabase.auth.signOut({ scope: "local" }).catch(() => {});
+          }
         }
         setSession(session ?? null);
         setAuthLoading(false);
@@ -124,6 +127,9 @@ function App() {
       .catch((err) => {
         if (!active) return;
         console.error("[App] Unexpected session bootstrap error:", err);
+        if (err?.message?.includes("Refresh Token")) {
+          void supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        }
         setSession(null);
         setAuthLoading(false);
       });
@@ -141,9 +147,13 @@ function App() {
     // 2. Listen for auth state changes (login, logout, token refresh)
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!active) return;
-      setSession(session);
+      if (event === "TOKEN_REFRESH_FAILED" || event === "SIGNED_OUT") {
+        setSession(null);
+      } else {
+        setSession(session);
+      }
       setAuthLoading(false);
     });
 
