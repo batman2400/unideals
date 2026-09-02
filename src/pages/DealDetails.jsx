@@ -946,8 +946,8 @@ function DealDetails() {
 
       <div className="mx-auto max-w-[1440px] px-4 pt-3 md:px-8 md:pt-4 lg:pt-5">
         {/* Breadcrumb + back — shared top row */}
-        <nav className="mb-3 flex flex-shrink-0 flex-wrap items-center justify-between gap-2 text-sm text-on-surface-variant/60 lg:mb-4">
-          <div className="flex min-w-0 flex-wrap items-center gap-2">
+        <nav className="mb-3 flex flex-shrink-0 items-center justify-between gap-2 text-xs text-on-surface-variant/60 sm:text-sm lg:mb-4">
+          <div className="flex min-w-0 flex-wrap items-center gap-1.5 sm:gap-2">
             <Link
               to="/"
               className="font-headline font-bold transition-colors hover:text-primary"
@@ -956,19 +956,19 @@ function DealDetails() {
             </Link>
             {category ? (
               <>
-                <span className="material-symbols-outlined text-sm">
+                <span className="material-symbols-outlined text-xs sm:text-sm">
                   chevron_right
                 </span>
                 <Link
                   to={categoryHref}
-                  className="truncate font-headline font-bold transition-colors hover:text-primary"
+                  className="max-w-[120px] truncate font-headline font-bold transition-colors hover:text-primary sm:max-w-none"
                 >
                   {category}
                 </Link>
               </>
             ) : (
               <>
-                <span className="material-symbols-outlined text-sm">
+                <span className="material-symbols-outlined text-xs sm:text-sm">
                   chevron_right
                 </span>
                 <Link
@@ -981,58 +981,59 @@ function DealDetails() {
             )}
             {brand ? (
               <>
-                <span className="material-symbols-outlined text-sm">
+                <span className="material-symbols-outlined text-xs sm:text-sm">
                   chevron_right
                 </span>
                 <Link
                   to={brandHref}
-                  className="truncate font-headline font-bold transition-colors hover:text-primary"
+                  className="max-w-[120px] truncate font-headline font-bold transition-colors hover:text-primary sm:max-w-none"
                 >
                   {brand}
                 </Link>
               </>
             ) : null}
-            <span className="material-symbols-outlined text-sm">
+            <span className="material-symbols-outlined text-xs sm:text-sm">
               chevron_right
             </span>
-            <span className="truncate font-headline font-bold text-on-surface">
+            <span className="max-w-[140px] truncate font-headline font-bold text-on-surface sm:max-w-xs md:max-w-md">
               {headline}
             </span>
           </div>
           <Link
             to="/deals"
-            className="inline-flex items-center gap-1 font-headline text-sm font-bold text-on-surface-variant/70 transition-colors hover:text-primary"
+            className="inline-flex shrink-0 items-center gap-1 font-headline font-bold text-on-surface-variant/70 transition-colors hover:text-primary"
           >
             <span className="material-symbols-outlined text-sm">arrow_back</span>
-            Back to all deals
+            <span className="hidden sm:inline">Back to all deals</span>
+            <span className="sm:hidden">All Deals</span>
           </Link>
         </nav>
 
         {/* Two-column stage — items-start so image keeps its natural height */}
         <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12 lg:items-start lg:gap-10 lg:pb-5">
-          {/* LEFT — reserved-aspect hero (CLS-safe, no crop) */}
-          <div className="min-w-0 lg:col-span-5">
-            <div className="relative aspect-[4/5] w-full -mx-4 overflow-hidden bg-surface-container sm:mx-0 sm:rounded-2xl">
+          {/* LEFT — dynamic natural-aspect hero (wraps image size, zero letterbox) */}
+          <div className="min-w-0 lg:col-span-5 lg:sticky lg:top-24">
+            <div className="relative w-full overflow-hidden rounded-2xl bg-surface-container/40 shadow-sm">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={title}
                   width={800}
-                  height={1000}
+                  height={800}
                   fetchPriority="high"
-                  className="absolute inset-0 h-full w-full object-contain"
+                  className="block h-auto w-full max-h-[75vh] rounded-2xl object-contain"
                   loading="eager"
                   decoding="async"
                 />
               ) : (
-                <div className="absolute inset-0 flex items-center justify-center">
+                <div className="flex aspect-square w-full items-center justify-center bg-surface-container">
                   <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">
                     image
                   </span>
                 </div>
               )}
 
-              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/80 px-3 py-1.5 text-[11px] font-bold text-on-surface shadow-sm backdrop-blur-md sm:left-4 sm:top-4">
+              <span className="absolute left-3 top-3 z-10 inline-flex items-center gap-1.5 rounded-full border border-white/40 bg-white/85 px-3 py-1.5 text-[11px] font-bold text-on-surface shadow-sm backdrop-blur-md sm:left-4 sm:top-4">
                 {isInStore ? "🏪 In-Store" : "🌐 Online"}
               </span>
 
@@ -1042,7 +1043,7 @@ function DealDetails() {
                   onClick={handleShareDeal}
                   aria-label="Share deal"
                   title="Share deal"
-                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-on-surface-variant shadow-sm transition hover:scale-105 hover:text-primary backdrop-blur-sm"
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-on-surface-variant shadow-sm backdrop-blur-sm transition hover:scale-105 hover:text-primary"
                 >
                   <span className="material-symbols-outlined text-xl">
                     {dealShared ? "check" : "share"}
@@ -1054,7 +1055,7 @@ function DealDetails() {
                   onClick={handleToggleSave}
                   disabled={loadingSave}
                   aria-label={isSaved ? "Remove from saved" : "Save deal"}
-                  className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm transition hover:scale-105 backdrop-blur-sm ${
+                  className={`flex h-10 w-10 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition hover:scale-105 ${
                     loadingSave ? "opacity-50" : ""
                   } ${isSaved ? "text-primary" : "text-on-surface-variant"}`}
                 >
@@ -1068,20 +1069,6 @@ function DealDetails() {
                   </span>
                 </button>
               </div>
-
-              <div className="absolute bottom-3 left-3 z-10 h-10 w-10 overflow-hidden rounded-full border-2 border-white bg-primary-container shadow-md sm:bottom-4 sm:left-4">
-                {brandLogoUrl ? (
-                  <img
-                    src={brandLogoUrl}
-                    alt={`${brand} logo`}
-                    className="h-full w-full object-cover"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center font-headline text-sm font-black text-on-primary-container">
-                    {brandInitial}
-                  </span>
-                )}
-              </div>
             </div>
           </div>
 
@@ -1091,9 +1078,22 @@ function DealDetails() {
               {brand ? (
                 <Link
                   to={brandHref}
-                  className="mb-1.5 inline-block text-xs font-bold uppercase tracking-[0.2em] text-primary transition-colors hover:text-primary/80"
+                  className="mb-2 inline-flex items-center gap-2.5 transition-opacity hover:opacity-80"
                 >
-                  {brand}
+                  {brandLogoUrl ? (
+                    <img
+                      src={brandLogoUrl}
+                      alt={`${brand} logo`}
+                      className="h-8 w-8 shrink-0 rounded-xl border border-outline-variant/20 bg-white object-contain p-0.5 shadow-xs"
+                    />
+                  ) : (
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-headline text-xs font-bold text-primary">
+                      {brandInitial}
+                    </span>
+                  )}
+                  <span className="font-headline text-xs font-bold uppercase tracking-[0.18em] text-primary">
+                    {brand}
+                  </span>
                 </Link>
               ) : (
                 <p className="mb-1.5 text-xs font-bold uppercase tracking-[0.2em] text-primary">
