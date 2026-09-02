@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "../../lib/supabaseClient";
 import { useRoleContext } from "../../lib/RoleContext";
 import {
   getPartnerBrand,
@@ -17,20 +16,10 @@ import {
 } from "../../lib/dealOffer";
 import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
+import { OFFICIAL_CATEGORIES, normalizeCategory } from "../../lib/categories";
 import DealCard from "../../components/DealCard";
 
-const CATEGORY_OPTIONS = [
-  "Fashion",
-  "Food & Drink",
-  "Tech & Mobile",
-  "Beauty & Care",
-  "Learning",
-  "Travel & Auto",
-  "Health & Fitness",
-  "Household",
-  "Finance",
-  "Events & Tickets",
-];
+const CATEGORY_OPTIONS = OFFICIAL_CATEGORIES;
 const TYPE_OPTIONS = ["Online", "In-Store"];
 
 // Excludes characters that are easily confused when read off a screen.
@@ -62,9 +51,7 @@ function CreateDeal() {
     user,
     role,
     loading: roleLoading,
-    impersonatedPartnerId,
   } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [offerType, setOfferType] = useState("percentage_off");
@@ -89,6 +76,7 @@ function CreateDeal() {
     ]);
   const [partnerBrand, setPartnerBrand] = useState("");
   const [partnerBrandId, setPartnerBrandId] = useState(null);
+  const [partnerBrandCategory, setPartnerBrandCategory] = useState("");
   const [brandLoading, setBrandLoading] = useState(true);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
@@ -136,28 +124,19 @@ function CreateDeal() {
         if (!active) return;
         setPartnerBrand("");
         setPartnerBrandId(null);
+        setPartnerBrandCategory("");
         setBrandLoading(false);
         return;
       }
 
       setError("");
 
-      if (role === "admin" && !impersonatedPartnerId) {
-        if (!active) return;
-        setError(
-          "Admin View: Please impersonate a brand from the sidebar to create deals.",
-        );
-        setPartnerBrand("");
-        setPartnerBrandId(null);
-        setBrandLoading(false);
-        return;
-      }
-
       if (role !== "partner" && role !== "admin") {
         if (!active) return;
         setError("Access denied. Partner role required.");
         setPartnerBrand("");
         setPartnerBrandId(null);
+        setPartnerBrandCategory("");
         setBrandLoading(false);
         return;
       }
@@ -168,8 +147,9 @@ function CreateDeal() {
       const {
         brandId,
         brandName,
+        category: rawCategory,
         error: brandError,
-      } = await getPartnerBrand(targetUserId);
+      } = await getPartnerBrand(user.id);
 
       if (!active) return;
 
@@ -177,6 +157,7 @@ function CreateDeal() {
         setError(brandError);
         setPartnerBrand("");
         setPartnerBrandId(null);
+        setPartnerBrandCategory("");
         setBrandLoading(false);
         return;
       }
@@ -185,13 +166,21 @@ function CreateDeal() {
         setError(PARTNER_BRAND_REQUIRED_MESSAGE);
         setPartnerBrand("");
         setPartnerBrandId(null);
+        setPartnerBrandCategory("");
         setBrandLoading(false);
         return;
       }
 
+      const defaultCategory = normalizeCategory(rawCategory);
+
       setPartnerBrand(brandName);
       setPartnerBrandId(brandId);
-      setFormData((prev) => ({ ...prev, brand: brandName }));
+      setPartnerBrandCategory(defaultCategory);
+      setFormData((prev) => ({
+        ...prev,
+        brand: brandName,
+        ...(defaultCategory ? { category: defaultCategory } : {}),
+      }));
       setBrandLoading(false);
     }
 
@@ -200,7 +189,7 @@ function CreateDeal() {
     return () => {
       active = false;
     };
-  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
+  }, [role, roleLoading, user?.id]);
 
   const onChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -275,13 +264,6 @@ function CreateDeal() {
 
     if (!user) {
       setError("You must be logged in to submit a deal.");
-      return;
-    }
-
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Please impersonate a brand from the sidebar to create deals.",
-      );
       return;
     }
 
@@ -377,7 +359,7 @@ function CreateDeal() {
           formData.description.trim() ||
           `${formData.title.trim()} student offer.`,
         redemption_code: generatedRedemptionCode,
-        partner_id: targetUserId,
+        partner_id: user.id,
         status: "approved",
         start_time: startIso,
         end_time: endIso,
@@ -403,7 +385,11 @@ function CreateDeal() {
       const scheduledForLater =
         !!formData.start_time && new Date(formData.start_time) > new Date();
 
-      setFormData({ ...INITIAL_FORM, brand: effectiveBrand });
+      setFormData({
+        ...INITIAL_FORM,
+        brand: effectiveBrand,
+        ...(partnerBrandCategory ? { category: partnerBrandCategory } : {}),
+      });
       setOfferType("percentage_off");
       setOfferValue("");
       setSelectedImageFile(null);
@@ -542,12 +528,22 @@ function CreateDeal() {
                     disabled={submitting}
                     className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                   >
-                    {CATEGORY_OPTIONS.map((option) => (
+                    {Array.from(
+                      new Set([
+                        ...(formData.category ? [formData.category] : []),
+                        ...CATEGORY_OPTIONS,
+                      ]),
+                    ).map((option) => (
                       <option key={option} value={option}>
                         {option}
                       </option>
                     ))}
                   </select>
+                  {partnerBrandCategory && (
+                    <p className="text-[11px] text-on-surface-variant/70 mt-2 font-medium tracking-wide">
+                      Defaulted to brand category ({partnerBrandCategory}).
+                    </p>
+                  )}
                 </div>
 
                 <div className="md:col-span-2">

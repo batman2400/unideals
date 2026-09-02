@@ -6,13 +6,7 @@ import PortalLayout from "../../layouts/PortalLayout";
 import jsQR from "jsqr";
 
 function PartnerScanner() {
-  const {
-    user,
-    role,
-    loading: roleLoading,
-    impersonatedPartnerId,
-  } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
+  const { user, role, loading: roleLoading } = useRoleContext();
   const [partnerBrand, setPartnerBrand] = useState("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -49,19 +43,11 @@ function PartnerScanner() {
 
     setError("");
 
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Please impersonate a brand from the sidebar to scan tickets.",
-      );
-      setLoading(false);
-      return;
-    }
-
     let active = true;
 
     async function init() {
       const { brandName, error: brandError } =
-        await getPartnerBrand(targetUserId);
+        await getPartnerBrand(user.id);
       if (!active) return;
       setPartnerBrand(brandName || "");
       if (brandError) setError(brandError);
@@ -72,7 +58,7 @@ function PartnerScanner() {
     return () => {
       active = false;
     };
-  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
+  }, [role, roleLoading, user?.id]);
 
   const stopCamera = useCallback(() => {
     if (scanIntervalRef.current) {

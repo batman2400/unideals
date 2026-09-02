@@ -36,6 +36,7 @@ import {
   CATEGORY_META,
   CATEGORY_DESCRIPTIONS,
   OLD_TO_NEW_CATEGORY,
+  normalizeCategory,
 } from "../../src/lib/categories.js";
 
 import {
@@ -268,6 +269,19 @@ test("Taxonomy & Categories Unit Tests", async (t) => {
         `Old category '${oldCat}' maps to '${newCat}' which is not in OFFICIAL_CATEGORIES`
       );
     }
+  });
+
+  await t.test("normalizeCategory handles variants, official categories, and fallbacks", () => {
+    assert.equal(normalizeCategory("Fashion"), "Fashion");
+    assert.equal(normalizeCategory("Fashion & Apparel"), "Fashion");
+    assert.equal(normalizeCategory("Health & Beauty"), "Beauty & Care");
+    assert.equal(normalizeCategory("Food and Drink"), "Food & Drink");
+    assert.equal(normalizeCategory("Tech"), "Tech & Mobile");
+    assert.equal(normalizeCategory("Coffee"), "Food & Drink");
+    assert.equal(normalizeCategory("Custom Category"), "Custom Category");
+    assert.equal(normalizeCategory(""), "");
+    assert.equal(normalizeCategory(null), "");
+    assert.equal(normalizeCategory(undefined), "");
   });
 });
 

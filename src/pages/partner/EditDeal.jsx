@@ -19,19 +19,9 @@ import {
 import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 import { toDatetimeLocalValue } from "../../lib/comingSoon";
+import { OFFICIAL_CATEGORIES, normalizeCategory } from "../../lib/categories";
 
-const CATEGORY_OPTIONS = [
-  "Fashion",
-  "Food & Drink",
-  "Tech & Mobile",
-  "Beauty & Care",
-  "Learning",
-  "Travel & Auto",
-  "Health & Fitness",
-  "Household",
-  "Finance",
-  "Events & Tickets",
-];
+const CATEGORY_OPTIONS = OFFICIAL_CATEGORIES;
 const TYPE_OPTIONS = ["Online", "In-Store"];
 
 const INITIAL_FORM = {
@@ -57,9 +47,7 @@ function EditDeal() {
     role,
     loading: roleLoading,
     error: roleError,
-    impersonatedPartnerId,
   } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
 
   const [formData, setFormData] = useState(INITIAL_FORM);
   const [offerType, setOfferType] = useState("percentage_off");
@@ -109,14 +97,6 @@ function EditDeal() {
         return;
       }
 
-      if (role === "admin" && !impersonatedPartnerId) {
-        setError(
-          "Admin View: Please impersonate a brand from the sidebar to edit deals.",
-        );
-        setLoading(false);
-        return;
-      }
-
       if (role !== "partner" && role !== "admin") {
         setError("Only partners or admins can edit offers from this page.");
         setLoading(false);
@@ -141,8 +121,9 @@ function EditDeal() {
       const {
         brandId,
         brandName,
+        category: rawBrandCategory,
         error: brandError,
-      } = await getPartnerBrand(targetUserId);
+      } = await getPartnerBrand(user.id);
 
       if (!active) return;
 
@@ -189,7 +170,10 @@ function EditDeal() {
         brand: data.brand || brandName,
         discount: data.discount || "",
         type: data.type || "Online",
-        category: data.category || "Fashion",
+        category:
+          normalizeCategory(data.category) ||
+          normalizeCategory(rawBrandCategory) ||
+          "Fashion",
         imageUrl: data.image_url || "",
         description: data.description || "",
         redemptionCode: data.redemption_code || "",
@@ -211,7 +195,7 @@ function EditDeal() {
     return () => {
       active = false;
     };
-  }, [id, role, roleError, roleLoading, targetUserId, impersonatedPartnerId]);
+  }, [id, role, roleError, roleLoading, user?.id]);
 
   const onChange = (event) => {
     const { name, value, type, checked } = event.target;
@@ -269,14 +253,7 @@ function EditDeal() {
     setError("");
     setSuccessMessage("");
 
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Please impersonate a brand from the sidebar to edit deals.",
-      );
-      return;
-    }
-
-    if ((role !== "partner" && role !== "admin") || !targetUserId) {
+    if ((role !== "partner" && role !== "admin") || !user?.id) {
       setError("Access denied. Partner role required.");
       return;
     }
@@ -583,7 +560,12 @@ function EditDeal() {
               disabled={saving}
               className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
             >
-              {CATEGORY_OPTIONS.map((option) => (
+              {Array.from(
+                new Set([
+                  ...(formData.category ? [formData.category] : []),
+                  ...CATEGORY_OPTIONS,
+                ]),
+              ).map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>

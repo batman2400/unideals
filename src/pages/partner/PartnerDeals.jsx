@@ -27,13 +27,7 @@ const CATALOGUE_TABS = [
 ];
 
 function PartnerDeals({ finishedOnly = false }) {
-  const {
-    user,
-    role,
-    loading: roleLoading,
-    impersonatedPartnerId,
-  } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
+  const { user, role, loading: roleLoading } = useRoleContext();
   const [partnerBrand, setPartnerBrand] = useState("");
   const [partnerBrandId, setPartnerBrandId] = useState(null);
   const [deals, setDeals] = useState([]);
@@ -68,21 +62,13 @@ function PartnerDeals({ finishedOnly = false }) {
 
     setError("");
 
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.",
-      );
-      setLoading(false);
-      return;
-    }
-
     let active = true;
 
     async function fetchDeals() {
       setLoading(true);
 
       const { brandId, brandName, error: brandError } =
-        await getPartnerBrand(targetUserId);
+        await getPartnerBrand(user.id);
       if (!active) return;
       if (brandError || !brandId) {
         setError(brandError || "No brand profile found.");
@@ -117,7 +103,7 @@ function PartnerDeals({ finishedOnly = false }) {
     return () => {
       active = false;
     };
-  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
+  }, [role, roleLoading, user?.id]);
 
   const handleDelete = useCallback(
     async (dealId) => {

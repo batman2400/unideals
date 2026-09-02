@@ -7,13 +7,7 @@ import PortalLayout from "../../layouts/PortalLayout";
 import { getDealComputedStatus } from "../../lib/comingSoon";
 
 function PartnerOverview() {
-  const {
-    user,
-    role,
-    loading: roleLoading,
-    impersonatedPartnerId,
-  } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
+  const { user, role, loading: roleLoading } = useRoleContext();
   const [partnerBrand, setPartnerBrand] = useState("");
   const [deals, setDeals] = useState([]);
   const [recentEvents, setRecentEvents] = useState([]);
@@ -35,21 +29,13 @@ function PartnerOverview() {
 
     setError("");
 
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.",
-      );
-      setLoading(false);
-      return;
-    }
-
     let active = true;
 
     async function fetchData() {
       setLoading(true);
 
       const { brandId, brandName, error: brandError } =
-        await getPartnerBrand(targetUserId);
+        await getPartnerBrand(user.id);
       if (!active) return;
       if (brandError || !brandId) {
         setError(
@@ -107,7 +93,7 @@ function PartnerOverview() {
     return () => {
       active = false;
     };
-  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
+  }, [role, roleLoading, user?.id]);
 
   const metrics = useMemo(() => {
     const now = new Date();

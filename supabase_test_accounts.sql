@@ -1,62 +1,55 @@
 -- ============================================================
--- Uni Deals — Test Accounts Setup
+-- Uni Deals — Test Accounts Setup & Email Confirmation
 -- ============================================================
--- 
--- STEP 1: Create 3 accounts by signing up on your app or via
---         Supabase Dashboard → Authentication → Users → Add User
+-- The auth accounts (admin@unideals.test, student@unideals.test, partner@unideals.test)
+-- have already been created in Supabase Auth with password: Test1234!
 --
---   Email                        Password
---   ─────────────────────────    ──────────
---   admin@unideals.test          Test1234!
---   student@unideals.test        Test1234!
---   partner@unideals.test        Test1234!
---
--- STEP 2: After all 3 accounts exist in Supabase Auth,
---         run THIS script in Supabase SQL Editor.
---         It will assign the correct roles and set up
---         the partner's brand profile.
+-- Run this script in the Supabase SQL Editor to:
+--   1) Instantly confirm their emails (bypassing email verification)
+--   2) Assign roles (admin, student, partner) & verify them
+--   3) Link the partner account to a brand ("Brew & Co.")
 -- ============================================================
 
--- ── 1) Promote admin ────────────────────────────────────────
-INSERT INTO public.user_roles (user_id, role)
-SELECT id, 'admin'
+-- ── 1) Auto-confirm emails in auth.users ─────────────────────
+UPDATE auth.users
+SET email_confirmed_at = COALESCE(email_confirmed_at, NOW())
+WHERE lower(email) IN (
+  'admin@unideals.test',
+  'student@unideals.test',
+  'partner@unideals.test'
+);
+
+-- ── 2) Promote Admin ─────────────────────────────────────────
+INSERT INTO public.user_roles (user_id, role, user_email, is_verified)
+SELECT id, 'admin', lower(email), TRUE
 FROM auth.users
 WHERE lower(email) = 'admin@unideals.test'
 ON CONFLICT (user_id) DO UPDATE
-  SET role = 'admin';
+  SET role = 'admin',
+      user_email = EXCLUDED.user_email,
+      is_verified = TRUE;
 
--- Mark admin as verified
-UPDATE public.user_roles
-SET is_verified = TRUE
-WHERE user_id = (SELECT id FROM auth.users WHERE lower(email) = 'admin@unideals.test');
-
--- ── 2) Ensure student has default role ──────────────────────
-INSERT INTO public.user_roles (user_id, role)
-SELECT id, 'student'
+-- ── 3) Ensure Student is Verified ────────────────────────────
+INSERT INTO public.user_roles (user_id, role, user_email, is_verified)
+SELECT id, 'student', lower(email), TRUE
 FROM auth.users
 WHERE lower(email) = 'student@unideals.test'
 ON CONFLICT (user_id) DO UPDATE
-  SET role = 'student';
+  SET role = 'student',
+      user_email = EXCLUDED.user_email,
+      is_verified = TRUE;
 
--- Mark student as verified (so they can redeem deals)
-UPDATE public.user_roles
-SET is_verified = TRUE
-WHERE user_id = (SELECT id FROM auth.users WHERE lower(email) = 'student@unideals.test');
-
--- ── 3) Promote partner + assign brand ───────────────────────
-INSERT INTO public.user_roles (user_id, role)
-SELECT id, 'partner'
+-- ── 4) Promote Partner + Assign Brand ────────────────────────
+INSERT INTO public.user_roles (user_id, role, user_email, is_verified)
+SELECT id, 'partner', lower(email), TRUE
 FROM auth.users
 WHERE lower(email) = 'partner@unideals.test'
 ON CONFLICT (user_id) DO UPDATE
-  SET role = 'partner';
+  SET role = 'partner',
+      user_email = EXCLUDED.user_email,
+      is_verified = TRUE;
 
--- Mark partner as verified
-UPDATE public.user_roles
-SET is_verified = TRUE
-WHERE user_id = (SELECT id FROM auth.users WHERE lower(email) = 'partner@unideals.test');
-
--- Create partner brand profile (assign them to "Brew & Co." as an example)
+-- Create or update partner brand profile (assigned to "Brew & Co.")
 INSERT INTO public.partner_profiles (user_id, brand_name)
 SELECT id, 'Brew & Co.'
 FROM auth.users
@@ -65,12 +58,27 @@ ON CONFLICT (user_id) DO UPDATE
   SET brand_name = EXCLUDED.brand_name,
       updated_at = NOW();
 
--- ── Verify everything worked ────────────────────────────────
+-- (Optional) If you also want your currently logged-in account (brucewayne110322@gmail.com) 
+-- to have admin access, uncomment the lines below:
+-- INSERT INTO public.user_roles (user_id, role, user_email, is_verified)
+-- SELECT id, 'admin', lower(email), TRUE
+-- FROM auth.users
+-- WHERE lower(email) = 'brucewayne110322@gmail.com'
+-- ON CONFLICT (user_id) DO UPDATE
+--   SET role = 'admin',
+--       user_email = EXCLUDED.user_email,
+--       is_verified = TRUE;
+
+-- ── 5) Verify Everything ─────────────────────────────────────
 SELECT 
-  ur.user_email,
+  u.email,
+  u.email_confirmed_at IS NOT NULL AS email_confirmed,
   ur.role,
   ur.is_verified,
   pp.brand_name
-FROM public.user_roles ur
-LEFT JOIN public.partner_profiles pp ON pp.user_id = ur.user_id
-WHERE ur.user_email IN ('admin@unideals.test', 'student@unideals.test', 'partner@unideals.test');
+FROM auth.users u
+LEFT JOIN public.user_roles ur ON ur.user_id = u.id
+LEFT JOIN public.partner_profiles pp ON pp.user_id = u.id
+WHERE lower(u.email) IN ('admin@unideals.test', 'student@unideals.test', 'partner@unideals.test')
+ORDER BY ur.role;
+

@@ -57,7 +57,7 @@ export const CATEGORY_DESCRIPTIONS = {
     "Discounted tickets and student offers for events and entertainment in Sri Lanka.",
 };
 
-// Migration map: old placeholder categories → new V1 names
+// Migration map: old placeholder categories & brand category variants → new V1 names
 export const OLD_TO_NEW_CATEGORY = {
   Tech: "Tech & Mobile",
   Coffee: "Food & Drink",
@@ -65,4 +65,22 @@ export const OLD_TO_NEW_CATEGORY = {
   Fitness: "Health & Fitness",
   Home: "Household",
   Creative: "Learning",
+  "Fashion & Apparel": "Fashion",
+  "Health & Beauty": "Beauty & Care",
+  "Food and Drink": "Food & Drink",
+  "Food & Beverage": "Food & Drink",
+  Beauty: "Beauty & Care",
+  Health: "Health & Fitness",
+  Travel: "Travel & Auto",
+  Events: "Events & Tickets",
 };
+
+/**
+ * Normalizes a raw brand or deal category name to a canonical taxonomy category if matched.
+ */
+export function normalizeCategory(category) {
+  if (!category || typeof category !== "string") return "";
+  const trimmed = category.trim();
+  return OLD_TO_NEW_CATEGORY[trimmed] || trimmed;
+}
+

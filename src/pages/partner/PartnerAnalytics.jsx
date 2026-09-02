@@ -9,13 +9,7 @@ import {
 } from "../../lib/comingSoon";
 
 function PartnerAnalytics() {
-  const {
-    user,
-    role,
-    loading: roleLoading,
-    impersonatedPartnerId,
-  } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
+  const { user, role, loading: roleLoading } = useRoleContext();
   const [partnerBrand, setPartnerBrand] = useState("");
   const [dealStats, setDealStats] = useState([]);
   const [totals, setTotals] = useState({
@@ -38,21 +32,13 @@ function PartnerAnalytics() {
 
     setError("");
 
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.",
-      );
-      setLoading(false);
-      return;
-    }
-
     let active = true;
 
     async function fetchAnalytics() {
       setLoading(true);
 
       const { brandName, error: brandError } =
-        await getPartnerBrand(targetUserId);
+        await getPartnerBrand(user.id);
       if (!active) return;
 
       if (brandError) {
@@ -138,7 +124,7 @@ function PartnerAnalytics() {
     return () => {
       active = false;
     };
-  }, [role, roleLoading, targetUserId, impersonatedPartnerId]);
+  }, [role, roleLoading, user?.id]);
 
   if (roleLoading || loading) {
     return (

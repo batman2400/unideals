@@ -1,46 +1,11 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { useRoleContext } from "../lib/RoleContext";
-import { supabase } from "../lib/supabaseClient";
 
 function PortalLayout({ children, portalType = "partner", brandName = "" }) {
   const location = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { role, impersonatedPartnerId, setImpersonatedPartnerId } =
-    useRoleContext();
-  const [partners, setPartners] = useState([]);
-
-  useEffect(() => {
-    if (role !== "admin" || portalType !== "partner") return;
-
-    let active = true;
-
-    supabase
-      .from("partner_profiles")
-      .select(
-        `
-          user_id,
-          brand_name,
-          brands ( name )
-        `,
-      )
-      .then(({ data, error }) => {
-        if (!active) return;
-        if (error) {
-          console.error("Failed to load partner list for impersonation:", error);
-          return;
-        }
-        const partnerList = (data || []).map((p) => {
-          const brand = p.brands?.name || p.brand_name || "Unknown Brand";
-          return { id: p.user_id, name: brand };
-        });
-        setPartners(partnerList.sort((a, b) => a.name.localeCompare(b.name)));
-      });
-
-    return () => {
-      active = false;
-    };
-  }, [role, portalType]);
+  const { role } = useRoleContext();
 
   const toggleSidebar = useCallback(() => {
     setSidebarOpen((prev) => !prev);
@@ -160,27 +125,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
               );
             })}
 
-            {role === "admin" && portalType === "partner" && (
-              <div className="px-4 py-3 mt-2 border-t border-outline-variant/10">
-                <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">
-                  Impersonate Brand
-                </label>
-                <select
-                  value={impersonatedPartnerId || ""}
-                  onChange={(e) =>
-                    setImpersonatedPartnerId(e.target.value || null)
-                  }
-                  className="w-full bg-surface-container-low border border-outline-variant/30 text-xs font-bold rounded-lg px-2 py-2 text-on-background focus:ring-2 focus:ring-primary/30 outline-none"
-                >
-                  <option value="">-- None (Admin View) --</option>
-                  {partners.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            )}
+
           </nav>
         </div>
       )}
@@ -256,27 +201,7 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
                     : "Manage your deals, track redemptions, and scan tickets."}
                 </p>
 
-                {role === "admin" && portalType === "partner" && (
-                  <div className="pt-3 border-t border-outline-variant/20">
-                    <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider mb-2 block">
-                      Impersonate Brand
-                    </label>
-                    <select
-                      value={impersonatedPartnerId || ""}
-                      onChange={(e) =>
-                        setImpersonatedPartnerId(e.target.value || null)
-                      }
-                      className="w-full bg-surface border border-outline-variant/30 text-xs font-bold rounded-lg px-2 py-2 text-on-background focus:ring-2 focus:ring-primary/30 outline-none"
-                    >
-                      <option value="">-- None (Admin View) --</option>
-                      {partners.map((p) => (
-                        <option key={p.id} value={p.id}>
-                          {p.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
+
               </div>
             </div>
           </div>

@@ -7,13 +7,7 @@ import PortalLayout from "../../layouts/PortalLayout";
 import { isComingSoonEvent, isFinishedEvent } from "../../lib/comingSoon";
 
 function PartnerEvents({ finishedOnly = false }) {
-  const {
-    user,
-    role,
-    loading: roleLoading,
-    impersonatedPartnerId,
-  } = useRoleContext();
-  const targetUserId = impersonatedPartnerId || user?.id;
+  const { user, role, loading: roleLoading } = useRoleContext();
   const [partnerBrand, setPartnerBrand] = useState("");
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -36,25 +30,17 @@ function PartnerEvents({ finishedOnly = false }) {
       return;
     }
 
-    if (role === "admin" && !impersonatedPartnerId) {
-      setError(
-        "Admin View: Viewing partner portal without a specific brand profile. Use the sidebar to impersonate a brand.",
-      );
-      setLoading(false);
-      return;
-    }
-
     setLoading(true);
     setError("");
 
-    const { brandName } = await getPartnerBrand(targetUserId);
+    const { brandName } = await getPartnerBrand(user.id);
     if (!isMountedRef.current) return;
     setPartnerBrand(brandName || "");
 
     const { data, error: fetchError } = await supabase
       .from("events")
       .select("*")
-      .eq("organizer_id", targetUserId)
+      .eq("organizer_id", user.id)
       .order("start_time", { ascending: false });
 
     if (!isMountedRef.current) return;
@@ -80,7 +66,7 @@ function PartnerEvents({ finishedOnly = false }) {
 
     setEvents(rows);
     setLoading(false);
-  }, [user?.id, role, impersonatedPartnerId, targetUserId, finishedOnly]);
+  }, [user?.id, role, roleLoading, finishedOnly]);
 
   useEffect(() => {
     if (roleLoading) return;
