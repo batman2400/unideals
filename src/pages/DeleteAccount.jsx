@@ -1,7 +1,8 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
+import { useRoleContext } from "../lib/RoleContext";
 import { deleteOwnAccount } from "../lib/deleteAccount";
 import { SITE_URL } from "../lib/seo";
 
@@ -12,35 +13,11 @@ function openLogin() {
 }
 
 export default function DeleteAccount() {
-  const [session, setSession] = useState(null);
-  const [authReady, setAuthReady] = useState(false);
+  const { user, authReady } = useRoleContext();
   const [confirmed, setConfirmed] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState("");
   const [done, setDone] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    supabase.auth.getSession().then(({ data }) => {
-      if (!active) return;
-      setSession(data.session ?? null);
-      setAuthReady(true);
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      if (!active) return;
-      setSession(nextSession);
-      setAuthReady(true);
-    });
-
-    return () => {
-      active = false;
-      subscription.unsubscribe();
-    };
-  }, []);
 
   const handleDelete = async (event) => {
     event.preventDefault();
@@ -118,7 +95,7 @@ export default function DeleteAccount() {
               Checking your session…
             </p>
           </div>
-        ) : !session ? (
+        ) : !user ? (
           <div>
             <h2 className="font-headline font-bold text-xl text-on-background mb-2">
               Sign in to continue
@@ -143,7 +120,7 @@ export default function DeleteAccount() {
             <p className="text-on-surface-variant text-sm leading-relaxed">
               This will permanently delete{" "}
               <span className="font-semibold text-on-background">
-                {session.user?.email || "this account"}
+                {user.email || "this account"}
               </span>
               , including student ID photos, verification status, in-store
               tickets, and push tokens. You cannot undo this.

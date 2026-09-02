@@ -54,27 +54,33 @@ function SignInRequired() {
   );
 }
 
+function AccessSpinner() {
+  return (
+    <div className="min-h-[40vh] flex items-center justify-center px-4">
+      <NoIndexTag />
+      <div className="flex items-center gap-3 text-on-surface-variant">
+        <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+        <p className="text-sm font-headline font-bold">Checking access...</p>
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoute({ allowedRoles = [], children, redirectTo = "/" }) {
-  const { role, loading, error, isAuthenticated, refreshRole } =
+  const { role, loading, authReady, error, isAuthenticated, refreshRole } =
     useRoleContext();
 
-  if (loading) {
-    return (
-      <div className="min-h-[40vh] flex items-center justify-center px-4">
-        <NoIndexTag />
-        <div className="flex items-center gap-3 text-on-surface-variant">
-          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          <p className="text-sm font-headline font-bold">Checking access...</p>
-        </div>
-      </div>
-    );
+  const needsRole = allowedRoles.length > 0;
+
+  if (!authReady || (needsRole && loading)) {
+    return <AccessSpinner />;
   }
 
   if (!isAuthenticated) {
     return <SignInRequired />;
   }
 
-  if (error) {
+  if (needsRole && error) {
     return (
       <section className="max-w-[760px] mx-auto px-6 py-16">
         <NoIndexTag />

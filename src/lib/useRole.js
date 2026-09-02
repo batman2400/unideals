@@ -9,8 +9,9 @@ import {
 /**
  * useRole
  *
- * Resolves the authenticated user and role from Supabase.
- * Role source of truth is the database helper function `get_user_role()`.
+ * Session is ready as soon as Auth returns. Role comes from public.user_roles
+ * (same source as get_user_role()). Do not block first paint on the yearly
+ * expiry sweep — cron plus client-side isStudentVerificationCurrent cover it.
  */
 export function useRole() {
   const [user, setUser] = useState(null);
@@ -18,9 +19,11 @@ export function useRole() {
   const [isVerified, setIsVerified] = useState(false);
   const [verifiedAt, setVerifiedAt] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [authReady, setAuthReady] = useState(false);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
   const hasInitialResolvedRef = useRef(false);
+  const staleExpiryStartedRef = useRef(false);
   const roleChannelRef = useRef(null);
   const roleChannelUserIdRef = useRef(null);
   const roleChannelSequenceRef = useRef(0);
@@ -126,6 +129,7 @@ export function useRole() {
           return nextUser;
         });
         attachRoleChannel(nextUser?.id ?? null);
+        setAuthReady(true);
 
         if (!nextUser) {
           setRole(null);
@@ -136,18 +140,12 @@ export function useRole() {
           return;
         }
 
-        try {
-          await supabase.rpc("expire_stale_student_verifications");
-        } catch {
-          // SQL may not be applied yet; client still enforces the 12-month window.
+        if (!staleExpiryStartedRef.current) {
+          staleExpiryStartedRef.current = true;
+          void supabase.rpc("expire_stale_student_verifications").catch(() => {});
         }
 
-        const { data: rpcRole, error: rpcError } =
-          await supabase.rpc("get_user_role");
-
-        if (!active) return;
-
-        let resolvedRole = rpcRole ?? "student";
+        let resolvedRole = "student";
         let resolvedIsVerified = false;
         let resolvedVerifiedAt = null;
 
@@ -168,7 +166,8 @@ export function useRole() {
         }
 
         if (roleQueryError) {
-          // Legacy fallback for environments where `is_verified` is not deployed yet.
+          const { data: rpcRole, error: rpcError } =
+            await supabase.rpc("get_user_role");
           const { data: legacyRoleRow, error: legacyRoleError } = await supabase
             .from("user_roles")
             .select("role")
@@ -179,13 +178,9 @@ export function useRole() {
             throw legacyRoleError;
           }
 
-          if (rpcError) {
-            resolvedRole = legacyRoleRow?.role ?? "student";
-          }
+          resolvedRole = rpcRole ?? legacyRoleRow?.role ?? "student";
         } else {
-          if (rpcError) {
-            resolvedRole = roleRow?.role ?? "student";
-          }
+          resolvedRole = roleRow?.role ?? "student";
           resolvedVerifiedAt =
             typeof roleRow?.verified_at === "string" ? roleRow.verified_at : null;
           const verifiedFlag = !!roleRow?.is_verified;
@@ -195,6 +190,8 @@ export function useRole() {
               : verifiedFlag;
         }
 
+        if (!active) return;
+
         setRole(resolvedRole);
         setIsVerified(resolvedIsVerified);
         setVerifiedAt(resolvedVerifiedAt);
@@ -202,6 +199,7 @@ export function useRole() {
         hasInitialResolvedRef.current = true;
       } catch (err) {
         if (!active) return;
+        setAuthReady(true);
         // Preserve the last known role on transient failures.
         setError(err?.message || "Failed to load user role.");
         setLoading(false);
@@ -209,14 +207,12 @@ export function useRole() {
       }
     }
 
-    resolveRole(null, false);
-
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      // Prevent disruptive loading spinners on background token refreshes
-      const isBackground = event === "TOKEN_REFRESHED" || event === "USER_UPDATED";
-      resolveRole(session, isBackground);
+      const isBackground =
+        event === "TOKEN_REFRESHED" || event === "USER_UPDATED";
+      void resolveRole(session, isBackground);
     });
 
     return () => {
@@ -227,6 +223,8 @@ export function useRole() {
   }, [refreshKey]);
 
   const refreshRole = () => {
+    hasInitialResolvedRef.current = false;
+    setAuthReady(false);
     setRefreshKey((previous) => previous + 1);
   };
 
@@ -244,6 +242,7 @@ export function useRole() {
     isVerificationExpired,
     isVerificationExpiringSoon,
     loading,
+    authReady,
     error,
     isAuthenticated: !!user,
     refreshRole,
