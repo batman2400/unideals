@@ -33,6 +33,7 @@ const EXACT_PATHS = new Set([
   "/support",
   "/terms",
   "/privacy",
+  "/delete-account",
   "/profile",
   "/saved",
   "/reset-password",
