@@ -168,17 +168,17 @@ export default function EventDetails() {
         Back to Events
       </button>
 
-      <div className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm flex flex-col md:flex-row">
-        {/* Left Side: Image */}
-        <div className="w-full md:w-2/5 h-64 md:h-auto relative bg-surface-container-high border-b md:border-b-0 md:border-r border-outline-variant/20">
+      <div className="bg-surface rounded-3xl border border-outline-variant/20 overflow-hidden shadow-sm flex flex-col md:flex-row md:items-start">
+        {/* Left Side: Image — natural aspect so desktop does not stretch/crop */}
+        <div className="w-full md:w-2/5 shrink-0 relative bg-surface-container-high border-b md:border-b-0 md:border-r border-outline-variant/20 md:sticky md:top-24">
           {event.cover_image_url ? (
-            <img 
-              src={event.cover_image_url} 
-              alt={event.title} 
-              className="w-full h-full object-cover"
+            <img
+              src={event.cover_image_url}
+              alt={event.title}
+              className="block h-auto w-full object-contain md:w-auto md:max-w-full md:max-h-[min(580px,70vh)] md:mx-auto"
             />
           ) : (
-            <div className="w-full h-full flex flex-col items-center justify-center bg-primary-container/20 text-primary/40">
+            <div className="w-full aspect-[16/9] flex flex-col items-center justify-center bg-primary-container/20 text-primary/40">
               <span className="material-symbols-outlined text-6xl mb-2">image</span>
               <span className="text-sm font-bold tracking-widest uppercase">No Image</span>
             </div>
