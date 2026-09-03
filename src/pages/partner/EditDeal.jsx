@@ -20,6 +20,8 @@ import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 import { toDatetimeLocalValue } from "../../lib/comingSoon";
 import { OFFICIAL_CATEGORIES, normalizeCategory } from "../../lib/categories";
+import ImageCropModal from "../../components/ImageCropModal";
+import { DEAL_ASPECT_OPTIONS } from "../../lib/imageCropUtils";
 
 const CATEGORY_OPTIONS = OFFICIAL_CATEGORIES;
 const TYPE_OPTIONS = ["Online", "In-Store"];
@@ -59,9 +61,12 @@ function EditDeal() {
   const [error, setError] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
   const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [originalImageFile, setOriginalImageFile] = useState(null);
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const isMountedRef = useRef(true);
   const inFlightRef = useRef(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -217,9 +222,28 @@ function EditDeal() {
     }
   };
 
+  const handleImageSelect = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file (JPG, PNG, or WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image is too large. Maximum allowed size is 5MB.");
+      return;
+    }
+    setError("");
+    setOriginalImageFile(file);
+    setIsCropModalOpen(true);
+  };
+
+  const handleCropComplete = (croppedFile) => {
+    setSelectedImageFile(croppedFile);
+  };
+
   const onImageFileChange = (event) => {
     const file = event.target.files?.[0] || null;
-    setSelectedImageFile(file);
+    handleImageSelect(file);
   };
 
   const offerPreview = buildOfferLabel(offerType, offerValue);
@@ -636,14 +660,77 @@ function EditDeal() {
             </label>
             <input
               type="file"
+              ref={fileInputRef}
               accept="image/*"
               onChange={onImageFileChange}
               disabled={saving}
-              className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-3 py-2.5 text-sm font-body"
+              className="hidden"
             />
-            <p className="text-[11px] text-on-surface-variant/70 mt-2 font-bold tracking-wide uppercase">
-              Optional: Upload JPG, PNG, or WEBP (max 5MB).
-            </p>
+            <div
+              className="relative border-2 border-dashed rounded-xl p-5 text-center transition-all border-outline-variant/30 bg-surface-container-lowest hover:bg-surface-container-low cursor-pointer"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {selectedImagePreviewUrl ? (
+                <div className="flex flex-col items-center">
+                  <div className="w-44 h-36 rounded-xl overflow-hidden border border-outline-variant/20 shadow-md mb-3 relative group bg-surface-container">
+                    <img
+                      src={selectedImagePreviewUrl}
+                      alt="New image preview"
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setIsCropModalOpen(true);
+                        }}
+                        className="bg-surface text-on-surface p-2 rounded-full hover:scale-110 transition-transform shadow-md flex items-center justify-center"
+                        title="Adjust Framing"
+                      >
+                        <span className="material-symbols-outlined text-sm">crop</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSelectedImageFile(null);
+                          setOriginalImageFile(null);
+                          if (fileInputRef.current) fileInputRef.current.value = "";
+                        }}
+                        className="bg-error text-on-error p-2 rounded-full hover:scale-110 transition-transform shadow-md flex items-center justify-center"
+                        title="Remove"
+                      >
+                        <span className="material-symbols-outlined text-sm">delete</span>
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setIsCropModalOpen(true); }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-headline font-bold hover:bg-primary/15 transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-base">crop</span>
+                      Adjust Framing
+                    </button>
+                    <span className="text-xs font-headline font-bold text-on-surface-variant hover:text-on-background">
+                      Click to replace
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center py-2">
+                  <div className="w-12 h-12 rounded-full bg-surface-container flex items-center justify-center mb-3">
+                    <span className="material-symbols-outlined text-2xl text-on-surface-variant">cloud_upload</span>
+                  </div>
+                  <p className="font-headline font-bold text-sm text-on-background mb-0.5">Click to upload a new image</p>
+                  <p className="text-[11px] text-on-surface-variant/70 uppercase tracking-wide">JPG, PNG or WEBP (max 5MB)</p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -755,6 +842,17 @@ function EditDeal() {
           </div>
         </form>
       </div>
+
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        imageFile={originalImageFile || selectedImageFile}
+        title="Frame Deal Image"
+        subtitle="Choose which part will be showcased on student deal cards (1:1 Square recommended)."
+        aspectOptions={DEAL_ASPECT_OPTIONS}
+        initialAspectId="1:1"
+        onCropComplete={handleCropComplete}
+        onClose={() => setIsCropModalOpen(false)}
+      />
     </section>
   );
 }

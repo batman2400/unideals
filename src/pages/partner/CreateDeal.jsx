@@ -18,6 +18,8 @@ import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 import { OFFICIAL_CATEGORIES, normalizeCategory } from "../../lib/categories";
 import DealCard from "../../components/DealCard";
+import ImageCropModal from "../../components/ImageCropModal";
+import { DEAL_ASPECT_OPTIONS } from "../../lib/imageCropUtils";
 
 const CATEGORY_OPTIONS = OFFICIAL_CATEGORIES;
 const TYPE_OPTIONS = ["Online", "In-Store"];
@@ -79,7 +81,9 @@ function CreateDeal() {
   const [partnerBrandCategory, setPartnerBrandCategory] = useState("");
   const [brandLoading, setBrandLoading] = useState(true);
   const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [originalImageFile, setOriginalImageFile] = useState(null);
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const isMountedRef = useRef(true);
   const inFlightRef = useRef(false);
@@ -208,9 +212,28 @@ function CreateDeal() {
     }
   };
 
+  const handleImageSelect = (file) => {
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Please select an image file (JPG, PNG, or WEBP).");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setError("Image is too large. Maximum allowed size is 5MB.");
+      return;
+    }
+    setError("");
+    setOriginalImageFile(file);
+    setIsCropModalOpen(true);
+  };
+
+  const handleCropComplete = (croppedFile) => {
+    setSelectedImageFile(croppedFile);
+  };
+
   const onImageFileChange = (event) => {
     const file = event.target.files?.[0] || null;
-    setSelectedImageFile(file);
+    handleImageSelect(file);
   };
 
   const handleDragOver = (e) => {
@@ -228,7 +251,7 @@ function CreateDeal() {
     setIsDragging(false);
     const file = e.dataTransfer.files?.[0];
     if (file) {
-      setSelectedImageFile(file);
+      handleImageSelect(file);
     }
   };
 
@@ -744,23 +767,39 @@ function CreateDeal() {
 
                 {selectedImagePreviewUrl ? (
                   <div className="flex flex-col items-center">
-                    <div className="w-48 h-32 rounded-lg overflow-hidden border border-outline-variant/20 shadow-sm mb-4 relative group">
+                    <div className="w-52 h-44 rounded-xl overflow-hidden border border-outline-variant/20 shadow-md mb-4 relative group bg-surface-container">
                       <img
                         src={selectedImagePreviewUrl}
                         alt="Selected preview"
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsCropModalOpen(true);
+                          }}
+                          className="bg-surface text-on-surface p-2 rounded-full hover:scale-110 transition-transform shadow-md flex items-center justify-center"
+                          title="Adjust Framing"
+                        >
+                          <span className="material-symbols-outlined text-sm">
+                            crop
+                          </span>
+                        </button>
                         <button
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
                             setSelectedImageFile(null);
+                            setOriginalImageFile(null);
                             if (fileInputRef.current)
                               fileInputRef.current.value = "";
                           }}
-                          className="bg-error text-on-error p-2 rounded-full hover:scale-110 transition-transform shadow-sm flex items-center justify-center"
+                          className="bg-error text-on-error p-2 rounded-full hover:scale-110 transition-transform shadow-md flex items-center justify-center"
+                          title="Remove image"
                         >
                           <span className="material-symbols-outlined text-sm">
                             delete
@@ -768,13 +807,23 @@ function CreateDeal() {
                         </button>
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="text-sm font-headline font-bold text-primary hover:underline"
-                    >
-                      Change Image
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={() => setIsCropModalOpen(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-headline font-bold hover:bg-primary/15 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-base">crop</span>
+                        Adjust Framing
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="text-xs font-headline font-bold text-on-surface-variant hover:text-on-background hover:underline"
+                      >
+                        Change Photo
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div
@@ -861,6 +910,17 @@ function CreateDeal() {
           </div>
         </div>
       </div>
+
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        imageFile={originalImageFile || selectedImageFile}
+        title="Frame Deal Image"
+        subtitle="Choose which part will be showcased on student deal cards (1:1 Square recommended)."
+        aspectOptions={DEAL_ASPECT_OPTIONS}
+        initialAspectId="1:1"
+        onCropComplete={handleCropComplete}
+        onClose={() => setIsCropModalOpen(false)}
+      />
     </section>
   );
 }

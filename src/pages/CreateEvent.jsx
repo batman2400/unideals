@@ -5,6 +5,8 @@ import { supabase } from "../lib/supabaseClient";
 import { uploadEventImage } from "../lib/eventImageUpload";
 import { asHttpUrl } from "../lib/httpUrl";
 import DateTimeFields, { combineLocalDateAndTime } from "../components/DateTimeFields";
+import ImageCropModal from "../components/ImageCropModal";
+import { EVENT_ASPECT_OPTIONS } from "../lib/imageCropUtils";
 
 const EMPTY_FORM = {
   title: "",
@@ -45,8 +47,11 @@ function CreateEvent() {
   const [success, setSuccess] = useState(false);
 
   const [selectedImageFile, setSelectedImageFile] = useState(null);
+  const [originalImageFile, setOriginalImageFile] = useState(null);
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
+  const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const isMountedRef = useRef(true);
+  const eventFileInputRef = useRef(null);
 
   useEffect(() => {
     return () => {
@@ -425,19 +430,33 @@ function CreateEvent() {
             </div>
             <div>
               <label className="block text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">Upload Cover Image</label>
-              <div className="relative border-2 border-dashed border-outline-variant/30 rounded-xl p-4 bg-surface-container/30 hover:bg-surface-container/50 transition-colors flex items-center justify-center min-h-[100px]">
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg, image/webp"
-                  onChange={(e) => {
-                    const file = e.target.files[0];
-                    if (file) {
-                      setSelectedImageFile(file);
-                      setFormData((prev) => ({ ...prev, cover_image_url: "" }));
+              <input
+                type="file"
+                ref={eventFileInputRef}
+                accept="image/png, image/jpeg, image/webp"
+                onChange={(e) => {
+                  const file = e.target.files[0];
+                  if (file) {
+                    if (!file.type.startsWith("image/")) {
+                      setError("Please select an image file (JPG, PNG, or WEBP).");
+                      return;
                     }
-                  }}
-                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                />
+                    if (file.size > 5 * 1024 * 1024) {
+                      setError("Image is too large. Maximum allowed size is 5MB.");
+                      return;
+                    }
+                    setError("");
+                    setOriginalImageFile(file);
+                    setFormData((prev) => ({ ...prev, cover_image_url: "" }));
+                    setIsCropModalOpen(true);
+                  }
+                }}
+                className="hidden"
+              />
+              <div
+                className="relative border-2 border-dashed border-outline-variant/30 rounded-xl p-4 bg-surface-container/30 hover:bg-surface-container/50 transition-colors flex items-center justify-center min-h-[100px] cursor-pointer"
+                onClick={() => eventFileInputRef.current?.click()}
+              >
                 {!selectedImagePreviewUrl && !formData.cover_image_url ? (
                   <div className="flex flex-col items-center justify-center text-center">
                     <span className="material-symbols-outlined text-on-surface-variant/50 text-3xl mb-1">cloud_upload</span>
@@ -445,18 +464,52 @@ function CreateEvent() {
                     <p className="text-[10px] text-on-surface-variant/70 uppercase tracking-wide mt-1">JPG, PNG, WEBP (Max 5MB)</p>
                   </div>
                 ) : (
-                  <div className="w-full flex items-center justify-between gap-4">
-                     <div className="flex items-center gap-4 flex-1 min-w-0">
-                       <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-outline-variant/30 bg-surface flex-shrink-0">
-                         <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Preview" className="w-full h-full object-cover" />
-                       </div>
-                       <div className="flex-1 min-w-0">
-                         <p className="text-sm font-bold text-on-background truncate">
-                           {selectedImageFile ? selectedImageFile.name : "Cover Image"}
-                         </p>
-                         <p className="text-[10px] text-on-surface-variant uppercase tracking-wide mt-0.5">Click to replace</p>
-                       </div>
-                     </div>
+                  <div className="w-full flex flex-col items-center gap-3">
+                    <div className="relative w-full max-w-xs aspect-video rounded-xl overflow-hidden border border-outline-variant/30 bg-surface shadow-md group">
+                      <img src={selectedImagePreviewUrl || formData.cover_image_url} alt="Preview" className="w-full h-full object-cover" />
+                      <div className="absolute inset-0 bg-black/45 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setIsCropModalOpen(true);
+                          }}
+                          className="bg-surface text-on-surface p-2 rounded-full hover:scale-110 transition-transform shadow-md flex items-center justify-center"
+                          title="Adjust Framing"
+                        >
+                          <span className="material-symbols-outlined text-sm">crop</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setSelectedImageFile(null);
+                            setOriginalImageFile(null);
+                            setFormData((prev) => ({ ...prev, cover_image_url: "" }));
+                            if (eventFileInputRef.current) eventFileInputRef.current.value = "";
+                          }}
+                          className="bg-error text-on-error p-2 rounded-full hover:scale-110 transition-transform shadow-md flex items-center justify-center"
+                          title="Remove image"
+                        >
+                          <span className="material-symbols-outlined text-sm">delete</span>
+                        </button>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); setIsCropModalOpen(true); }}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-primary/10 text-primary text-xs font-headline font-bold hover:bg-primary/15 transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-base">crop</span>
+                        Adjust Framing
+                      </button>
+                      <span className="text-xs font-headline font-bold text-on-surface-variant">
+                        {selectedImageFile ? selectedImageFile.name : "Cover Image"}
+                      </span>
+                    </div>
                   </div>
                 )}
               </div>
@@ -563,6 +616,18 @@ function CreateEvent() {
           </div>
         </div>
       </div>
+      <ImageCropModal
+        isOpen={isCropModalOpen}
+        imageFile={originalImageFile || selectedImageFile}
+        title="Frame Event Cover"
+        subtitle="Choose which part will be showcased on the event banner (16:9 Wide recommended)."
+        aspectOptions={EVENT_ASPECT_OPTIONS}
+        initialAspectId="16:9"
+        onCropComplete={(croppedFile) => {
+          setSelectedImageFile(croppedFile);
+        }}
+        onClose={() => setIsCropModalOpen(false)}
+      />
     </div>
   );
 }
