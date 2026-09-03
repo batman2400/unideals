@@ -1011,9 +1011,9 @@ function DealDetails() {
 
         {/* Two-column stage — items-start so image keeps its natural height */}
         <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12 lg:items-start lg:gap-10 lg:pb-5">
-          {/* LEFT — dynamic natural-aspect hero (wraps image size, zero letterbox) */}
-          <div className="min-w-0 lg:col-span-5 lg:sticky lg:top-24">
-            <div className="relative w-full overflow-hidden rounded-2xl bg-surface-container/40 shadow-sm">
+          {/* LEFT — dynamic natural-aspect hero (hugs image size, zero letterbox) */}
+          <div className="flex min-w-0 justify-center lg:col-span-5 lg:sticky lg:top-24">
+            <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-2xl shadow-sm">
               {imageUrl ? (
                 <img
                   src={imageUrl}
@@ -1021,12 +1021,12 @@ function DealDetails() {
                   width={800}
                   height={800}
                   fetchPriority="high"
-                  className="block h-auto w-full max-h-[75vh] rounded-2xl object-contain"
+                  className="block h-auto w-auto max-h-[min(580px,70vh)] max-w-full rounded-2xl object-cover"
                   loading="eager"
                   decoding="async"
                 />
               ) : (
-                <div className="flex aspect-square w-full items-center justify-center bg-surface-container">
+                <div className="flex aspect-square w-full min-w-[280px] items-center justify-center rounded-2xl bg-surface-container">
                   <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">
                     image
                   </span>
