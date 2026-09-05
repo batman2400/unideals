@@ -9,7 +9,7 @@ import { Link, useSearchParams } from "react-router-dom";
 import { useMemo } from "react";
 import { Helmet } from "react-helmet-async";
 import { useDeals } from "../lib/useDeals";
-import { slugify, SITE_URL } from "../lib/seo";
+import { slugify, SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import DealsLoader from "../components/DealsLoader";
 
 function Brands() {
@@ -54,6 +54,24 @@ function Brands() {
           content="Browse every partner brand offering exclusive student discounts on Uni Deals — from tech and fashion to food and fitness, all across Sri Lanka."
         />
         <link rel="canonical" href={`${SITE_URL}/brands`} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Uni Deals" />
+        <meta property="og:title" content="Top Brand Student Discounts in Sri Lanka | Uni Deals" />
+        <meta
+          property="og:description"
+          content="Browse every partner brand offering exclusive student discounts on Uni Deals — from tech and fashion to food and fitness, all across Sri Lanka."
+        />
+        <meta property="og:url" content={`${SITE_URL}/brands`} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Top Brand Student Discounts in Sri Lanka | Uni Deals" />
+        <meta
+          name="twitter:description"
+          content="Browse every partner brand offering exclusive student discounts on Uni Deals — from tech and fashion to food and fitness, all across Sri Lanka."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
       
       {/* Page Header */}

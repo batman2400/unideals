@@ -57,6 +57,13 @@ export default function Blog() {
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
         <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Student Guides & Tips | Uni Deals Blog" />
+        <meta
+          name="twitter:description"
+          content="Tips, guides, and student life hacks to help Sri Lankan university students make the most of discounts, campus life, and their student budget."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
       {/* Header */}

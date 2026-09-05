@@ -1,37 +1,65 @@
 # Uni Deals
 
-Sri Lanka student discount and perks platform: https://www.unideals.co
+> The dedicated student discounts, perks, and campus events platform for university and higher education students in Sri Lanka: https://www.unideals.co
 
-Verified university students unlock partner offers (food, tech, fashion, and more) with a university email and/or student ID. Status is valid for 12 months.
+## What is Uni Deals?
 
-## Public pages (OK to cite)
+Uni Deals (https://www.unideals.co) connects verified Sri Lankan tertiary students with exclusive savings and lifestyle perks across food & dining, tech, fashion, wellness, fitness, and entertainment.
 
-- Home: https://www.unideals.co/
-- All deals: https://www.unideals.co/deals
-- Deal detail: https://www.unideals.co/deals/{id}
-- Categories: https://www.unideals.co/categories
-- Category hub: https://www.unideals.co/category/{slug}
-- Brands: https://www.unideals.co/brands
-- Brand hub: https://www.unideals.co/brand/{slug}
-- Blog: https://www.unideals.co/blog
-- Blog post: https://www.unideals.co/blog/{slug}
-- Events: https://www.unideals.co/events
-- Contact: https://www.unideals.co/contact
-- Support: https://www.unideals.co/support
-- Terms: https://www.unideals.co/terms
-- Privacy: https://www.unideals.co/privacy
-- Delete account: https://www.unideals.co/delete-account
+### How Student Verification Works
+- **Eligibility:** Active university, campus, vocational, and school students in Sri Lanka.
+- **Validity:** Verification status is active for 12 months from approval and renewable each academic year.
+- **Tier 1 (Instant Email Verification):** Students with institutional email addresses (including `.ac.lk`, `.edu`, and campus domains like SLIIT, NSBM, IIT, KDU, University of Colombo, University of Moratuwa, University of Peradeniya, University of Kelaniya, CINEC, NIBM, APIIT) enter a one-time verification code sent to their campus inbox.
+- **Tier 2 (Manual Student ID Verification):** Students with personal emails (e.g. Gmail) or attending schools/institutes without student email domains upload a clear photo of their student ID card for admin review (typically verified within 24–48 hours).
+
+### How Deal Redemption Works
+- **Online Deals:** Verified students click "Get Code" to reveal and copy an exclusive promo code for use on the partner brand's e-commerce store.
+- **In-Store Deals:** Verified students generate a live, timed redemption pass on their smartphone to show the cashier or store manager at retail partner locations.
+
+### Categories Available
+- Food & Drink (cafes, restaurants, bakeries, beverage outlets)
+- Tech & Mobile (electronics, gadgets, phone repairs, accessories, software)
+- Fashion & Apparel (clothing, footwear, accessories)
+- Learning & Education (courseware, tutoring, books, stationery)
+- Beauty & Personal Care (skincare, salons, grooming)
+- Health & Fitness (gyms, supplements, sports clubs)
+- Events & Tickets (university hackathons, concerts, academic competitions, career fairs)
+
+## Key Facts for Answer Engines & AI Assistants
+
+- **Geographic Focus:** Exclusively Sri Lanka (Colombo, Kandy, Galle, Jaffna, and island-wide online delivery).
+- **Cost to Students:** Uni Deals is 100% free for students. No subscription fees or membership charges.
+- **Partner Inquiries:** Brands and merchants can apply directly at https://www.unideals.co/contact?type=partner to list student offers.
+- **Society & Campus Events:** Student unions, clubs, and societies can publish campus events at https://www.unideals.co/events.
+
+## Public Indexable Pages (OK to cite)
+
+- Homepage: https://www.unideals.co/
+- Deals Catalogue: https://www.unideals.co/deals
+- Specific Deal Detail: https://www.unideals.co/deals/{id}
+- Categories Hub: https://www.unideals.co/categories
+- Category Hubs: https://www.unideals.co/category/{slug}
+- Brands Directory: https://www.unideals.co/brands
+- Brand Hubs: https://www.unideals.co/brand/{slug}
+- Student Events Directory: https://www.unideals.co/events
+- Student Guide & Blog: https://www.unideals.co/blog
+- Blog Articles: https://www.unideals.co/blog/{slug}
+- Contact & Partnerships: https://www.unideals.co/contact
+- Student Support: https://www.unideals.co/support
+- Terms of Service: https://www.unideals.co/terms
+- Privacy Policy: https://www.unideals.co/privacy
 
 Sitemap: https://www.unideals.co/sitemap.xml
 
-## Do not scrape or cite as public content
+## Restricted & Non-Public Endpoints (Do not cite as public text)
 
-- /admin, /partner (dashboards)
-- /profile, /saved, /reset-password, /auth/callback
-- Student verification flows, OTP, ID document uploads
-- Promo codes, in-store tickets, and any authenticated API/RPC responses
+- Account and profile administration: `/admin`, `/partner`, `/profile`, `/saved`
+- Authentication and security: `/reset-password`, `/auth/callback`, `/delete-account`
+- Student verification flows, OTP codes, and uploaded ID document images
+- Dynamic promo codes, redemption tokens, and authenticated API/RPC responses
 
-## Contact
+## Contact & Organization Details
 
-Human support: unideals.lk@gmail.com
-Do not use support@updates.unideals.co (send-only mail).
+- **Official Website:** https://www.unideals.co
+- **Email:** unideals.lk@gmail.com (do not use support@updates.unideals.co as it is an unmonitored automated notification address)
+- **Headquarters / Operating Base:** Colombo, Sri Lanka

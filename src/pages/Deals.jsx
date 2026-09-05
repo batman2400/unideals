@@ -130,6 +130,13 @@ function Deals({ searchQuery }) {
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
         <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="All Student Deals & Discounts in Sri Lanka | Uni Deals" />
+        <meta
+          name="twitter:description"
+          content="Browse every exclusive student discount on Uni Deals — online promo codes and in-store deals across tech, food, fashion, and more in Sri Lanka."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
       {/* Page Header */}

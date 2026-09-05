@@ -13,7 +13,7 @@ import { useSearchParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import { isComingSoonDeal } from "../lib/comingSoon";
-import { slugify, SITE_URL } from "../lib/seo";
+import { slugify, SITE_URL, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import {
   OFFICIAL_CATEGORIES,
   CATEGORY_META as categoryMeta,
@@ -109,6 +109,18 @@ function Categories() {
         <title>{getCategoryTitle()}</title>
         <meta name="description" content={metaDescription} />
         <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="Uni Deals" />
+        <meta property="og:title" content={getCategoryTitle()} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:url" content={canonicalUrl} />
+        <meta property="og:image" content={DEFAULT_OG_IMAGE} />
+        <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
+        <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={getCategoryTitle()} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
       {/* Page Header */}

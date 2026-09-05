@@ -1,18 +1,14 @@
 /**
- * Server-rendered Open Graph proxy for /deals/:id
+ * Server-rendered Open Graph & Schema.org proxy for /deals/:id
  *
- * react-helmet-async only injects <title>/og:* tags into the DOM after
- * JavaScript executes. Social-preview crawlers (Facebook, Twitter/X,
- * WhatsApp, LinkedIn, Slack, ...) do not execute JavaScript, so they would
- * otherwise only ever see the static, generic tags from index.html for
- * every shared /deals/:id link.
+ * Serves fully prerendered HTML to search engines (Googlebot, Bingbot,
+ * Applebot, ...) and social preview bots (WhatsApp, Telegram, Facebook,
+ * Twitter/X, Discord, Slack, iMessage) and AI answer engines (ChatGPT,
+ * Perplexity, Claude).
  *
- * vercel.json rewrites requests from those specific user agents to this
- * function (mirroring the existing /blog/:slug -> api/og-proxy.js rule),
- * which fetches the deal via the same public RPC the client app uses and
- * returns a minimal, fully server-rendered HTML document with accurate
- * per-deal title/description/image tags. Human visitors and Googlebot
- * (which does render JS) are unaffected and keep hitting the normal SPA.
+ * Emits Product + nested Offer JSON-LD schema, canonical, Open Graph,
+ * and a rich indexable HTML body with internal links to category & brand hubs.
+ * NEVER emits secret redemption codes in bot HTML.
  */
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -21,6 +17,14 @@ const escapeHtml = (value) =>
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
+
+function slugify(value) {
+  return String(value ?? "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
 const SITE_URL = "https://www.unideals.co";
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
@@ -62,14 +66,49 @@ export default async function handler(req, res) {
     }
 
     const canonicalUrl = `${SITE_URL}/deals/${deal.id}`;
-    const title = escapeHtml(
-      `${deal.brand} Student Discount: ${deal.discount} | Uni Deals`,
-    );
-    const description = escapeHtml(
+    const brandSlug = slugify(deal.brand);
+    const categorySlug = slugify(deal.category);
+    const brandUrl = brandSlug ? `${SITE_URL}/brand/${brandSlug}` : `${SITE_URL}/brands`;
+    const categoryUrl = categorySlug ? `${SITE_URL}/category/${categorySlug}` : `${SITE_URL}/categories`;
+
+    const rawTitle = `${deal.brand} Student Discount: ${deal.discount} | Uni Deals`;
+    const rawDescription =
       deal.description ||
-        `Save ${deal.discount} on ${deal.brand} with your verified Sri Lankan university email — redeem on Uni Deals.`,
-    );
-    const image = escapeHtml(deal.image_url || DEFAULT_IMAGE);
+      `Save ${deal.discount} on ${deal.brand} with your verified Sri Lankan university email — redeem on Uni Deals.`;
+    const rawImage = deal.image_url || DEFAULT_IMAGE;
+
+    const title = escapeHtml(rawTitle);
+    const description = escapeHtml(rawDescription);
+    const image = escapeHtml(rawImage);
+
+    const schema = {
+      "@context": "https://schema.org",
+      "@type": "Product",
+      "name": `${deal.brand} - ${deal.title || deal.discount + " OFF"}`,
+      "description": rawDescription,
+      "image": [rawImage],
+      "brand": {
+        "@type": "Brand",
+        "name": deal.brand,
+      },
+      "category": deal.category || "Student Deals",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "LKR",
+        "availability": "https://schema.org/InStock",
+        "url": canonicalUrl,
+        "areaServed": {
+          "@type": "Country",
+          "name": "Sri Lanka",
+        },
+        "eligibleRegion": {
+          "@type": "Country",
+          "name": "Sri Lanka",
+        },
+        "eligibleCustomerType": "http://purl.org/goodrelations/v1#Enduser",
+      },
+    };
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -85,14 +124,36 @@ export default async function handler(req, res) {
     <meta property="og:image" content="${image}" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content="en_LK" />
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="${title}" />
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${image}" />
+    <script type="application/ld+json">${JSON.stringify(schema)}</script>
   </head>
   <body>
-    <h1>${title}</h1>
-    <p>${description}</p>
+    <article>
+      <header>
+        <p><strong>Brand:</strong> <a href="${brandUrl}">${escapeHtml(deal.brand)}</a></p>
+        <p><strong>Category:</strong> <a href="${categoryUrl}">${escapeHtml(deal.category || "General")}</a></p>
+        <h1>${title}</h1>
+      </header>
+      <section>
+        <p><strong>Discount Offer:</strong> ${escapeHtml(deal.discount)} (${escapeHtml(deal.type || "Online & In-Store")})</p>
+        <p>${description}</p>
+      </section>
+      <section>
+        <p>Verified university students in Sri Lanka can unlock this exclusive student perk using their university email on <a href="${SITE_URL}">Uni Deals</a>.</p>
+      </section>
+      <nav aria-label="Related links">
+        <ul>
+          <li><a href="${SITE_URL}/deals">All Student Deals</a></li>
+          <li><a href="${brandUrl}">More ${escapeHtml(deal.brand)} Deals</a></li>
+          <li><a href="${categoryUrl}">More ${escapeHtml(deal.category || "Student")} Discounts</a></li>
+          <li><a href="${SITE_URL}">Uni Deals Homepage</a></li>
+        </ul>
+      </nav>
+    </article>
   </body>
 </html>`;
 
@@ -118,6 +179,8 @@ function notFoundHtml() {
   </head>
   <body>
     <h1>Deal Not Found</h1>
+    <p>This student deal may have expired or is no longer available.</p>
+    <p><a href="${SITE_URL}/deals">Browse all active student deals</a></p>
   </body>
 </html>`;
 }

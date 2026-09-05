@@ -59,7 +59,7 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|linkedinbot|skypeuripreview|pinterest|slackbot|vkShare|W3C_Validator|atproto).*"
+          "value": "(?i).*(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
         }
       ],
       "destination": "/api/og-proxy?slug=:slug"
@@ -70,10 +70,54 @@
         {
           "type": "header",
           "key": "user-agent",
-          "value": "(?i).*(twitterbot|facebookexternalhit|linkedinbot|skypeuripreview|pinterest|slackbot|vkShare|W3C_Validator|atproto).*"
+          "value": "(?i).*(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
         }
       ],
       "destination": "/api/deal-og-proxy?id=:id"
+    },
+    {
+      "source": "/events/:id",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/event-og-proxy?id=:id"
+    },
+    {
+      "source": "/category/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/hub-og-proxy?type=category&slug=:slug"
+    },
+    {
+      "source": "/brand/:slug",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/hub-og-proxy?type=brand&slug=:slug"
+    },
+    {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/home-og-proxy"
     },
     {
       "source": "/((?!api/|.*\\..*).*)",

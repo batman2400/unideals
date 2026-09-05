@@ -119,18 +119,18 @@ function urlEntry(loc, { lastmod, changefreq, priority } = {}) {
     .join("\n");
 }
 
-function staticEntries() {
+function staticEntries(now = new Date().toISOString()) {
   return [
-    urlEntry(`${SITE_URL}/`, { changefreq: "daily", priority: "1.0" }),
-    urlEntry(`${SITE_URL}/deals`, { changefreq: "hourly", priority: "0.9" }),
-    urlEntry(`${SITE_URL}/categories`, { changefreq: "daily", priority: "0.8" }),
-    urlEntry(`${SITE_URL}/brands`, { changefreq: "daily", priority: "0.8" }),
-    urlEntry(`${SITE_URL}/events`, { changefreq: "daily", priority: "0.8" }),
-    urlEntry(`${SITE_URL}/blog`, { changefreq: "daily", priority: "0.7" }),
-    urlEntry(`${SITE_URL}/contact`, { changefreq: "monthly", priority: "0.3" }),
-    urlEntry(`${SITE_URL}/support`, { changefreq: "monthly", priority: "0.3" }),
-    urlEntry(`${SITE_URL}/terms`, { changefreq: "yearly", priority: "0.2" }),
-    urlEntry(`${SITE_URL}/privacy`, { changefreq: "yearly", priority: "0.2" }),
+    urlEntry(`${SITE_URL}/`, { lastmod: now, changefreq: "daily", priority: "1.0" }),
+    urlEntry(`${SITE_URL}/deals`, { lastmod: now, changefreq: "hourly", priority: "0.9" }),
+    urlEntry(`${SITE_URL}/categories`, { lastmod: now, changefreq: "daily", priority: "0.8" }),
+    urlEntry(`${SITE_URL}/brands`, { lastmod: now, changefreq: "daily", priority: "0.8" }),
+    urlEntry(`${SITE_URL}/events`, { lastmod: now, changefreq: "daily", priority: "0.8" }),
+    urlEntry(`${SITE_URL}/blog`, { lastmod: now, changefreq: "daily", priority: "0.7" }),
+    urlEntry(`${SITE_URL}/contact`, { lastmod: now, changefreq: "monthly", priority: "0.3" }),
+    urlEntry(`${SITE_URL}/support`, { lastmod: now, changefreq: "monthly", priority: "0.3" }),
+    urlEntry(`${SITE_URL}/terms`, { lastmod: now, changefreq: "yearly", priority: "0.2" }),
+    urlEntry(`${SITE_URL}/privacy`, { lastmod: now, changefreq: "yearly", priority: "0.2" }),
   ];
 }
 
@@ -170,7 +170,7 @@ export default async function handler(req, res) {
 
     const dealEntries = deals.map((deal) =>
       urlEntry(`${SITE_URL}/deals/${deal.id}`, {
-        lastmod: toIso(deal.created_at, now),
+        lastmod: toIso(deal.updated_at || deal.created_at, now),
         changefreq: "weekly",
         priority: "0.7",
       }),
@@ -197,13 +197,14 @@ export default async function handler(req, res) {
     const categorySlugs = new Map();
     const brandSlugs = new Map();
     deals.forEach((deal) => {
+      const dealDate = deal.updated_at || deal.created_at;
       if (deal.category) {
         const slug = slugify(deal.category);
-        if (slug && !categorySlugs.has(slug)) categorySlugs.set(slug, deal.created_at);
+        if (slug && !categorySlugs.has(slug)) categorySlugs.set(slug, dealDate);
       }
       if (deal.brand) {
         const slug = slugify(deal.brand);
-        if (slug && !brandSlugs.has(slug)) brandSlugs.set(slug, deal.created_at);
+        if (slug && !brandSlugs.has(slug)) brandSlugs.set(slug, dealDate);
       }
     });
 
@@ -226,7 +227,7 @@ export default async function handler(req, res) {
     sendXml(
       res,
       buildXml([
-        ...staticEntries(),
+        ...staticEntries(now),
         ...dealEntries,
         ...categoryEntries,
         ...brandEntries,
@@ -236,6 +237,6 @@ export default async function handler(req, res) {
     );
   } catch (error) {
     console.error("[sitemap] generation failed:", error);
-    sendXml(res, buildXml(staticEntries()));
+    sendXml(res, buildXml(staticEntries(now)));
   }
 }

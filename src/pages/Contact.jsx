@@ -3,6 +3,25 @@ import { useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { SITE_URL } from "../lib/seo";
+import FAQSchema from "../components/FAQSchema";
+
+const CONTACT_FAQS = [
+  {
+    question: "How do I verify my student status?",
+    answer:
+      "Sign up, then verify from Profile. A university email code verifies you immediately; otherwise upload a student ID. Status is valid for 12 months and must be renewed each year.",
+  },
+  {
+    question: "Can I submit an event for my society?",
+    answer:
+      'Yes! Select "Event Collaboration" in the form or use the Events page to submit directly.',
+  },
+  {
+    question: "Are partnerships paid?",
+    answer:
+      "We offer both free student discounts and premium featured placements. Reach out to learn more.",
+  },
+];
 
 export default function Contact() {
   const [searchParams] = useSearchParams();
@@ -74,14 +93,17 @@ export default function Contact() {
   };
 
   const seoTags = (
-    <Helmet>
-      <title>Contact Us | Uni Deals</title>
-      <meta
-        name="description"
-        content="Get in touch with Uni Deals for support, brand partnerships, or event collaboration. We respond to all inquiries within 24-48 hours."
-      />
-      <link rel="canonical" href={`${SITE_URL}/contact`} />
-    </Helmet>
+    <>
+      <Helmet>
+        <title>Contact Us | Uni Deals</title>
+        <meta
+          name="description"
+          content="Get in touch with Uni Deals for support, brand partnerships, or event collaboration. We respond to all inquiries within 24-48 hours."
+        />
+        <link rel="canonical" href={`${SITE_URL}/contact`} />
+      </Helmet>
+      <FAQSchema items={CONTACT_FAQS} />
+    </>
   );
 
   if (isSuccess) {

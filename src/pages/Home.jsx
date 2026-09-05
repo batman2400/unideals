@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
 import ExploreFeed from "../components/ExploreFeed";
-import FAQSchema from "../components/FAQSchema";
+import HomeFAQ from "../components/HomeFAQ";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
 import { slugify, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import { OFFICIAL_CATEGORIES } from "../lib/categories";
@@ -54,7 +54,6 @@ function Home({ searchQuery, onSearchChange }) {
         <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
       
-      <FAQSchema />
       <SiteNavigationSchema />
 
       {/* SEO Optimized Headers */}
@@ -87,6 +86,8 @@ function Home({ searchQuery, onSearchChange }) {
       </div>
 
       <ExploreFeed searchQuery={searchQuery} />
+
+      <HomeFAQ />
 
       {/* SEO Supported Campuses Section */}
       <section className="max-w-[1440px] mx-auto px-4 md:px-8 py-8 md:py-12 border-t border-outline-variant/20 mt-8">

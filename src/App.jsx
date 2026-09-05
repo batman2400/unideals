@@ -196,6 +196,33 @@ function App() {
     window.history.replaceState({}, document.title, nextUrl);
   }, [location.pathname, location.search, location.hash]);
 
+  // ── SEO Head Stacking Deduplication ───────────────────
+  // Crawlers or browser hydration may encounter initial fallback tags from index.html.
+  // Once Helmet mounts route-specific tags, purge any redundant untagged fallback elements
+  // so there is strictly one canonical link, one description, and one title in <head>.
+  useEffect(() => {
+    const canonicals = document.querySelectorAll('link[rel="canonical"]');
+    if (canonicals.length > 1) {
+      canonicals.forEach((el) => {
+        if (!el.hasAttribute("data-rh")) el.remove();
+      });
+    }
+
+    const descriptions = document.querySelectorAll('meta[name="description"]');
+    if (descriptions.length > 1) {
+      descriptions.forEach((el) => {
+        if (!el.hasAttribute("data-rh")) el.remove();
+      });
+    }
+
+    const titles = document.querySelectorAll("title");
+    if (titles.length > 1) {
+      titles.forEach((el) => {
+        if (!el.hasAttribute("data-rh")) el.remove();
+      });
+    }
+  }, [location.pathname]);
+
   // Surface OAuth errors returned in the URL (e.g. user cancelled Google),
   // then strip the query params so a refresh doesn't reopen the modal.
   useEffect(() => {

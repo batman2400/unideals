@@ -48,6 +48,13 @@ export default function UniversityEvents() {
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
         <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="Student Events in Sri Lanka | Uni Deals" />
+        <meta
+          name="twitter:description"
+          content="Discover university events, tech fests, networking sessions, and society gatherings across Sri Lanka. Submit your own campus event for free on Uni Deals."
+        />
+        <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
 
       {activeEvents.length > 0 && (

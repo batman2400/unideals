@@ -36,45 +36,60 @@ export default function DealOfferSchema({ deal, canonicalUrl }) {
 
   const schema = {
     "@context": "https://schema.org",
-    "@type": "Offer",
-    name: title,
+    "@type": "Product",
+    name: `${brand} - ${title || "Student Discount"}`,
     description:
       description ||
       `Exclusive ${brand} student discount for verified Sri Lankan university students, available on Uni Deals.`,
-    category: category || undefined,
+    category: category || "Student Deals",
     url: canonicalUrl,
     image: imageUrl || FALLBACK_IMAGE,
-    availability: "https://schema.org/InStock",
-    seller: {
-      "@type": "Organization",
+    brand: {
+      "@type": "Brand",
       name: brand,
       ...(hasStoreUrl ? { url: safeStoreUrl } : {}),
     },
-    areaServed: {
-      "@type": "Country",
-      name: "Sri Lanka",
-    },
-    additionalProperty: [
-      {
-        "@type": "PropertyValue",
-        name: "Fulfillment Method",
-        value: isInStore ? "In-Store Redemption" : "Online Redemption",
+    offers: {
+      "@type": "Offer",
+      price: "0",
+      priceCurrency: "LKR",
+      availability: "https://schema.org/InStock",
+      url: canonicalUrl,
+      seller: {
+        "@type": "Organization",
+        name: brand,
+        ...(hasStoreUrl ? { url: safeStoreUrl } : {}),
       },
-      {
-        "@type": "PropertyValue",
-        name: "Eligibility",
-        value: "Verified Sri Lankan university students (.ac.lk email required)",
+      areaServed: {
+        "@type": "Country",
+        name: "Sri Lanka",
       },
-    ],
-    eligibleCustomerType: {
-      "@type": "Audience",
-      audienceType: "Verified Sri Lankan university students",
+      eligibleRegion: {
+        "@type": "Country",
+        name: "Sri Lanka",
+      },
+      eligibleCustomerType: {
+        "@type": "Audience",
+        audienceType: "Verified Sri Lankan university students",
+      },
+      additionalProperty: [
+        {
+          "@type": "PropertyValue",
+          name: "Fulfillment Method",
+          value: isInStore ? "In-Store Redemption" : "Online Redemption",
+        },
+        {
+          "@type": "PropertyValue",
+          name: "Eligibility",
+          value: "Verified Sri Lankan university students (.ac.lk email required)",
+        },
+      ],
+      ...(isInStore
+        ? { availableAtOrFrom: { "@type": "Place", name: `${brand} Stores in Sri Lanka` } }
+        : {}),
+      ...(showStartDate && startTime ? { validFrom: startTime } : {}),
+      ...(showEndDate && endTime ? { validThrough: endTime } : {}),
     },
-    ...(isInStore
-      ? { availableAtOrFrom: { "@type": "Place", name: `${brand} Stores in Sri Lanka` } }
-      : {}),
-    ...(showStartDate && startTime ? { validFrom: startTime } : {}),
-    ...(showEndDate && endTime ? { validThrough: endTime } : {}),
   };
 
   return <script type="application/ld+json">{JSON.stringify(schema)}</script>;

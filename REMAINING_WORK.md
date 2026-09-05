@@ -91,8 +91,8 @@ Details: [LAUNCH.md](../unideals-app/LAUNCH.md), [SECURITY.md](../unideals-app/S
 ### OUT
 
 - [x] **11.** [SECURITY.md](../unideals-app/SECURITY.md) live checks: private ID bucket; student JWT cannot read `deals.redemption_code` from the table, others’ IDs/tickets, admin RPCs; Edge Function gates; production Auth redirects `unideals://` (`exp://**` removed). Play SHA-1 is step 14
-- [ ] **12.** Phone QA on a **preview APK** (not Play): login / Google / reset, ID verify, **Online Reveal** (need a live Online deal), in-store QR + scanner, admin approve/reject. Abuse: student JWT cannot steal IDs/codes
-- [ ] **13.** Play Console listing: 512 icon, **1024×500 feature graphic**, screenshots, Data safety, IARC, 13+ audience, camera/photo justifications, privacy URL, **delete-account URL**. Upload the **existing production AAB** to Internal testing — not a preview APK
+- [x] **12.** Phone QA on a **preview APK** (not Play): login / Google / reset, ID verify, **Online Reveal** (need a live Online deal), in-store QR + scanner, admin approve/reject. Abuse: student JWT cannot steal IDs/codes
+- [ ] **13.** Play Console: developer account is done. Icon + feature graphic + listing copy are in `unideals-app/play-store/`. Remaining: screenshots, Data safety, IARC, 13+, camera/photo justifications, privacy URL, **delete-account URL**. Production AAB **1.0.0** versionCode **3** is building — not a preview APK, not versionCode 2
 - [ ] **14.** After that upload: add **Play app-signing SHA-1** on the Firebase Android key (keep the EAS SHA-1)
 - [ ] **15.** Promote Internal → Closed (if required) → Production
 - [ ] **16.** After a **store** install Reveals an online code: apply `supabase_reveal_deal_code_cutover.sql` **once**

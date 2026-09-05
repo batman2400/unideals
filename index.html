@@ -16,7 +16,7 @@
       (see src/pages/*.jsx), but this must stay accurate for crawlers or
       social bots that don't execute JS.
     -->
-    <title>Uni Deals | Student Discounts & Perks in Sri Lanka</title>
+    <title data-rh="true">Uni Deals | Student Discounts & Perks in Sri Lanka</title>
     <script>
       (function () {
         var path = (location.pathname || "/").replace(/\/+$/, "") || "/";
@@ -34,8 +34,11 @@
         if (title) document.title = title;
       })();
     </script>
-    <link rel="canonical" href="https://www.unideals.co/" />
+    <link data-rh="true" rel="canonical" href="https://www.unideals.co/" />
+    <link rel="alternate" hreflang="en-LK" href="https://www.unideals.co/" />
+    <link rel="alternate" hreflang="x-default" href="https://www.unideals.co/" />
     <meta
+      data-rh="true"
       name="description"
       content="Uni Deals is Sri Lanka's student discount and perks platform. Unlock exclusive offers on food, tech, fashion, and more with your verified university email."
     />
@@ -58,20 +61,46 @@
     <link rel="manifest" href="/manifest.webmanifest?v=16" />
 
     <!-- Social preview -->
-    <meta property="og:type" content="website" />
-    <meta property="og:url" content="https://www.unideals.co/" />
-    <meta property="og:site_name" content="Uni Deals" />
-    <meta property="og:title" content="Uni Deals | Student Discounts & Perks in Sri Lanka" />
+    <meta data-rh="true" property="og:type" content="website" />
+    <meta data-rh="true" property="og:url" content="https://www.unideals.co/" />
+    <meta data-rh="true" property="og:site_name" content="Uni Deals" />
+    <meta data-rh="true" property="og:title" content="Uni Deals | Student Discounts & Perks in Sri Lanka" />
     <meta
+      data-rh="true"
       property="og:description"
       content="Uni Deals is Sri Lanka's student discount and perks platform. Unlock exclusive offers on food, tech, fashion, and more with your verified university email."
     />
-    <meta property="og:image" content="https://www.unideals.co/og-default.png" />
-    <meta property="og:image:width" content="1200" />
-    <meta property="og:image:height" content="630" />
-    <meta property="og:image:type" content="image/png" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:image" content="https://www.unideals.co/og-default.png" />
+    <meta data-rh="true" property="og:image" content="https://www.unideals.co/og-default.png" />
+    <meta data-rh="true" property="og:image:width" content="1200" />
+    <meta data-rh="true" property="og:image:height" content="630" />
+    <meta data-rh="true" property="og:image:type" content="image/png" />
+    <meta property="og:locale" content="en_LK" />
+    <meta data-rh="true" name="twitter:card" content="summary_large_image" />
+    <meta data-rh="true" name="twitter:title" content="Uni Deals | Student Discounts & Perks in Sri Lanka" />
+    <meta
+      data-rh="true"
+      name="twitter:description"
+      content="Uni Deals is Sri Lanka's student discount and perks platform. Unlock exclusive offers on food, tech, fashion, and more with your verified university email."
+    />
+    <meta data-rh="true" name="twitter:image" content="https://www.unideals.co/og-default.png" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Uni Deals",
+      "alternateName": "UniDeals",
+      "url": "https://www.unideals.co",
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.unideals.co/deals?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    }
+    </script>
 
     <script type="application/ld+json">
     {
@@ -87,7 +116,23 @@
         "height": 512
       },
       "image": "https://www.unideals.co/logo-512.png",
-      "description": "A dedicated discount and perks platform for university students in Sri Lanka."
+      "description": "A dedicated discount and perks platform for university students in Sri Lanka.",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Colombo",
+        "addressCountry": "LK"
+      },
+      "areaServed": {
+        "@type": "Country",
+        "name": "Sri Lanka"
+      },
+      "contactPoint": {
+        "@type": "ContactPoint",
+        "email": "unideals.lk@gmail.com",
+        "contactType": "customer support",
+        "areaServed": "LK",
+        "availableLanguage": ["English", "Sinhala", "Tamil"]
+      }
     }
     </script>
 
@@ -103,6 +148,23 @@
     />
   </head>
   <body class="bg-background text-on-background font-body antialiased">
+    <noscript>
+      <header style="padding: 16px; background: #29695b; color: #fff;">
+        <p><strong>Uni Deals:</strong> Exclusive Student Discounts &amp; Perks in Sri Lanka</p>
+      </header>
+      <nav aria-label="Quick links" style="padding: 16px;">
+        <h2>Explore Uni Deals</h2>
+        <ul>
+          <li><a href="/deals">Student Deals in Sri Lanka</a></li>
+          <li><a href="/categories">Deal Categories</a></li>
+          <li><a href="/brands">Partner Brands Directory</a></li>
+          <li><a href="/events">Student &amp; Campus Events</a></li>
+          <li><a href="/blog">Student Guides &amp; Blog</a></li>
+          <li><a href="/contact">Partner With Us / Contact</a></li>
+          <li><a href="/support">Student Support</a></li>
+        </ul>
+      </nav>
+    </noscript>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
