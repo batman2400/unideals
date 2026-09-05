@@ -16,6 +16,10 @@ import { next, rewrite } from "@vercel/functions";
 
 const CANONICAL_ORIGIN = "https://www.unideals.co";
 
+/** Full bot user-agent pattern matching search engines, social scrapers, and AI answer engines. */
+export const BOT_UA_REGEX =
+  /(googlebot|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto)/i;
+
 /** Production Vercel alias that Bing already indexed. */
 const VERCEL_PRODUCTION_HOSTS = new Set([
   "unideals-nine.vercel.app",
@@ -100,6 +104,15 @@ export default async function middleware(request) {
   }
 
   const path = normalizePath(url.pathname);
+
+  // ── Bot prerendering for Homepage (/) ────────────────────────────────
+  // Vercel serves static dist/index.html on / before vercel.json rewrites.
+  // Intercepting bots here at Edge middleware ensures search engines,
+  // social crawlers, and AI answer engines receive rich pre-rendered HTML.
+  const userAgent = request.headers.get("user-agent") || "";
+  if (path === "/" && BOT_UA_REGEX.test(userAgent)) {
+    return rewrite(new URL(`/api/home-og-proxy${url.search}`, request.url));
+  }
 
   // ── /deals/:id existence check ───────────────────────────────────────
   if (path.startsWith("/deals/") && path !== "/deals") {

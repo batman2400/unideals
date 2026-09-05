@@ -6,7 +6,7 @@
  * and AI answer engines (ChatGPT, Perplexity, Claude).
  *
  * Emits Event JSON-LD schema matching client EventSchema, canonical, Open Graph,
- * 404 for unapproved/finished events, and a rich indexable HTML body.
+ * 404 with noindex for invalid/unapproved/finished events, and a rich indexable HTML body.
  */
 const escapeHtml = (value) =>
   String(value ?? "")
@@ -16,23 +16,51 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+export const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const SITE_URL = "https://www.unideals.co";
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
 
-function isFinishedEvent(event, now = new Date()) {
-  const publishAt = event?.publish_at;
-  if (publishAt) {
-    const publishDate = new Date(publishAt);
-    if (!Number.isNaN(publishDate.getTime()) && publishDate.getTime() > now.getTime()) {
-      return false;
-    }
+function toIsoDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function offerValidFrom(event) {
+  const fromCreated = toIsoDate(event.created_at);
+  if (fromCreated) return fromCreated;
+
+  const start = event.start_time ? new Date(event.start_time) : null;
+  if (start && !Number.isNaN(start.getTime())) {
+    start.setDate(start.getDate() - 30);
+    return start.toISOString();
   }
-  if (!event?.start_time) return false;
-  const startTime = new Date(event.start_time);
-  if (Number.isNaN(startTime.getTime()) || startTime > now) return false;
-  if (event.end_time) {
-    const endTime = new Date(event.end_time);
-    if (!Number.isNaN(endTime.getTime())) return endTime.getTime() <= now.getTime();
+
+  return new Date().toISOString();
+}
+
+export function isComingSoonEvent(event) {
+  if (!event) return false;
+  const publishAt = event.publish_at || event.publishAt;
+  if (!publishAt) return false;
+  const t = new Date(publishAt);
+  return !Number.isNaN(t.getTime()) && t.getTime() > Date.now();
+}
+
+export function isFinishedEvent(event, now = new Date()) {
+  if (!event) return false;
+  if (isComingSoonEvent(event)) return false;
+  const start = event.start_time || event.startTime;
+  if (!start) return false;
+  const startTime = new Date(start);
+  if (Number.isNaN(startTime.getTime())) return false;
+  if (startTime > now) return false;
+  const endRaw = event.end_time || event.endTime;
+  const endTime = endRaw ? new Date(endRaw) : null;
+  if (endTime && !Number.isNaN(endTime.getTime())) {
+    return endTime.getTime() <= now.getTime();
   }
   return now.getTime() - startTime.getTime() >= 24 * 60 * 60 * 1000;
 }
@@ -40,7 +68,7 @@ function isFinishedEvent(event, now = new Date()) {
 export default async function handler(req, res) {
   const { id } = req.query;
 
-  if (!id || typeof id !== "string") {
+  if (!id || typeof id !== "string" || !UUID_REGEX.test(id.trim())) {
     res.status(404).setHeader("Content-Type", "text/html; charset=utf-8");
     return res.send(notFoundHtml());
   }
@@ -48,14 +76,16 @@ export default async function handler(req, res) {
   const supabaseUrl = process.env.VITE_SUPABASE_URL;
   const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
 
+  if (!supabaseUrl || !supabaseKey) {
+    res.status(404).setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(notFoundHtml());
+  }
+
   try {
     const query = new URL(`${supabaseUrl}/rest/v1/events`);
-    query.searchParams.set("id", `eq.${id}`);
+    query.searchParams.set("id", `eq.${id.trim()}`);
     query.searchParams.set("status", "eq.approved");
-    query.searchParams.set(
-      "select",
-      "id,title,description,cover_image_url,start_time,end_time,publish_at,location_name,club_name,university_name,organizer_url,external_registration_url,created_at",
-    );
+    query.searchParams.set("select", "*");
 
     const eventRes = await fetch(query, {
       headers: {
@@ -65,7 +95,8 @@ export default async function handler(req, res) {
     });
 
     if (!eventRes.ok) {
-      throw new Error(`Upstream responded ${eventRes.status}`);
+      res.status(404).setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.send(notFoundHtml());
     }
 
     const events = await eventRes.json();
@@ -87,6 +118,7 @@ export default async function handler(req, res) {
     const description = escapeHtml(rawDescription);
     const image = escapeHtml(rawImage);
     const organizerName = event.club_name || event.university_name || "Uni Deals";
+    const organizerUrl = event.organizer_url || event.external_registration_url || canonicalUrl;
 
     const location = event.location_name
       ? {
@@ -116,7 +148,7 @@ export default async function handler(req, res) {
       "organizer": {
         "@type": "Organization",
         "name": organizerName,
-        "url": event.organizer_url || canonicalUrl,
+        "url": organizerUrl,
       },
       "performer": {
         "@type": "Organization",
@@ -128,6 +160,7 @@ export default async function handler(req, res) {
         "availability": "https://schema.org/InStock",
         "price": "0",
         "priceCurrency": "LKR",
+        "validFrom": offerValidFrom(event),
       },
     };
 
@@ -179,12 +212,13 @@ export default async function handler(req, res) {
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate");
     res.status(200).send(html);
   } catch (error) {
-    console.error(error);
-    res.status(500).send("Internal Server Error");
+    console.error("event-og-proxy error:", error);
+    res.status(404).setHeader("Content-Type", "text/html; charset=utf-8");
+    return res.send(notFoundHtml());
   }
 }
 
-function notFoundHtml() {
+export function notFoundHtml() {
   return `<!DOCTYPE html>
 <html lang="en">
   <head>
