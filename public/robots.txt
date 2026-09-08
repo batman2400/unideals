@@ -8,7 +8,7 @@ Disallow: /reset-password
 Disallow: /delete-account
 Disallow: /events/new
 
-# AI crawlers
+# AI crawlers — brand facts for answer engines (also listed in sitemap.xml)
 Allow: /llms.txt
 
 Sitemap: https://www.unideals.co/sitemap.xml

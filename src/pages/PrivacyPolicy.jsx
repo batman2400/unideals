@@ -31,10 +31,12 @@ function PrivacyPolicy() {
             1. Who We Are
           </h2>
           <p>
-            Uni Deals is a student discount platform serving universities and
-            partner businesses in Sri Lanka. This Privacy Policy explains how we
-            collect, use, protect, and disclose personal information when you
-            use our website, mobile app, and related services.
+            Uni Deals (unideals.co) is a student discount platform serving
+            universities and partner businesses in Sri Lanka. Uni Deals is not
+            UNiDAYS and is not affiliated with myunidays.com. This Privacy
+            Policy explains how we collect, use, protect, and disclose personal
+            information when you use our website, mobile app, and related
+            services.
           </p>
         </section>
 

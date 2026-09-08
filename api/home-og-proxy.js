@@ -44,6 +44,16 @@ const OFFICIAL_CATEGORIES = [
 
 const HOME_FAQS = [
   {
+    question: "What is Uni Deals?",
+    answer:
+      "Uni Deals (unideals.co) is Sri Lanka's student discount and campus perks platform, based in Colombo. Verified university and school students unlock partner offers on food, tech, fashion, wellness, and more. If you searched Unideals, Uni Deals, or unideals.co, this is the Sri Lankan site — not an international student-discount app.",
+  },
+  {
+    question: "Is Uni Deals the same as UNiDAYS?",
+    answer:
+      "No. Uni Deals is an independent Sri Lankan platform at https://www.unideals.co. It is not UNiDAYS, not affiliated with UNiDAYS, and not the service at myunidays.com. UNiDAYS is a separate international student discount programme. Searches for unideals, uni deals, or unideals.co refer to Uni Deals in Sri Lanka.",
+  },
+  {
     question: "How do I claim student offers in Sri Lanka?",
     answer:
       "Sign up on Uni Deals, then verify from your Profile. Entering the verification code sent to your university email (.ac.lk or campus domain) verifies you immediately. School students and anyone without an institute email upload a student ID for manual admin review. Once verified, online deals reveal a promo code and in-store deals generate a timed redemption ticket on your phone.",
@@ -95,7 +105,7 @@ export default async function handler(req, res) {
     "@type": "WebSite",
     "@id": `${SITE_URL}/#website`,
     "name": "Uni Deals",
-    "alternateName": "UniDeals",
+    "alternateName": ["UniDeals", "Unideals", "Uni Deals Sri Lanka", "unideals.co"],
     "url": SITE_URL,
     "potentialAction": {
       "@type": "SearchAction",
@@ -112,7 +122,7 @@ export default async function handler(req, res) {
     "@type": "Organization",
     "@id": `${SITE_URL}/#organization`,
     "name": "Uni Deals",
-    "alternateName": "UniDeals",
+    "alternateName": ["UniDeals", "Unideals", "Uni Deals Sri Lanka", "unideals.co"],
     "url": SITE_URL,
     "logo": {
       "@type": "ImageObject",
@@ -122,7 +132,9 @@ export default async function handler(req, res) {
     },
     "image": `${SITE_URL}/logo-512.png`,
     "description":
-      "Dedicated discount and perks platform for university and tertiary students in Sri Lanka.",
+      "Uni Deals (unideals.co) is Sri Lanka's student discount and campus perks platform, based in Colombo. It is not UNiDAYS.",
+    "disambiguatingDescription":
+      "Independent Sri Lankan student deals website at unideals.co. Not affiliated with UNiDAYS or myunidays.com.",
     "address": {
       "@type": "PostalAddress",
       "addressLocality": "Colombo",
@@ -155,9 +167,9 @@ export default async function handler(req, res) {
   };
 
   const title =
-    "Uni Deals | The Best Student Discounts & Offers in Sri Lanka";
+    "Uni Deals (unideals.co) | Student Discounts in Sri Lanka";
   const description =
-    "Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech accessories, and clothing using your verified university email.";
+    "Uni Deals (unideals.co) is Sri Lanka's student discount platform — not UNiDAYS. Unlock food, tech, and fashion offers with a verified university email.";
 
   const categoryLinksHtml = OFFICIAL_CATEGORIES.map(
     (cat) =>
@@ -194,6 +206,7 @@ export default async function handler(req, res) {
     <meta charset="utf-8" />
     <title>${title}</title>
     <link rel="canonical" href="${SITE_URL}/" />
+    <link rel="alternate" type="text/plain" href="${SITE_URL}/llms.txt" title="Uni Deals for AI assistants" />
     <link rel="alternate" hreflang="en-LK" href="${SITE_URL}/" />
     <link rel="alternate" hreflang="x-default" href="${SITE_URL}/" />
     <meta name="description" content="${description}" />
@@ -217,9 +230,15 @@ export default async function handler(req, res) {
   <body>
     <main>
       <header>
-        <h1>Exclusive Discounts &amp; Perks for University Students in Sri Lanka</h1>
+        <h1>Uni Deals (unideals.co) — Student Discounts in Sri Lanka</h1>
         <p>${description}</p>
       </header>
+
+      <section aria-label="About Uni Deals">
+        <h2>About Uni Deals</h2>
+        <p>Uni Deals, also searched as Unideals, is the student discount and campus perks platform for Sri Lanka. The official website is https://www.unideals.co. Students at SLIIT, NSBM, University of Colombo, University of Moratuwa, KDU, and other campuses verify with a university email or student ID, then redeem partner offers in-store and online.</p>
+        <p>Uni Deals is not UNiDAYS. UNiDAYS (myunidays.com) is a separate international student discount programme. Uni Deals is independent, based in Colombo, and only operates in Sri Lanka. Queries for unideals, uni deals, or unideals.co refer to this site.</p>
+      </section>
 
       <section aria-label="Deal categories">
         <h2>Browse Student Deals by Category</h2>
@@ -255,6 +274,7 @@ export default async function handler(req, res) {
           <li><a href="${SITE_URL}/blog">Student Guides &amp; Blog</a></li>
           <li><a href="${SITE_URL}/contact">Partner With Us / Contact</a></li>
           <li><a href="${SITE_URL}/support">Student Support</a></li>
+          <li><a href="${SITE_URL}/llms.txt">Uni Deals facts for AI assistants</a></li>
           <li><a href="${SITE_URL}/terms">Terms of Service</a></li>
           <li><a href="${SITE_URL}/privacy">Privacy Policy</a></li>
         </ul>

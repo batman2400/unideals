@@ -131,6 +131,7 @@ function staticEntries(now = new Date().toISOString()) {
     urlEntry(`${SITE_URL}/support`, { lastmod: now, changefreq: "monthly", priority: "0.3" }),
     urlEntry(`${SITE_URL}/terms`, { lastmod: now, changefreq: "yearly", priority: "0.2" }),
     urlEntry(`${SITE_URL}/privacy`, { lastmod: now, changefreq: "yearly", priority: "0.2" }),
+    urlEntry(`${SITE_URL}/llms.txt`, { lastmod: now, changefreq: "monthly", priority: "0.3" }),
   ];
 }
 

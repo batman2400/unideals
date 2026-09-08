@@ -12,7 +12,8 @@ export default function SiteNavigationSchema() {
       "@id": "https://www.unideals.co/#website",
       "url": "https://www.unideals.co/",
       "name": "Uni Deals",
-      "description": "Exclusive Student Discounts & Offers in Sri Lanka",
+      "alternateName": ["UniDeals", "Unideals", "Uni Deals Sri Lanka", "unideals.co"],
+      "description": "Uni Deals (unideals.co) is Sri Lanka's student discount platform. It is not UNiDAYS.",
       "potentialAction": {
         "@type": "SearchAction",
         "target": {

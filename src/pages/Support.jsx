@@ -50,6 +50,16 @@ export default function Support() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
             <h3 className="font-headline font-bold text-base text-on-background mb-2">
+              Is Uni Deals the same as UNiDAYS?
+            </h3>
+            <p className="text-on-surface-variant text-sm leading-relaxed">
+              No. Uni Deals (unideals.co) is Sri Lanka&apos;s independent student
+              deals platform. It is not UNiDAYS and is not the service at
+              myunidays.com.
+            </p>
+          </div>
+          <div className="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-5">
+            <h3 className="font-headline font-bold text-base text-on-background mb-2">
               How do I verify my student status?
             </h3>
             <p className="text-on-surface-variant text-sm leading-relaxed">

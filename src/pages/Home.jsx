@@ -35,22 +35,23 @@ function Home({ searchQuery, onSearchChange }) {
   return (
     <div className="w-full animate-fade-in">
       <Helmet>
-        <title>Uni Deals | The Best Student Discounts & Offers in Sri Lanka</title>
-        <meta name="description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech accessories, and clothing using your verified university email." />
-        <meta name="keywords" content="student discounts in sri lanka, student offers in sri lanka, university deals colombo, kdu student offers, sliit discounts" />
+        <title>Uni Deals (unideals.co) | Student Discounts in Sri Lanka</title>
+        <meta name="description" content="Uni Deals (unideals.co) is Sri Lanka's student discount platform — not UNiDAYS. Unlock food, tech, and fashion offers with a verified university email." />
+        <meta name="keywords" content="unideals, uni deals, unideals.co, uni deals sri lanka, student discounts sri lanka, student offers sri lanka, university deals colombo, kdu student offers, sliit discounts" />
         <link rel="canonical" href="https://www.unideals.co/" />
+        <link rel="alternate" type="text/plain" href="https://www.unideals.co/llms.txt" title="Uni Deals for AI assistants" />
         
         {/* Open Graph / Social Sharing */}
-        <meta property="og:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
-        <meta property="og:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
+        <meta property="og:title" content="Uni Deals (unideals.co) | Student Discounts in Sri Lanka" />
+        <meta property="og:description" content="Uni Deals (unideals.co) is Sri Lanka's student discount platform — not UNiDAYS. Unlock food, tech, and fashion offers with a verified university email." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://www.unideals.co/" />
         <meta property="og:image" content={DEFAULT_OG_IMAGE} />
         <meta property="og:image:width" content={DEFAULT_OG_IMAGE_WIDTH} />
         <meta property="og:image:height" content={DEFAULT_OG_IMAGE_HEIGHT} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Uni Deals | Exclusive Student Discounts in Sri Lanka" />
-        <meta name="twitter:description" content="Unlock exclusive student discounts and the best student offers in Sri Lanka. Save on daily dining, tech, and clothing." />
+        <meta name="twitter:title" content="Uni Deals (unideals.co) | Student Discounts in Sri Lanka" />
+        <meta name="twitter:description" content="Uni Deals (unideals.co) is Sri Lanka's student discount platform — not UNiDAYS. Unlock food, tech, and fashion offers with a verified university email." />
         <meta name="twitter:image" content={DEFAULT_OG_IMAGE} />
       </Helmet>
       
@@ -58,8 +59,8 @@ function Home({ searchQuery, onSearchChange }) {
 
       {/* SEO Optimized Headers */}
       <div className="sr-only">
-        <h1>Exclusive Discounts & Perks for University Students in Sri Lanka</h1>
-        <h2>Save on tech, dining, fashion, and entertainment using your verified university email.</h2>
+        <h1>Uni Deals (unideals.co) — Student Discounts in Sri Lanka</h1>
+        <h2>Sri Lanka's student deals platform. Not UNiDAYS. Save on tech, dining, and fashion with a verified university email.</h2>
       </div>
 
       <HeroSection searchQuery={searchQuery} onSearchChange={onSearchChange} />
@@ -86,6 +87,25 @@ function Home({ searchQuery, onSearchChange }) {
       </div>
 
       <ExploreFeed searchQuery={searchQuery} />
+
+      <section className="max-w-[1440px] mx-auto px-4 md:px-8 py-10 md:py-12">
+        <div className="max-w-3xl mx-auto rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8">
+          <h2 className="font-headline font-extrabold text-2xl md:text-3xl text-on-background tracking-tight">
+            About Uni Deals
+          </h2>
+          <p className="text-on-surface-variant text-sm md:text-base mt-3 leading-relaxed">
+            Uni Deals (unideals.co) is Sri Lanka&apos;s student discount and campus
+            perks platform, based in Colombo. Verified students at SLIIT, NSBM,
+            University of Colombo, University of Moratuwa, KDU, and other campuses
+            unlock partner offers on food, tech, fashion, and more.
+          </p>
+          <p className="text-on-surface-variant text-sm md:text-base mt-3 leading-relaxed">
+            Uni Deals is not UNiDAYS. UNiDAYS is a separate international
+            programme. Searches for unideals, uni deals, or unideals.co refer to
+            this Sri Lankan site.
+          </p>
+        </div>
+      </section>
 
       <HomeFAQ />
 
