@@ -57,15 +57,15 @@ function PartnerOverview() {
         supabase
           .from("redemption_events")
           .select("id", { count: "exact", head: true })
-          .eq("partner_id", targetUserId),
+          .eq("partner_id", user.id),
         supabase
           .from("confirmed_redemptions")
           .select("id", { count: "exact", head: true })
-          .eq("partner_id", targetUserId),
+          .eq("partner_id", user.id),
         supabase
           .from("redemption_events")
           .select("id, scanned_code, scan_result, scan_method, created_at")
-          .eq("partner_id", targetUserId)
+          .eq("partner_id", user.id)
           .order("created_at", { ascending: false })
           .limit(6),
       ]);

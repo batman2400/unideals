@@ -349,7 +349,7 @@ function CreateDeal() {
       const { publicUrl: effectiveImageUrl } = await withTimeout(
         uploadDealImage({
           file: selectedImageFile,
-          userId: targetUserId,
+          userId: user.id,
           brandName: effectiveBrand,
         }),
         45000,

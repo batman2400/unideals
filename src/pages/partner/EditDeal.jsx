@@ -332,7 +332,7 @@ function EditDeal() {
       if (selectedImageFile) {
         const { publicUrl } = await uploadDealImage({
           file: selectedImageFile,
-          userId: targetUserId,
+          userId: user.id,
           brandName: partnerBrand,
         });
 

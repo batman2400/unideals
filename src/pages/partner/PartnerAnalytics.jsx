@@ -53,7 +53,7 @@ function PartnerAnalytics() {
       // Try to use the new partner_deal_stats RPC
       const { data: statsData, error: statsError } = await supabase.rpc(
         "get_partner_deal_stats",
-        { target_partner_id: targetUserId },
+        { target_partner_id: user.id },
       );
 
       if (!active) return;
@@ -64,11 +64,11 @@ function PartnerAnalytics() {
           supabase
             .from("redemption_events")
             .select("id", { count: "exact", head: true })
-            .eq("partner_id", targetUserId),
+            .eq("partner_id", user.id),
           supabase
             .from("confirmed_redemptions")
             .select("id", { count: "exact", head: true })
-            .eq("partner_id", targetUserId),
+            .eq("partner_id", user.id),
         ]);
 
         if (!active) return;
