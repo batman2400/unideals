@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useRoleContext } from "../lib/RoleContext";
 import { supabase } from "../lib/supabaseClient";
 import { uploadEventImage } from "../lib/eventImageUpload";
@@ -52,6 +53,11 @@ function CreateEvent() {
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const isMountedRef = useRef(true);
   const eventFileInputRef = useRef(null);
+  const pageTitle = (
+    <Helmet>
+      <title>Create Event | Uni Deals</title>
+    </Helmet>
+  );
 
   useEffect(() => {
     return () => {
@@ -76,16 +82,21 @@ function CreateEvent() {
   // Show a loading state briefly while checking auth
   if (roleLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-      </div>
+      <>
+        {pageTitle}
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      </>
     );
   }
 
   // Auth check: user must be logged in to submit an event
   if (!isAuthenticated) {
     return (
-      <div className="max-w-3xl mx-auto px-4 py-16 text-center animate-fade-in">
+      <>
+        {pageTitle}
+        <div className="max-w-3xl mx-auto px-4 py-16 text-center animate-fade-in">
         <span className="material-symbols-outlined text-6xl text-primary mb-4">login</span>
         <h1 className="font-headline font-bold text-3xl text-on-background mb-2">Sign In Required</h1>
         <p className="text-on-surface-variant mb-6">
@@ -97,7 +108,8 @@ function CreateEvent() {
         >
           Sign In
         </button>
-      </div>
+        </div>
+      </>
     );
   }
 
@@ -237,6 +249,8 @@ function CreateEvent() {
   const previewStartIso = combineLocalDateAndTime(formData.start_date, formData.start_clock);
 
   return (
+    <>
+    {pageTitle}
     <div className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 animate-fade-in">
       <div className="mb-8">
         <button
@@ -629,6 +643,7 @@ function CreateEvent() {
         onClose={() => setIsCropModalOpen(false)}
       />
     </div>
+    </>
   );
 }
 

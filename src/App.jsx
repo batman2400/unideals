@@ -73,6 +73,12 @@ const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const AuthCallback = lazy(() => import("./pages/AuthCallback"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
+/** Plural brand URLs → canonical /brand/:slug. */
+function LegacyBrandRedirect() {
+  const { slug } = useParams();
+  return <Navigate to={`/brand/${slug}`} replace />;
+}
+
 /** Legacy /perks/:id → /deals/:id, preserving the deal id. */
 function LegacyDealRedirect() {
   const { id } = useParams();
@@ -309,7 +315,9 @@ function App() {
               <Route path="/categories" element={<Categories />} />
               <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/brands" element={<Brands />} />
+              <Route path="/brands/:slug" element={<LegacyBrandRedirect />} />
               <Route path="/brand/:brandId" element={<BrandPage />} />
+              <Route path="/faq" element={<Navigate to="/support" replace />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/delete-account" element={<DeleteAccount />} />

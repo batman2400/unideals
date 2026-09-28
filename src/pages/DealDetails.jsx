@@ -40,12 +40,17 @@ function formatDealDate(value) {
 }
 
 // ── In-Store Redemption (Server-Generated Unique Ticket) ─
-function InStoreRedemption({ dealId, brand }) {
+function InStoreRedemption({ dealId, brand, canMint }) {
   const [ticket, setTicket] = useState(null);
   const [generating, setGenerating] = useState(false);
   const [ticketError, setTicketError] = useState("");
 
   const generateTicket = useCallback(async () => {
+    if (!canMint) {
+      setTicketError("Student verification required to generate tickets.");
+      return;
+    }
+
     setGenerating(true);
     setTicketError("");
 
@@ -75,7 +80,7 @@ function InStoreRedemption({ dealId, brand }) {
     } finally {
       setGenerating(false);
     }
-  }, [dealId]);
+  }, [dealId, canMint]);
 
   const handleRegenerate = useCallback(() => {
     setTicket(null);
@@ -833,7 +838,7 @@ function DealDetails() {
   const expired = !comingSoon && isExpiredDeal(deal);
   const isPrivilegedRole = role === "admin" || role === "partner";
   const canRevealRedemption =
-    isPrivilegedRole || (isAuthenticated && isVerified);
+    !roleLoading && (isPrivilegedRole || (isAuthenticated && isVerified));
   const showVerificationWall = !comingSoon && !expired && !canRevealRedemption;
   const headline = discount || title;
   const launchLabel = comingSoon && startTime ? formatLaunchDate(startTime) : "";
@@ -880,11 +885,15 @@ function DealDetails() {
       isAuthenticated={isAuthenticated}
       isPending={verificationPending}
       expired={isVerificationExpired}
-      verificationLoading={roleLoading && isAuthenticated}
+      verificationLoading={roleLoading}
       onOpenAuthModal={handleOpenAuthModal}
     />
   ) : isInStore ? (
-    <InStoreRedemption dealId={deal.id} brand={brand} />
+    <InStoreRedemption
+      dealId={deal.id}
+      brand={brand}
+      canMint={Boolean(isVerified)}
+    />
   ) : (
     <OnlineRedemption
       dealId={deal.id}

@@ -18,6 +18,16 @@
       "permanent": true
     },
     {
+      "source": "/faq",
+      "destination": "/support",
+      "statusCode": 308
+    },
+    {
+      "source": "/brands/:slug",
+      "destination": "/brand/:slug",
+      "statusCode": 308
+    },
+    {
       "source": "/perks",
       "destination": "/deals",
       "statusCode": 301

@@ -51,6 +51,8 @@ import {
   resolveBrandExplorePath,
 } from "../../src/lib/seo.js";
 
+import { isStudentVerificationCurrent } from "../../src/lib/studentVerification.js";
+
 import {
   isComingSoonDeal,
   isExpiredDeal,
@@ -415,5 +417,23 @@ test("Scanned Code Payload Formatting Unit Tests", async (t) => {
     assert.equal(formatScannedCode("PLAIN-COUPON-CODE"), "PLAIN-COUPON-CODE");
     assert.equal(formatScannedCode(""), "—");
     assert.equal(formatScannedCode(null), "—");
+  });
+});
+
+test("Student verification current-window helper", async (t) => {
+  await t.test("rejects an unverified flag even with a recent timestamp", () => {
+    const recent = new Date("2026-08-01T00:00:00.000Z");
+    const now = new Date("2026-09-28T00:00:00.000Z").getTime();
+    assert.equal(isStudentVerificationCurrent(false, recent, now), false);
+  });
+
+  await t.test("treats a missing verified_at as current when the flag is true", () => {
+    assert.equal(isStudentVerificationCurrent(true, null), true);
+  });
+
+  await t.test("rejects a flag that is older than one year", () => {
+    const old = new Date("2025-08-01T00:00:00.000Z");
+    const now = new Date("2026-09-28T00:00:00.000Z").getTime();
+    assert.equal(isStudentVerificationCurrent(true, old, now), false);
   });
 });

@@ -2,7 +2,7 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { BOT_UA_REGEX } from "../../middleware.js";
+import { BOT_UA_REGEX, legacyPathRedirect } from "../../middleware.js";
 import handler, {
   UUID_REGEX,
   isFinishedEvent,
@@ -78,6 +78,24 @@ describe("Middleware BOT User-Agent Allowlist Tests", () => {
       assert.equal(BOT_UA_REGEX.test(human.ua), false, `Expected ${human.name} to NOT match BOT_UA_REGEX`);
     });
   }
+});
+
+describe("legacyPathRedirect", () => {
+  it("sends /faq to support", () => {
+    assert.equal(legacyPathRedirect("/faq"), "/support");
+    assert.equal(legacyPathRedirect("/faq/"), "/support");
+  });
+
+  it("sends plural brand URLs to /brand/:slug", () => {
+    assert.equal(legacyPathRedirect("/brands/missing"), "/brand/missing");
+    assert.equal(legacyPathRedirect("/brands/techson/"), "/brand/techson");
+  });
+
+  it("leaves the brand directory and unrelated paths alone", () => {
+    assert.equal(legacyPathRedirect("/brands"), null);
+    assert.equal(legacyPathRedirect("/brand/missing"), null);
+    assert.equal(legacyPathRedirect("/support"), null);
+  });
 });
 
 describe("Event UUID Validation Tests", () => {

@@ -43,13 +43,27 @@ function writeRoleCache(data) {
   }
 }
 
+function verificationFromRoleRow(roleName, row, previousVerifiedAt = null) {
+  const verifiedAt =
+    typeof row?.verified_at === "string" ? row.verified_at : previousVerifiedAt;
+  const hasFlag =
+    row != null && Object.prototype.hasOwnProperty.call(row, "is_verified");
+  const verifiedFlag = hasFlag ? !!row.is_verified : false;
+  const isVerified =
+    roleName === "student"
+      ? isStudentVerificationCurrent(verifiedFlag, verifiedAt)
+      : verifiedFlag;
+  return { isVerified, verifiedAt };
+}
+
 export function useRole() {
   const initialCache = readRoleCache();
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(initialCache?.role || null);
   const [isVerified, setIsVerified] = useState(initialCache?.isVerified || false);
   const [verifiedAt, setVerifiedAt] = useState(initialCache?.verifiedAt || null);
-  const [loading, setLoading] = useState(!initialCache);
+  // Cache may seed chrome, but verification is not finished until user_roles is read.
+  const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
   const [error, setError] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -180,12 +194,9 @@ export function useRole() {
           void supabase.rpc("expire_stale_student_verifications").catch(() => {});
         }
 
-        const isCacheValidForUser = Boolean(
-          initialCache?.userId && initialCache.userId === nextUser.id,
-        );
-        let resolvedRole = isCacheValidForUser ? initialCache?.role : null;
-        let resolvedIsVerified = isCacheValidForUser ? (initialCache?.isVerified || false) : false;
-        let resolvedVerifiedAt = isCacheValidForUser ? (initialCache?.verifiedAt || null) : null;
+        let resolvedRole = null;
+        let resolvedIsVerified = false;
+        let resolvedVerifiedAt = null;
 
         let { data: roleRow, error: roleQueryError } = await supabase
           .from("user_roles")
@@ -206,26 +217,39 @@ export function useRole() {
         if (roleQueryError || !roleRow?.role) {
           const { data: rpcRole, error: rpcError } =
             await supabase.rpc("get_user_role");
-          const { data: legacyRoleRow, error: legacyRoleError } = await supabase
+          let { data: legacyRoleRow, error: legacyRoleError } = await supabase
             .from("user_roles")
-            .select("role")
+            .select("role, is_verified, verified_at")
             .eq("user_id", nextUser.id)
             .maybeSingle();
+
+          if (legacyRoleError && /verified_at/i.test(legacyRoleError.message ?? "")) {
+            const retry = await supabase
+              .from("user_roles")
+              .select("role, is_verified")
+              .eq("user_id", nextUser.id)
+              .maybeSingle();
+            legacyRoleRow = retry.data;
+            legacyRoleError = retry.error;
+          }
 
           if (legacyRoleError && rpcError) {
             throw legacyRoleError;
           }
 
-          resolvedRole = rpcRole ?? legacyRoleRow?.role ?? resolvedRole ?? "student";
+          resolvedRole = rpcRole ?? legacyRoleRow?.role ?? "student";
+          const fromRow = verificationFromRoleRow(
+            resolvedRole,
+            legacyRoleRow,
+            null,
+          );
+          resolvedIsVerified = fromRow.isVerified;
+          resolvedVerifiedAt = fromRow.verifiedAt;
         } else {
           resolvedRole = roleRow.role;
-          resolvedVerifiedAt =
-            typeof roleRow?.verified_at === "string" ? roleRow.verified_at : null;
-          const verifiedFlag = !!roleRow?.is_verified;
-          resolvedIsVerified =
-            resolvedRole === "student"
-              ? isStudentVerificationCurrent(verifiedFlag, resolvedVerifiedAt)
-              : verifiedFlag;
+          const fromRow = verificationFromRoleRow(resolvedRole, roleRow, null);
+          resolvedIsVerified = fromRow.isVerified;
+          resolvedVerifiedAt = fromRow.verifiedAt;
         }
 
         if (!active) return;

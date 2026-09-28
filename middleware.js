@@ -107,6 +107,17 @@ async function spaNotFound(request) {
   );
 }
 
+/** Permanent aliases that must not 404 as unknown SPA paths. */
+export function legacyPathRedirect(pathname) {
+  const path = normalizePath(pathname);
+  if (path === "/faq") return "/support";
+  const parts = path.split("/").filter(Boolean);
+  if (parts.length === 2 && parts[0] === "brands" && parts[1]) {
+    return `/brand/${parts[1]}`;
+  }
+  return null;
+}
+
 function isKnownAppPath(pathname) {
   const path = normalizePath(pathname);
   if (EXACT_PATHS.has(path)) return true;
@@ -145,6 +156,13 @@ export default async function middleware(request) {
   }
 
   const path = normalizePath(url.pathname);
+
+  const alias = legacyPathRedirect(path);
+  if (alias) {
+    const target = new URL(request.url);
+    target.pathname = alias;
+    return Response.redirect(target, 308);
+  }
 
   // Internal fetch of the built shell. Must not re-enter bot or 404 logic.
   if (request.headers.get(SPA_SHELL_HEADER) === "1") {

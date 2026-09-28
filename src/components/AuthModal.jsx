@@ -387,33 +387,27 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
   if (!isOpen) return null;
 
   return (
-    // Backdrop — click to close
+    // Backdrop — click to close. The card is capped to the viewport so the
+    // close control stays pinned; the form scrolls underneath.
     <div
       className="fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
       <div className="flex min-h-full justify-center px-4 py-6">
-      {/* Modal Card — stop clicks from bubbling to backdrop.
-          my-auto centers a short card; a tall signup card scrolls from the top
-          so the close control stays reachable. */}
       <div
         data-clarity-mask="true"
-        className="relative my-auto bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-modal-enter"
+        className="relative my-auto flex max-h-[calc(100dvh-3rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl animate-modal-enter"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Close button */}
         <button
-          className="absolute top-4 right-4 text-on-surface-variant/60 hover:text-on-surface transition-colors z-10"
+          className="absolute top-2 right-2 z-20 flex h-11 w-11 items-center justify-center text-on-surface-variant/60 hover:text-on-surface transition-colors"
           onClick={onClose}
           aria-label="Close modal"
         >
           <span className="material-symbols-outlined text-2xl">close</span>
         </button>
-
-        {/* Header accent bar */}
-        <div className="h-1.5 emerald-gradient" />
-
-        <div className="p-6 sm:p-8 pt-6">
+        <div className="h-1.5 flex-shrink-0 emerald-gradient" />
+        <div className="overflow-y-auto overscroll-contain p-6 sm:p-8 pt-6">
           {/* Logo */}
           <div className="flex flex-col items-center gap-2 mb-6">
             <img
