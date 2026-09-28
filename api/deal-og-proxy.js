@@ -18,6 +18,19 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+function breadcrumbList(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
 function slugify(value) {
   return String(value ?? "")
     .toLowerCase()
@@ -81,6 +94,18 @@ export default async function handler(req, res) {
     const description = escapeHtml(rawDescription);
     const image = escapeHtml(rawImage);
 
+    const crumbs = [
+      { name: "Home", url: `${SITE_URL}/` },
+      deal.category
+        ? { name: deal.category, url: categoryUrl }
+        : { name: "Deals", url: `${SITE_URL}/deals` },
+    ];
+    if (deal.brand) crumbs.push({ name: deal.brand, url: brandUrl });
+    crumbs.push({
+      name: deal.title || `${deal.discount} OFF`,
+      url: canonicalUrl,
+    });
+
     const schema = {
       "@context": "https://schema.org",
       "@type": "Product",
@@ -115,6 +140,7 @@ export default async function handler(req, res) {
   <head>
     <meta charset="utf-8" />
     <title>${title}</title>
+    <meta name="description" content="${description}" />
     <link rel="canonical" href="${canonicalUrl}" />
     <meta property="og:type" content="product" />
     <meta property="og:site_name" content="Uni Deals" />
@@ -130,6 +156,7 @@ export default async function handler(req, res) {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${image}" />
     <script type="application/ld+json">${JSON.stringify(schema)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbList(crumbs))}</script>
   </head>
   <body>
     <article>

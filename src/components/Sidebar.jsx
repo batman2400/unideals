@@ -20,6 +20,8 @@ export default function Sidebar({ onLogout, isLoggedIn, authReady = true }) {
   const studentLinks = [
     { path: "/", label: "Explore", icon: "explore", exact: true },
     { path: "/deals", label: "Deals", icon: "local_offer" },
+    { path: "/brands", label: "Brands", icon: "storefront" },
+    { path: "/categories", label: "Categories", icon: "category" },
     { path: "/events", label: "Events", icon: "event" },
     { path: "/blog", label: "Blog", icon: "newspaper" },
     ...(isLoggedIn

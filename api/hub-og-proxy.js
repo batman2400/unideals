@@ -16,6 +16,19 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+function breadcrumbList(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
 function slugify(value) {
   return String(value ?? "")
     .toLowerCase()
@@ -154,6 +167,11 @@ export default async function handler(req, res) {
 
     const title = escapeHtml(rawTitle);
     const description = escapeHtml(rawDescription);
+    const crumbs = [
+      { name: "Home", url: `${SITE_URL}/` },
+      { name: "Categories", url: `${SITE_URL}/categories` },
+      { name: categoryName, url: canonicalUrl },
+    ];
 
     const schema = {
       "@context": "https://schema.org",
@@ -193,6 +211,7 @@ export default async function handler(req, res) {
   <head>
     <meta charset="utf-8" />
     <title>${title}</title>
+    <meta name="description" content="${description}" />
     <link rel="canonical" href="${canonicalUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Uni Deals" />
@@ -206,6 +225,7 @@ export default async function handler(req, res) {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${DEFAULT_IMAGE}" />
     <script type="application/ld+json">${JSON.stringify(schema)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbList(crumbs))}</script>
   </head>
   <body>
     <main>
@@ -262,6 +282,11 @@ export default async function handler(req, res) {
 
     const title = escapeHtml(rawTitle);
     const description = escapeHtml(rawDescription);
+    const crumbs = [
+      { name: "Home", url: `${SITE_URL}/` },
+      { name: "Brands", url: `${SITE_URL}/brands` },
+      { name: brandName, url: canonicalUrl },
+    ];
 
     const schema = {
       "@context": "https://schema.org",
@@ -303,6 +328,7 @@ export default async function handler(req, res) {
   <head>
     <meta charset="utf-8" />
     <title>${title}</title>
+    <meta name="description" content="${description}" />
     <link rel="canonical" href="${canonicalUrl}" />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="Uni Deals" />
@@ -316,6 +342,7 @@ export default async function handler(req, res) {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${brandImage}" />
     <script type="application/ld+json">${JSON.stringify(schema)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbList(crumbs))}</script>
   </head>
   <body>
     <main>

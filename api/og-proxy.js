@@ -16,6 +16,97 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#39;");
 
+function breadcrumbList(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
+function inlineMarkdown(text) {
+  let html = escapeHtml(text);
+  html = html.replace(
+    /\[([^\]]+)\]\(((?:https?:\/\/|\/)[^)\s]+)\)/g,
+    (_, label, href) => `<a href="${href}">${label}</a>`,
+  );
+  html = html.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  html = html.replace(/(^|[^*])\*([^*]+)\*/g, "$1<em>$2</em>");
+  return html;
+}
+
+/** Safe subset of markdown. Deal tokens become links, never redemption codes. */
+function renderMarkdown(content) {
+  const source = String(content ?? "").replace(
+    /\[deal:(\d+)\]/g,
+    (_, id) => `[Deal ${id}](${SITE_URL}/deals/${id})`,
+  );
+  const lines = source.split(/\r?\n/);
+  let html = "";
+  let listType = null;
+
+  const flushList = () => {
+    if (!listType) return;
+    html += listType === "ol" ? "</ol>" : "</ul>";
+    listType = null;
+  };
+
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed) {
+      flushList();
+      continue;
+    }
+
+    const heading = trimmed.match(/^(#{1,3})\s+(.*)$/);
+    if (heading) {
+      flushList();
+      const level = heading[1].length + 1;
+      html += `<h${level}>${inlineMarkdown(heading[2])}</h${level}>`;
+      continue;
+    }
+
+    const bullet = trimmed.match(/^[-*]\s+(.*)$/);
+    if (bullet) {
+      if (listType !== "ul") {
+        flushList();
+        html += "<ul>";
+        listType = "ul";
+      }
+      html += `<li>${inlineMarkdown(bullet[1])}</li>`;
+      continue;
+    }
+
+    const numbered = trimmed.match(/^\d+\.\s+(.*)$/);
+    if (numbered) {
+      if (listType !== "ol") {
+        flushList();
+        html += "<ol>";
+        listType = "ol";
+      }
+      html += `<li>${inlineMarkdown(numbered[1])}</li>`;
+      continue;
+    }
+
+    if (trimmed.startsWith(">")) {
+      flushList();
+      html += `<blockquote><p>${inlineMarkdown(trimmed.replace(/^>\s?/, ""))}</p></blockquote>`;
+      continue;
+    }
+
+    flushList();
+    html += `<p>${inlineMarkdown(trimmed)}</p>`;
+  }
+
+  flushList();
+  return html;
+}
+
 const SITE_URL = "https://www.unideals.co";
 const DEFAULT_IMAGE = `${SITE_URL}/og-default.png`;
 
@@ -68,6 +159,13 @@ export default async function handler(req, res) {
     const title = escapeHtml(rawTitle);
     const description = escapeHtml(rawDescription);
     const image = escapeHtml(rawImage);
+    const articleHtml =
+      renderMarkdown(post.content) || `<p>${description}</p>`;
+    const crumbs = [
+      { name: "Home", url: `${SITE_URL}/` },
+      { name: "Blog", url: `${SITE_URL}/blog` },
+      { name: post.title, url: canonicalUrl },
+    ];
 
     const schema = {
       "@context": "https://schema.org",
@@ -97,6 +195,7 @@ export default async function handler(req, res) {
   <head>
     <meta charset="utf-8" />
     <title>${title}</title>
+    <meta name="description" content="${description}" />
     <link rel="canonical" href="${canonicalUrl}" />
     <meta property="og:type" content="article" />
     <meta property="og:site_name" content="Uni Deals" />
@@ -112,6 +211,7 @@ export default async function handler(req, res) {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${image}" />
     <script type="application/ld+json">${JSON.stringify(schema)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbList(crumbs))}</script>
   </head>
   <body>
     <article>
@@ -120,7 +220,7 @@ export default async function handler(req, res) {
         <h1>${title}</h1>
       </header>
       <section>
-        <p>${description}</p>
+        ${articleHtml}
       </section>
       <nav aria-label="Related links">
         <ul>

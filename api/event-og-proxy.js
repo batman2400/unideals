@@ -8,6 +8,19 @@
  * Emits Event JSON-LD schema matching client EventSchema, canonical, Open Graph,
  * 404 with noindex for invalid/unapproved/finished events, and a rich indexable HTML body.
  */
+function breadcrumbList(items) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((item, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: item.name,
+      item: item.url,
+    })),
+  };
+}
+
 const escapeHtml = (value) =>
   String(value ?? "")
     .replace(/&/g, "&amp;")
@@ -117,6 +130,11 @@ export default async function handler(req, res) {
     const title = escapeHtml(rawTitle);
     const description = escapeHtml(rawDescription);
     const image = escapeHtml(rawImage);
+    const crumbs = [
+      { name: "Home", url: `${SITE_URL}/` },
+      { name: "Events", url: `${SITE_URL}/events` },
+      { name: event.title, url: canonicalUrl },
+    ];
     const organizerName = event.club_name || event.university_name || "Uni Deals";
     const organizerUrl = event.organizer_url || event.external_registration_url || canonicalUrl;
 
@@ -169,6 +187,7 @@ export default async function handler(req, res) {
   <head>
     <meta charset="utf-8" />
     <title>${title}</title>
+    <meta name="description" content="${description}" />
     <link rel="canonical" href="${canonicalUrl}" />
     <meta property="og:type" content="event" />
     <meta property="og:site_name" content="Uni Deals" />
@@ -184,6 +203,7 @@ export default async function handler(req, res) {
     <meta name="twitter:description" content="${description}" />
     <meta name="twitter:image" content="${image}" />
     <script type="application/ld+json">${JSON.stringify(schema)}</script>
+    <script type="application/ld+json">${JSON.stringify(breadcrumbList(crumbs))}</script>
   </head>
   <body>
     <article>

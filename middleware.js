@@ -61,9 +61,50 @@ function normalizePath(pathname) {
   return pathname.replace(/\/+$/, "") || "/";
 }
 
-/** SPA index with HTTP 404 — Uni Deals chrome, not Vercel's default page. */
-function spaNotFound(request) {
-  return rewrite(new URL("/", request.url), { status: 404 });
+const SPA_SHELL_HEADER = "x-unideals-spa-shell";
+
+/**
+ * SPA index with HTTP 404. Injects noindex and drops the homepage canonical
+ * so a missing URL is not treated as a copy of /.
+ */
+async function spaNotFound(request) {
+  const headers = {
+    "Content-Type": "text/html; charset=utf-8",
+    "X-Robots-Tag": "noindex, nofollow",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+  };
+
+  try {
+    const shellRes = await fetch(new URL("/", request.url), {
+      headers: {
+        [SPA_SHELL_HEADER]: "1",
+        "user-agent": "UniDealsShell",
+      },
+    });
+    let html = await shellRes.text();
+    if (html.includes("<html")) {
+      if (!/name=["']robots["']/i.test(html)) {
+        html = html.replace(
+          /<head[^>]*>/i,
+          (match) =>
+            `${match}\n    <meta name="robots" content="noindex, nofollow" />`,
+        );
+      }
+      html = html.replace(
+        /<link\b[^>]*\brel=["']canonical["'][^>]*>/gi,
+        "",
+      );
+      return new Response(html, { status: 404, headers });
+    }
+  } catch {
+    // Fall through to a minimal noindex document.
+  }
+
+  return new Response(
+    `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8" /><title>Page Not Found | Uni Deals</title><meta name="robots" content="noindex, nofollow" /></head><body><h1>Page Not Found</h1></body></html>`,
+    { status: 404, headers },
+  );
 }
 
 function isKnownAppPath(pathname) {
@@ -105,12 +146,19 @@ export default async function middleware(request) {
 
   const path = normalizePath(url.pathname);
 
+  // Internal fetch of the built shell. Must not re-enter bot or 404 logic.
+  if (request.headers.get(SPA_SHELL_HEADER) === "1") {
+    return next();
+  }
+
+  const userAgent = request.headers.get("user-agent") || "";
+  const isBot = BOT_UA_REGEX.test(userAgent);
+
   // ── Bot prerendering for Homepage (/) ────────────────────────────────
   // Vercel serves static dist/index.html on / before vercel.json rewrites.
   // Intercepting bots here at Edge middleware ensures search engines,
   // social crawlers, and AI answer engines receive rich pre-rendered HTML.
-  const userAgent = request.headers.get("user-agent") || "";
-  if (path === "/" && BOT_UA_REGEX.test(userAgent)) {
+  if (path === "/" && isBot) {
     return rewrite(new URL(`/api/home-og-proxy${url.search}`, request.url));
   }
 
@@ -122,7 +170,8 @@ export default async function middleware(request) {
       id.length > 0 && Number.isInteger(numericId) && numericId > 0;
 
     if (!isValidIdShape) {
-      return spaNotFound(request);
+      // Bots get deal-og-proxy's noindex 404. Humans get the SPA shell.
+      return isBot ? next() : spaNotFound(request);
     }
 
     const supabaseUrl = process.env.VITE_SUPABASE_URL;
@@ -151,7 +200,7 @@ export default async function middleware(request) {
       const data = await res.json();
       const dealExists = Array.isArray(data) ? data.length > 0 : Boolean(data);
 
-      return dealExists ? next() : spaNotFound(request);
+      return dealExists || isBot ? next() : spaNotFound(request);
     } catch {
       return next();
     }

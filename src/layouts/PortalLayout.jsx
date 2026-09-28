@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { Link, useLocation } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { useRoleContext } from "../lib/RoleContext";
 
 function PortalLayout({ children, portalType = "partner", brandName = "" }) {
@@ -56,11 +57,19 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
     return location.pathname.startsWith(link.path);
   };
 
+  const activeLink = navLinks
+    .filter((link) => isActive(link))
+    .sort((a, b) => b.path.length - a.path.length)[0];
+  const documentTitle = `${activeLink?.label || portalTitle} | Uni Deals`;
+
   return (
     <div
       data-clarity-mask="true"
       className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8"
     >
+      <Helmet>
+        <title>{documentTitle}</title>
+      </Helmet>
       {/* Mobile Header */}
       <div className="lg:hidden flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">

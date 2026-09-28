@@ -37,6 +37,13 @@ import {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
+/** Autofill can paint a value without firing React onChange. Read the DOM. */
+function fieldValue(form, name, fallback) {
+  const control = form?.elements?.namedItem?.(name);
+  if (control && "value" in control) return String(control.value ?? "");
+  return String(fallback ?? "");
+}
+
 function GoogleMark({ className }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -187,8 +194,11 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     e.preventDefault();
     if (inFlightRef.current) return;
 
+    const nextEmail = fieldValue(e.currentTarget, "email", email);
+    if (nextEmail !== email) setEmail(nextEmail);
+
     setAuthError("");
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = nextEmail.trim().toLowerCase();
 
     if (!EMAIL_PATTERN.test(normalizedEmail)) {
       setErrors({ email: "Please enter a valid email address." });
@@ -228,16 +238,25 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     }
   };
 
-  // ── Frontend Validation ───────────────────────────────
-  const validate = () => {
-    const newErrors = {};
-    const normalizedEmail = email.trim().toLowerCase();
+  const clearFieldError = (field) => {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
 
-    if (activeTab === "signup" && fullName.trim().length === 0) {
+  // ── Frontend Validation ───────────────────────────────
+  const validate = (fields) => {
+    const newErrors = {};
+    const normalizedEmail = fields.email.trim().toLowerCase();
+
+    if (activeTab === "signup" && fields.fullName.trim().length === 0) {
       newErrors.fullName = "Full name is required.";
     }
 
-    if (activeTab === "signup" && username.trim().length < 3) {
+    if (activeTab === "signup" && fields.username.trim().length < 3) {
       newErrors.username = "Username must be at least 3 characters.";
     }
 
@@ -246,9 +265,9 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     }
 
     if (activeTab === "signup") {
-      const passwordError = validatePasswordStrength(password);
+      const passwordError = validatePasswordStrength(fields.password);
       if (passwordError) newErrors.password = passwordError;
-    } else if (password.length === 0) {
+    } else if (fields.password.length === 0) {
       newErrors.password = "Please enter your password.";
     }
 
@@ -264,11 +283,31 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     // open, since setLoading only takes effect on re-render.
     if (inFlightRef.current) return;
 
+    const form = e.currentTarget;
+    const nextFullName = fieldValue(form, "fullName", fullName);
+    const nextUsername = fieldValue(form, "username", username);
+    const nextEmail = fieldValue(form, "email", email);
+    const nextPassword = fieldValue(form, "password", password);
+
+    if (nextFullName !== fullName) setFullName(nextFullName);
+    if (nextUsername !== username) setUsername(nextUsername);
+    if (nextEmail !== email) setEmail(nextEmail);
+    if (nextPassword !== password) setPassword(nextPassword);
+
     setAuthError("");
 
-    const normalizedEmail = email.trim().toLowerCase();
+    const normalizedEmail = nextEmail.trim().toLowerCase();
 
-    if (!validate()) return;
+    if (
+      !validate({
+        fullName: nextFullName,
+        username: nextUsername,
+        email: nextEmail,
+        password: nextPassword,
+      })
+    ) {
+      return;
+    }
 
     setExistingAccount(false);
 
@@ -281,12 +320,12 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
         const requestStartedAt = Date.now();
         const { data, error } = await supabase.auth.signUp({
           email: normalizedEmail,
-          password,
+          password: nextPassword,
           options: {
             emailRedirectTo: window.location.origin,
             data: {
-              full_name: fullName.trim(),
-              username: username.trim(),
+              full_name: nextFullName.trim(),
+              username: nextUsername.trim(),
             },
           },
         });
@@ -313,7 +352,7 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
         // ── Login ────────────────────────────────────────
         const { error } = await supabase.auth.signInWithPassword({
           email: normalizedEmail,
-          password,
+          password: nextPassword,
         });
 
         if (error) {
@@ -350,13 +389,16 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
   return (
     // Backdrop — click to close
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-[100] overflow-y-auto overscroll-contain bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
-      {/* Modal Card — stop clicks from bubbling to backdrop */}
+      <div className="flex min-h-full justify-center px-4 py-6">
+      {/* Modal Card — stop clicks from bubbling to backdrop.
+          my-auto centers a short card; a tall signup card scrolls from the top
+          so the close control stays reachable. */}
       <div
         data-clarity-mask="true"
-        className="relative bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-modal-enter"
+        className="relative my-auto bg-surface rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-modal-enter"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Close button */}
@@ -434,10 +476,14 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     autoComplete="email"
                     placeholder="you@email.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      clearFieldError("email");
+                    }}
                     disabled={loading}
                     autoFocus
                     className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
@@ -600,9 +646,14 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                       </label>
                       <input
                         type="text"
+                        name="fullName"
+                        autoComplete="name"
                         placeholder="Jane Doe"
                         value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
+                        onChange={(e) => {
+                          setFullName(e.target.value);
+                          clearFieldError("fullName");
+                        }}
                         disabled={loading}
                         className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
                           errors.fullName
@@ -626,9 +677,14 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                       </label>
                       <input
                         type="text"
+                        name="username"
+                        autoComplete="username"
                         placeholder="jane_doe"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => {
+                          setUsername(e.target.value);
+                          clearFieldError("username");
+                        }}
                         disabled={loading}
                         className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
                           errors.username
@@ -654,11 +710,13 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                   </label>
                   <input
                     type="email"
+                    name="email"
                     autoComplete="email"
                     placeholder="you@email.com"
                     value={email}
                     onChange={(e) => {
                       setEmail(e.target.value);
+                      clearFieldError("email");
                       if (existingAccount) setExistingAccount(false);
                     }}
                     disabled={loading}
@@ -694,10 +752,14 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
                     Password
                   </label>
                   <PasswordInput
+                    name="password"
                     autoComplete={activeTab === "signup" ? "new-password" : "current-password"}
                     placeholder="••••••••"
                     value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      clearFieldError("password");
+                    }}
                     disabled={loading}
                     className={`w-full bg-surface-container-low border rounded-lg px-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all disabled:opacity-50 ${
                       errors.password
@@ -778,6 +840,7 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
             </>
           )}
         </div>
+      </div>
       </div>
     </div>
   );

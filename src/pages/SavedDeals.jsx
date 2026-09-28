@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { unsaveDeal, usePublicDealsByIds } from "../lib/useDeals";
 import { useRoleContext } from "../lib/RoleContext";
@@ -74,6 +75,9 @@ export default function SavedDeals() {
 
   return (
     <div className="max-w-4xl mx-auto px-4 md:px-8 py-6 md:py-10 animate-fade-in">
+      <Helmet>
+        <title>Saved Deals | Uni Deals</title>
+      </Helmet>
       <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-8 gap-4">
         <div>
           <h1 className="font-headline font-extrabold text-3xl md:text-4xl tracking-tighter text-on-background">

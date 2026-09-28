@@ -14,6 +14,7 @@
  */
 import { useState, useEffect, useRef } from "react";
 import { Link, Navigate } from "react-router-dom";
+import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { useRoleContext } from "../lib/RoleContext";
 import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
@@ -560,6 +561,9 @@ function Profile({ isLoggedIn, user }) {
 
   return (
     <div className="max-w-7xl w-full mx-auto px-4 lg:px-8 py-8 md:py-12 animate-fade-in">
+      <Helmet>
+        <title>Profile | Uni Deals</title>
+      </Helmet>
       <div className="flex flex-col lg:flex-row gap-8 lg:gap-12 items-start">
         {/* Left Column (Identity & ID Card) */}
         <div className="w-full lg:w-80 flex-shrink-0 flex flex-col items-center lg:items-start">

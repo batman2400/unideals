@@ -12,6 +12,8 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
   const navLinks = [
     { path: "/", label: "Explore" },
     { path: "/deals", label: "Deals" },
+    { path: "/brands", label: "Brands" },
+    { path: "/categories", label: "Categories" },
     { path: "/events", label: "Events" },
     { path: "/blog", label: "Blog" },
     ...(isLoggedIn ? [{ path: "/saved", label: "Saved Deals" }] : []),
@@ -35,11 +37,11 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
       </Link>
 
       {/* Center: Links */}
-      <div className="flex items-center gap-3 lg:gap-6 xl:gap-8">
+      <div className="flex items-center gap-2 lg:gap-4 xl:gap-6">
         {navLinks.map((link) => {
           const active = isActive(link.path);
           const requiresAuth = link.path === "/saved";
-          const className = `relative font-headline font-bold text-base tracking-tight transition-colors duration-200 py-1 ${
+          const className = `relative font-headline font-bold text-sm lg:text-base tracking-tight transition-colors duration-200 py-1 ${
             active
               ? "text-primary after:absolute after:-bottom-1 after:left-0 after:w-full after:h-0.5 after:bg-primary after:rounded-full"
               : "text-on-surface-variant hover:text-on-background"

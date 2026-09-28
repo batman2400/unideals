@@ -153,6 +153,24 @@ export default async function handler(req, res) {
     },
   };
 
+  const navSchema = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": "Uni Deals",
+    "itemListElement": [
+      { name: "Deals", url: `${SITE_URL}/deals` },
+      { name: "Brands", url: `${SITE_URL}/brands` },
+      { name: "Categories", url: `${SITE_URL}/categories` },
+      { name: "Events", url: `${SITE_URL}/events` },
+      { name: "Blog", url: `${SITE_URL}/blog` },
+    ].map((item, index) => ({
+      "@type": "SiteNavigationElement",
+      "position": index + 1,
+      "name": item.name,
+      "url": item.url,
+    })),
+  };
+
   const faqSchema = {
     "@context": "https://schema.org",
     "@type": "FAQPage",
@@ -226,6 +244,7 @@ export default async function handler(req, res) {
     <script type="application/ld+json">${JSON.stringify(websiteSchema)}</script>
     <script type="application/ld+json">${JSON.stringify(orgSchema)}</script>
     <script type="application/ld+json">${JSON.stringify(faqSchema)}</script>
+    <script type="application/ld+json">${JSON.stringify(navSchema)}</script>
   </head>
   <body>
     <main>
@@ -267,11 +286,11 @@ export default async function handler(req, res) {
       <nav aria-label="Site directory">
         <h2>Quick Links</h2>
         <ul>
-          <li><a href="${SITE_URL}/deals">All Student Deals</a></li>
-          <li><a href="${SITE_URL}/categories">Deal Categories</a></li>
-          <li><a href="${SITE_URL}/brands">Partner Brands Directory</a></li>
-          <li><a href="${SITE_URL}/events">Campus &amp; University Events</a></li>
-          <li><a href="${SITE_URL}/blog">Student Guides &amp; Blog</a></li>
+          <li><a href="${SITE_URL}/deals">Deals</a></li>
+          <li><a href="${SITE_URL}/brands">Brands</a></li>
+          <li><a href="${SITE_URL}/categories">Categories</a></li>
+          <li><a href="${SITE_URL}/events">Events</a></li>
+          <li><a href="${SITE_URL}/blog">Blog</a></li>
           <li><a href="${SITE_URL}/contact">Partner With Us / Contact</a></li>
           <li><a href="${SITE_URL}/support">Student Support</a></li>
           <li><a href="${SITE_URL}/llms.txt">Uni Deals facts for AI assistants</a></li>
