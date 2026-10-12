@@ -43,6 +43,7 @@ const EXACT_PATHS = new Set([
   "/reset-password",
   "/auth/callback",
   "/perks",
+  "/become-partner",
   "/login",
   "/signup",
 ]);
@@ -118,7 +119,7 @@ export function legacyPathRedirect(pathname) {
   return null;
 }
 
-function isKnownAppPath(pathname) {
+export function isKnownAppPath(pathname) {
   const path = normalizePath(pathname);
   if (EXACT_PATHS.has(path)) return true;
   if (path === "/admin" || path.startsWith("/admin/")) return true;
