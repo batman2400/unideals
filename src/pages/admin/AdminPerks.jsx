@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "../../lib/supabaseClient";
 import PortalLayout from "../../layouts/PortalLayout";
 import {
+  PERK_CATEGORIES,
   PERK_COLUMNS,
   mapPerk,
   perksSchemaMissing,
@@ -146,6 +147,11 @@ export default function AdminPerks() {
       <form onSubmit={save} className="mb-8 grid gap-3 max-w-2xl">
         <input name="providerName" value={form.providerName} onChange={onChange} placeholder="Provider name" className="h-12 rounded-xl border border-outline-variant/30 bg-surface-container-low px-4" />
         <input name="logoUrl" value={form.logoUrl} onChange={onChange} placeholder="Logo image URL (https://)" className="h-12 rounded-xl border border-outline-variant/30 bg-surface-container-low px-4" />
+        <select name="category" value={form.category} onChange={onChange} className="h-12 rounded-xl border border-outline-variant/30 bg-surface-container-low px-4">
+          {PERK_CATEGORIES.map((item) => (
+            <option key={item} value={item}>{item}</option>
+          ))}
+        </select>
         <textarea name="summary" value={form.summary} onChange={onChange} placeholder="Summary" rows={3} className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3" />
         <textarea name="eligibility" value={form.eligibility} onChange={onChange} placeholder="Who can claim it" rows={3} className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3" />
         <textarea name="claimSteps" value={form.claimSteps} onChange={onChange} placeholder="Claim steps, one per line" rows={4} className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3" />

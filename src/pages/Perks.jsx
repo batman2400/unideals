@@ -1,14 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import PerkMark from "../components/PerkMark";
-import { fetchActivePerks, perkDisclaimer } from "../lib/studentPerks";
+import { fetchActivePerks, PERK_CATEGORIES, perkDisclaimer } from "../lib/studentPerks";
 import { SITE_URL } from "../lib/seo";
 
 export default function Perks() {
   const [perks, setPerks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [category, setCategory] = useState("All");
 
   useEffect(() => {
     let active = true;
@@ -26,6 +28,25 @@ export default function Perks() {
       active = false;
     };
   }, []);
+
+  const categories = useMemo(
+    () => [
+      "All",
+      ...PERK_CATEGORIES.filter((item) => perks.some((perk) => perk.category === item)),
+    ],
+    [perks],
+  );
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return perks.filter((perk) => {
+      if (category !== "All" && perk.category !== category) return false;
+      if (!needle) return true;
+      return [perk.providerName, perk.category, perk.summary, perk.availability]
+        .filter(Boolean)
+        .some((value) => String(value).toLowerCase().includes(needle));
+    });
+  }, [perks, query, category]);
 
   return (
     <section className="max-w-[1100px] mx-auto px-4 sm:px-6 py-10 md:py-14">
@@ -48,17 +69,47 @@ export default function Perks() {
         eligibility, issue a code, or take a referral fee.
       </p>
 
+      <div className="mt-6 flex flex-col gap-3">
+        <input
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Search perks, such as domains, design, or AI"
+          className="h-12 w-full rounded-xl border border-outline-variant/30 bg-surface px-4 text-sm text-on-background"
+        />
+        <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+          {categories.map((item) => {
+            const selected = item === category;
+            return (
+              <button
+                key={item}
+                type="button"
+                onClick={() => setCategory(item)}
+                className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-semibold ${
+                  selected
+                    ? "bg-primary text-on-primary"
+                    : "bg-surface-container text-on-surface-variant"
+                }`}
+              >
+                {item}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
       {loading ? (
         <p className="mt-8 text-sm text-on-surface-variant">Loading…</p>
       ) : error ? (
         <p className="mt-8 text-sm text-error">{error}</p>
-      ) : perks.length === 0 ? (
+      ) : visible.length === 0 ? (
         <p className="mt-8 text-sm text-on-surface-variant">
-          No global perks are published yet.
+          {perks.length === 0
+            ? "No global perks are published yet."
+            : "No perks match that search."}
         </p>
       ) : (
         <ul className="mt-8 grid gap-4 md:grid-cols-2">
-          {perks.map((perk) => (
+          {visible.map((perk) => (
             <li
               key={perk.id}
               className="flex h-full flex-col rounded-2xl border border-outline-variant/20 bg-surface p-5"

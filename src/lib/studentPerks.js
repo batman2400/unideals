@@ -1,5 +1,18 @@
 import { supabase } from "./supabaseClient";
 
+export const PERK_CATEGORIES = [
+  "AI",
+  "Learning",
+  "Design",
+  "Cloud",
+  "Software",
+  "Domains",
+  "Security",
+  "Productivity",
+  "Music",
+  "Video",
+];
+
 export const PERK_COLUMNS =
   "id, provider_name, logo_url, category, summary, eligibility, claim_steps, official_url, availability, last_verified_on, is_active, sort_order";
 
