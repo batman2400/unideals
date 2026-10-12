@@ -80,6 +80,8 @@ export function useRole() {
 
   useEffect(() => {
     let active = true;
+    let requestSeq = 0;
+    let committedUserId = readRoleCache()?.userId ?? null;
 
     function detachRoleChannel() {
       if (roleChannelRef.current) {
@@ -139,7 +141,9 @@ export function useRole() {
     }
 
     async function resolveRole(sessionOverride = null, isBackgroundRefresh = false) {
-      if (!active) return;
+      const requestId = ++requestSeq;
+      const stale = () => !active || requestId !== requestSeq;
+      if (stale()) return;
 
       if (!isBackgroundRefresh && !hasInitialResolvedRef.current) {
         setLoading(true);
@@ -166,8 +170,15 @@ export function useRole() {
         }
 
         const nextUser = session?.user ?? null;
+        if (stale()) return;
 
-        if (!active) return;
+        const nextUserId = nextUser?.id ?? null;
+        // A new sign-in must keep the guard on "Checking access..." until
+        // user_roles returns. Leaving loading false here shows a blank role
+        // while the header already has the session.
+        if (nextUserId !== committedUserId) {
+          setLoading(true);
+        }
 
         // Keep the same object when the uid is unchanged so pages that
         // depend on `user` (Saved Deals) do not refetch on every token refresh.
@@ -180,6 +191,8 @@ export function useRole() {
         setAuthReady(true);
 
         if (!nextUser) {
+          if (stale()) return;
+          committedUserId = null;
           writeRoleCache(null);
           setRole(null);
           setIsVerified(false);
@@ -252,8 +265,9 @@ export function useRole() {
           resolvedVerifiedAt = fromRow.verifiedAt;
         }
 
-        if (!active) return;
+        if (stale()) return;
 
+        committedUserId = nextUser.id;
         writeRoleCache({
           userId: nextUser.id,
           role: resolvedRole,
@@ -267,7 +281,7 @@ export function useRole() {
         setLoading(false);
         hasInitialResolvedRef.current = true;
       } catch (err) {
-        if (!active) return;
+        if (stale()) return;
         setAuthReady(true);
         // Preserve the last known role on transient failures.
         setError(err?.message || "Failed to load user role.");
@@ -281,7 +295,13 @@ export function useRole() {
     } = supabase.auth.onAuthStateChange((event, session) => {
       const isBackground =
         event === "TOKEN_REFRESHED" || event === "USER_UPDATED";
-      void resolveRole(session, isBackground);
+      // Supabase holds the auth lock while this callback runs. Starting a
+      // user_roles query here deadlocks that lock and leaves admin routes
+      // on "Checking access..." for 20 seconds after the modal login.
+      setTimeout(() => {
+        if (!active) return;
+        void resolveRole(session, isBackground);
+      }, 0);
     });
 
     // Run initial resolution immediately on mount

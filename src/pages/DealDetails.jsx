@@ -761,12 +761,17 @@ function DealDetails() {
       url: window.location.href,
     });
 
-    if (res.method === "clipboard" && res.success) {
+    if (res.cancelled) return;
+    if (res.success) {
       setDealShared(true);
-      setShareToastMessage("Deal link copied to clipboard!");
+      setShareToastMessage(
+        res.method === "clipboard"
+          ? "Deal link copied to clipboard!"
+          : "Deal link shared.",
+      );
       setTimeout(() => setDealShared(false), 2000);
-    } else if (res.error) {
-      setShareToastMessage("Could not copy deal link");
+    } else {
+      setShareToastMessage("Could not share the deal link");
     }
   }, [deal]);
 

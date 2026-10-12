@@ -19,6 +19,7 @@ import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
 import { OFFICIAL_CATEGORIES, normalizeCategory } from "../../lib/categories";
 import DealCard from "../../components/DealCard";
+import PortalLayout from "../../layouts/PortalLayout";
 import ImageCropModal from "../../components/ImageCropModal";
 import { DEAL_ASPECT_OPTIONS } from "../../lib/imageCropUtils";
 
@@ -257,6 +258,14 @@ function CreateDeal() {
   };
 
   const offerPreview = buildOfferLabel(offerType, offerValue);
+  const offerFieldError =
+    String(offerValue).trim().length > 0
+      ? validateOfferValue(offerType, offerValue)
+      : "";
+  const scheduleFieldError =
+    formData.start_time || formData.end_time
+      ? validateSchedule(formData.start_time, formData.end_time)
+      : "";
 
   const validate = () => {
     const requiredKeys = [
@@ -465,7 +474,8 @@ function CreateDeal() {
   };
 
   return (
-    <section className="max-w-screen-2xl w-full mx-auto px-4 md:px-6 lg:px-8 py-8 md:py-12 animate-fade-in">
+    <PortalLayout portalType="partner">
+    <section className="animate-fade-in">
       <div className="flex items-center justify-between gap-4 mb-8 flex-wrap">
         <div>
           <span className="text-xs font-bold tracking-[0.3em] text-primary uppercase block mb-2">
@@ -624,6 +634,7 @@ function CreateDeal() {
                       onChange={(event) => setOfferValue(event.target.value)}
                       disabled={submitting}
                       placeholder={getOfferValuePlaceholder(offerType)}
+                      aria-invalid={offerFieldError ? "true" : undefined}
                       className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
                     />
                   ) : (
@@ -631,6 +642,9 @@ function CreateDeal() {
                       Buy 1 Get 1
                     </div>
                   )}
+                  {offerFieldError ? (
+                    <p className="text-error text-xs font-bold mt-2">{offerFieldError}</p>
+                  ) : null}
                 </div>
 
                 <div>
@@ -723,8 +737,12 @@ function CreateDeal() {
                     value={formData.end_time}
                     onChange={onChange}
                     disabled={submitting}
+                    aria-invalid={scheduleFieldError ? "true" : undefined}
                     className="w-full bg-surface-container-low border border-outline-variant/20 rounded-lg px-4 py-3 min-h-[44px] text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all appearance-auto"
                   />
+                  {scheduleFieldError ? (
+                    <p className="text-error text-xs font-bold mt-2">{scheduleFieldError}</p>
+                  ) : null}
                   <label className="mt-3 flex items-start gap-2.5 cursor-pointer">
                     <input
                       type="checkbox"
@@ -923,6 +941,7 @@ function CreateDeal() {
         onClose={() => setIsCropModalOpen(false)}
       />
     </section>
+    </PortalLayout>
   );
 }
 

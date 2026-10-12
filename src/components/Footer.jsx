@@ -21,12 +21,15 @@ function Footer() {
       url: window.location.origin,
     });
 
-    if (result.method === "clipboard" && result.success) {
+    if (result.cancelled) return;
+    if (result.success) {
       setCopied(true);
-      setToastMessage("Link copied to clipboard!");
+      setToastMessage(
+        result.method === "clipboard" ? "Link copied to clipboard!" : "Link shared.",
+      );
       setTimeout(() => setCopied(false), 2000);
-    } else if (result.error) {
-      setToastMessage("Could not copy link");
+    } else {
+      setToastMessage("Could not share the link");
     }
   };
 

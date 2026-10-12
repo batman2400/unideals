@@ -42,9 +42,11 @@ export default function EventDetails() {
         query = query.eq("status", "approved");
       }
 
-      const { data, error: fetchError } = await query.single();
+      const { data: rows, error: fetchError } = await query.limit(1);
 
       if (fetchError) throw fetchError;
+      const data = rows?.[0] ?? null;
+      if (!data) throw new Error("This event could not be found.");
 
       const canViewFinished =
         role === "admin" ||

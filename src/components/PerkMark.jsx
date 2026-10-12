@@ -15,7 +15,7 @@ export default function PerkMark({ perk, className = "h-12 w-12" }) {
   return (
     <img
       src={src}
-      alt=""
+      alt={perk.providerName || "Provider logo"}
       className={`${className} shrink-0 rounded-xl border border-outline-variant/15 bg-surface-container-low object-contain p-2`}
     />
   );

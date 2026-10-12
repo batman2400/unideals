@@ -66,13 +66,21 @@ export default function CategoryPage() {
   const canonicalUrl = `${SITE_URL}/category/${categoryId}`;
   const meta = CATEGORY_META[categoryName] || { icon: "category", color: "text-primary" };
 
+  if (loading) {
+    return (
+      <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-16">
+        <p className="text-sm text-on-surface-variant">Loading category…</p>
+      </div>
+    );
+  }
+
   // Unknown slug — no official or live category matches it.
-  if (!loading && !categoryName) {
+  if (!categoryName) {
     return (
       <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center">
         <Helmet>
           <title>Category Not Found | Uni Deals</title>
-          <meta name="robots" content="noindex, follow" />
+          <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <h1 className="font-headline font-extrabold text-3xl mb-3">
           Category Not Found

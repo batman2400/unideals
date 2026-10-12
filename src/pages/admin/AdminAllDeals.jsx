@@ -26,6 +26,12 @@ const STATUS_BADGE = {
 
 const PAGE_LIMIT = 500;
 
+function matchesSearch(query, values) {
+  const needle = String(query ?? "").trim().toLowerCase();
+  if (!needle) return true;
+  return values.some((value) => String(value ?? "").toLowerCase().includes(needle));
+}
+
 function AdminAllDeals({ finishedOnly = false }) {
   const { role, loading: roleLoading } = useRoleContext();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -42,6 +48,7 @@ function AdminAllDeals({ finishedOnly = false }) {
   const [message, setMessage] = useState("");
   const [actingDealId, setActingDealId] = useState(null);
   const [listTruncated, setListTruncated] = useState(false);
+  const [hasLoaded, setHasLoaded] = useState(false);
   const isMountedRef = useRef(true);
 
   useEffect(
@@ -61,7 +68,7 @@ function AdminAllDeals({ finishedOnly = false }) {
       "admin_list_all_deals",
       {
         status_filter: null,
-        search_query: searchQuery,
+        search_query: "",
         page_limit: PAGE_LIMIT,
         page_offset: 0,
       },
@@ -70,6 +77,7 @@ function AdminAllDeals({ finishedOnly = false }) {
     if (fetchError) {
       setError(fetchError.message);
       setListTruncated(false);
+      setHasLoaded(true);
       setLoading(false);
       return;
     }
@@ -84,6 +92,7 @@ function AdminAllDeals({ finishedOnly = false }) {
       setError(
         "Couldn't load deal schedules, so status filters may be inaccurate. Please refresh.",
       );
+      setHasLoaded(true);
       setLoading(false);
       return;
     }
@@ -122,8 +131,9 @@ function AdminAllDeals({ finishedOnly = false }) {
 
     setDeals(processedDeals || []);
     setListTruncated((data || []).length >= PAGE_LIMIT);
+    setHasLoaded(true);
     setLoading(false);
-  }, [role, statusFilter, searchQuery, finishedOnly]);
+  }, [role, statusFilter, finishedOnly]);
 
   useEffect(() => {
     if (roleLoading) return;
@@ -190,6 +200,15 @@ function AdminAllDeals({ finishedOnly = false }) {
     return () => clearTimeout(timer);
   }, [inputValue]);
 
+  const visibleDeals = deals.filter((deal) =>
+    matchesSearch(searchQuery, [
+      deal.title,
+      deal.brand,
+      deal.discount,
+      deal.category,
+    ]),
+  );
+
   if (roleLoading) {
     return (
       <PortalLayout portalType="admin">
@@ -241,7 +260,7 @@ function AdminAllDeals({ finishedOnly = false }) {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Search by title or brand..."
+            placeholder="Search by title, brand, or discount..."
             className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl pl-10 pr-4 py-3 text-sm font-body focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none transition-all"
           />
         </div>
@@ -270,9 +289,9 @@ function AdminAllDeals({ finishedOnly = false }) {
       </div>
 
       {/* Deals Table */}
-      {loading ? (
+      {loading || !hasLoaded ? (
         <div className="h-96 rounded-2xl skeleton-shimmer" />
-      ) : deals.length === 0 ? (
+      ) : visibleDeals.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
             search_off
@@ -314,7 +333,7 @@ function AdminAllDeals({ finishedOnly = false }) {
                 </tr>
               </thead>
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
-                {deals.map((deal) => {
+                {visibleDeals.map((deal) => {
                   const isActing = actingDealId === deal.id;
                   const displayStatus = getDealComputedStatus(deal);
                   const badge =

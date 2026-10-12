@@ -43,6 +43,7 @@ const EXACT_PATHS = new Set([
   "/reset-password",
   "/auth/callback",
   "/perks",
+  "/become-partner",
   "/login",
   "/signup",
 ]);

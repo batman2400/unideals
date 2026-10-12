@@ -54,6 +54,10 @@ export default function PerkDetails() {
   if (!perk) {
     return (
       <section className="max-w-xl mx-auto px-6 py-16">
+        <Helmet>
+          <title>Perk Not Found | Uni Deals</title>
+          <meta name="robots" content="noindex, nofollow" />
+        </Helmet>
         <h1 className="font-headline font-black text-3xl text-on-background">
           Perk unavailable
         </h1>

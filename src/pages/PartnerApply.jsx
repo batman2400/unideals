@@ -53,7 +53,7 @@ const emptyForm = {
 };
 
 export default function PartnerApply() {
-  const { user, role, authReady } = useRoleContext();
+  const { user, role, authReady, loading: roleLoading } = useRoleContext();
   const [form, setForm] = useState(emptyForm);
   const [logoFile, setLogoFile] = useState(null);
   const [existingLogo, setExistingLogo] = useState(null);
@@ -69,19 +69,22 @@ export default function PartnerApply() {
     let active = true;
 
     async function load() {
-      if (!authReady) return;
-      if (!user?.id) {
+      if (!authReady || roleLoading) return;
+      if (!user?.id || role === "partner" || role === "admin") {
         if (active) setLoading(false);
         return;
       }
 
-      const { data, error: fetchError } = await supabase
+      // limit(1) returns 200 [] when this account has no application.
+      // maybeSingle asks for a single object and PostgREST answers 406.
+      const { data: rows, error: fetchError } = await supabase
         .from("brands")
         .select(
           "name, category, description, website_url, instagram_handle, tiktok_handle, location, logo_url, contact_name, contact_phone, status, rejection_reason",
         )
         .eq("applicant_user_id", user.id)
-        .maybeSingle();
+        .limit(1);
+      const data = rows?.[0] ?? null;
 
       if (!active) return;
 
@@ -119,7 +122,7 @@ export default function PartnerApply() {
     return () => {
       active = false;
     };
-  }, [authReady, user?.id]);
+  }, [authReady, roleLoading, role, user?.id]);
 
   const onChange = (event) => {
     const { name, value } = event.target;
@@ -201,7 +204,7 @@ export default function PartnerApply() {
         application. Your account stays a student until it is approved.
       </p>
 
-      {!authReady || loading ? (
+      {!authReady || roleLoading || loading ? (
         <p className="mt-8 text-sm text-on-surface-variant">Loading…</p>
       ) : !user ? (
         <div className="mt-8">

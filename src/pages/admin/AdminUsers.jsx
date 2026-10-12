@@ -18,6 +18,12 @@ const ROLE_FILTER_TABS = [
 
 const PAGE_LIMIT = 100;
 
+function matchesSearch(query, values) {
+  const needle = String(query ?? "").trim().toLowerCase();
+  if (!needle) return true;
+  return values.some((value) => String(value ?? "").toLowerCase().includes(needle));
+}
+
 function AdminUsers() {
   const { role, loading: roleLoading } = useRoleContext();
   const [users, setUsers] = useState([]);
@@ -53,7 +59,7 @@ function AdminUsers() {
     const { data, error: fetchError } = await supabase.rpc(
       "list_users_with_roles",
       {
-        search_query: searchQuery,
+        search_query: "",
         role_filter: roleFilter,
         page_limit: PAGE_LIMIT,
         page_offset: 0,
@@ -70,7 +76,7 @@ function AdminUsers() {
     setUsers(data || []);
     setListTruncated((data || []).length >= PAGE_LIMIT);
     setLoading(false);
-  }, [role, searchQuery, roleFilter]);
+  }, [role, roleFilter]);
 
   const fetchBrands = useCallback(async () => {
     if (role !== "admin") return;
@@ -184,6 +190,16 @@ function AdminUsers() {
     return () => clearTimeout(timer);
   }, [inputValue]);
 
+  const visibleUsers = users.filter((user) =>
+    matchesSearch(searchQuery, [
+      user.email,
+      user.brand_name,
+      user.full_name,
+      user.name,
+      user.role,
+    ]),
+  );
+
   if (roleLoading) {
     return (
       <PortalLayout portalType="admin">
@@ -282,7 +298,7 @@ function AdminUsers() {
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Search by email or brand..."
+            placeholder="Search by name, email, or brand..."
             className="w-full bg-surface-container-low border border-outline-variant/20 rounded-xl pl-10 pr-4 py-3 text-sm focus:ring-2 focus:ring-primary/30 focus:border-primary outline-none"
           />
         </div>
@@ -306,7 +322,7 @@ function AdminUsers() {
       {/* Users Table */}
       {loading ? (
         <div className="h-96 rounded-2xl skeleton-shimmer" />
-      ) : users.length === 0 ? (
+      ) : visibleUsers.length === 0 ? (
         <div className="bg-surface rounded-2xl border border-outline-variant/15 p-12 text-center">
           <span className="material-symbols-outlined text-4xl text-on-surface-variant/30 mb-2 block">
             group_off
@@ -340,7 +356,7 @@ function AdminUsers() {
                 </tr>
               </thead>
               <tbody className="block md:table-row-group divide-y divide-outline-variant/8">
-                {users.map((u) => {
+                {visibleUsers.map((u) => {
                   const badge = ROLE_BADGE[u.role] || ROLE_BADGE.student;
                   const isActing = actingUserId === u.user_id;
 

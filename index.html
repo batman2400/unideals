@@ -28,12 +28,15 @@
         else if (path === "/brands") title = "Brands | Uni Deals";
         else if (path.indexOf("/brand/") === 0) title = "Brand | Uni Deals";
         else if (path === "/blog") title = "Blog | Uni Deals";
-        else if (path.indexOf("/blog/") === 0) title = "Blog | Uni Deals";
+        else if (path === "/perks") title = "Global student perks | Uni Deals";
+        else if (path === "/become-partner") title = "Partner application | Uni Deals";
         else if (path === "/events") title = "Student Events in Sri Lanka | Uni Deals";
         else if (path === "/events/new") title = "Create Event | Uni Deals";
         else if (path === "/saved") title = "Saved Deals | Uni Deals";
         else if (path === "/profile") title = "Profile | Uni Deals";
+        else if (path === "/admin/blog") title = "Blog Manager | Uni Deals";
         else if (path.indexOf("/admin") === 0) title = "Admin | Uni Deals";
+        else if (path === "/partner/create-deal") title = "Create Deal | Uni Deals";
         else if (path.indexOf("/partner") === 0) title = "Partner | Uni Deals";
         else if (path === "/login" || path === "/signup") title = "Uni Deals";
         if (title) document.title = title;

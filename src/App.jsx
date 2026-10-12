@@ -28,6 +28,7 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import AuthModal from "./components/AuthModal";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ChunkErrorBoundary from "./components/ChunkErrorBoundary";
 import Telemetry from "./components/Telemetry";
 
 const loadHome = () => import("./pages/Home");
@@ -287,6 +288,7 @@ function App() {
             isDealDetailsPage ? "pb-16 md:pb-0" : "pb-16"
           }`}
         >
+        <ChunkErrorBoundary>
         <Suspense fallback={<RouteSkeleton />}>
           <div className="animate-route-fade flex flex-col flex-1">
             <Routes location={location}>
@@ -422,6 +424,7 @@ function App() {
             </Routes>
           </div>
         </Suspense>
+        </ChunkErrorBoundary>
 
         </main>
       </div>

@@ -6,6 +6,22 @@ import App from "./App";
 import "./index.css";
 
 import { HelmetProvider } from 'react-helmet-async';
+import { clearChunkReloadFlag, isChunkLoadError, reloadForStaleChunk } from './lib/chunkReload';
+
+window.addEventListener("vite:preloadError", (event) => {
+  event.preventDefault();
+  reloadForStaleChunk();
+});
+
+window.addEventListener("unhandledrejection", (event) => {
+  if (!isChunkLoadError(event.reason)) return;
+  event.preventDefault();
+  reloadForStaleChunk();
+});
+
+window.setTimeout(() => {
+  clearChunkReloadFlag();
+}, 8000);
 
 // This is the starting point of your React app.
 // It grabs the <div id="root"> from index.html and renders

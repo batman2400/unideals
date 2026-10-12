@@ -75,12 +75,20 @@ export default function BrandPage() {
   const brandsResolved = brandRecord !== undefined;
   const pageLoading = !brandName && (loading || !brandsResolved);
 
-  if (!pageLoading && !brandName) {
+  if (pageLoading) {
+    return (
+      <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-16">
+        <p className="text-sm text-on-surface-variant">Loading brand…</p>
+      </div>
+    );
+  }
+
+  if (!brandName) {
     return (
       <div className="max-w-[1440px] mx-auto px-6 md:px-8 py-16 text-center">
         <Helmet>
           <title>Brand Not Found | Uni Deals</title>
-          <meta name="robots" content="noindex, follow" />
+          <meta name="robots" content="noindex, nofollow" />
         </Helmet>
         <h1 className="font-headline font-extrabold text-3xl mb-3">
           Brand Not Found

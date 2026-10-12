@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { supabase } from "../../lib/supabaseClient";
+import PortalLayout from "../../layouts/PortalLayout";
 
 export default function AdminBlog() {
   const [posts, setPosts] = useState([]);
@@ -158,6 +159,7 @@ export default function AdminBlog() {
   };
 
   return (
+    <PortalLayout portalType="admin">
     <div className="w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
@@ -394,5 +396,6 @@ export default function AdminBlog() {
         </div>
       )}
     </div>
+    </PortalLayout>
   );
 }

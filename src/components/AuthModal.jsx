@@ -107,6 +107,29 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     setResetSent(false);
   }, [isOpen, initialTab]);
 
+  useEffect(() => {
+    if (isOpen) return;
+    setSignupSuccess(false);
+    setShowForgot(false);
+    setResetSent(false);
+    setExistingAccount(false);
+    setErrors({});
+    setAuthError("");
+    setFullName("");
+    setUsername("");
+    setEmail("");
+    setPassword("");
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (event) => {
+      if (event.key === "Escape") onClose();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isOpen, onClose]);
+
   // Reset form when switching tabs
   const switchTab = (tab) => {
     setActiveTab(tab);
@@ -395,6 +418,9 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
     >
       <div className="flex min-h-full justify-center px-4 py-6">
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={activeTab === "signup" ? "Create an account" : "Sign in"}
         data-clarity-mask="true"
         className="relative my-auto flex max-h-[calc(100dvh-3rem)] w-full max-w-md flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl animate-modal-enter"
         onClick={(e) => e.stopPropagation()}

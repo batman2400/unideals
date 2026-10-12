@@ -16,19 +16,25 @@ export default function BlogPost() {
     fetchPost();
   }, [slug]);
 
+  useEffect(() => {
+    if (!post?.title) return;
+    document.title = `${post.title} | Uni Deals Blog`;
+  }, [post]);
+
   const fetchPost = async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const { data, error: fetchError } = await supabase
+      const { data: rows, error: fetchError } = await supabase
         .from("posts")
         .select("*")
         .eq("slug", slug)
         .eq("is_published", true)
-        .single();
+        .limit(1);
 
       if (fetchError) throw fetchError;
+      const data = rows?.[0] ?? null;
       if (!data) throw new Error("Post not found");
       
       setPost(data);
@@ -48,6 +54,9 @@ export default function BlogPost() {
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50/50 py-12">
+        <Helmet>
+          <title>Article | Uni Deals Blog</title>
+        </Helmet>
         <div className="max-w-3xl mx-auto px-4 animate-pulse">
           <div className="h-6 w-32 bg-slate-200 rounded-lg mb-8" />
           <div className="h-10 w-3/4 bg-slate-200 rounded-xl mb-4" />

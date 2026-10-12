@@ -27,6 +27,55 @@ const EMPTY_FORM = {
   external_registration_url: "",
 };
 
+function validateEventForm(formData) {
+  const title = formData.title.trim();
+  if (title.length < 3) return "Event title must be at least 3 characters.";
+
+  const description = formData.description.trim();
+  if (description.length < 20) {
+    return "Add a description of at least 20 characters so students know what the event is.";
+  }
+
+  if (!formData.university_name.trim()) return "Add the university name.";
+  if (!formData.location_name.trim()) return "Add a location.";
+
+  const startIso = combineLocalDateAndTime(formData.start_date, formData.start_clock);
+  if (!startIso) return "Please pick a start date and time.";
+  const start = new Date(startIso);
+  if (start.getTime() < Date.now() - 60 * 1000) {
+    return "Start time must be in the future.";
+  }
+
+  const hasEnd = Boolean(formData.end_date || formData.end_clock);
+  const endIso = hasEnd
+    ? combineLocalDateAndTime(formData.end_date, formData.end_clock)
+    : null;
+  if (hasEnd && !endIso) {
+    return "Please pick both an end date and an end time, or leave both blank.";
+  }
+  if (endIso && new Date(endIso).getTime() < start.getTime()) {
+    return "End time must be on or after the start time.";
+  }
+
+  const hasPublish = Boolean(formData.publish_date || formData.publish_clock);
+  const publishIso = hasPublish
+    ? combineLocalDateAndTime(formData.publish_date, formData.publish_clock)
+    : null;
+  if (hasPublish && !publishIso) {
+    return "Please pick both a publish date and time, or leave both blank.";
+  }
+  if (publishIso && new Date(publishIso).getTime() > start.getTime()) {
+    return "The listing go-live time must be on or before the start time.";
+  }
+
+  const registrationUrl = formData.external_registration_url.trim();
+  if (registrationUrl && !asHttpUrl(registrationUrl)) {
+    return "Registration link must start with http:// or https://.";
+  }
+
+  return "";
+}
+
 function explainSubmitError(error) {
   const message = error?.message || "";
   if (/row-level security/i.test(message) || error?.code === "42501") {
@@ -120,45 +169,31 @@ function CreateEvent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setError("");
     setSuccess(false);
+
+    const formError = validateEventForm(formData);
+    if (formError) {
+      setError(formError);
+      return;
+    }
+
+    setSubmitting(true);
 
     try {
       if (!user) throw new Error("You must be logged in to create an event.");
 
       const startIso = combineLocalDateAndTime(formData.start_date, formData.start_clock);
-      if (!startIso) {
-        throw new Error("Please pick a start date and time.");
-      }
-
       const hasEnd = Boolean(formData.end_date || formData.end_clock);
       const endIso = hasEnd
         ? combineLocalDateAndTime(formData.end_date, formData.end_clock)
         : null;
-      if (hasEnd && !endIso) {
-        throw new Error("Please pick both an end date and an end time, or leave both blank.");
-      }
-
-      const start = new Date(startIso);
-      const end = endIso ? new Date(endIso) : null;
-      if (end && end.getTime() < start.getTime()) {
-        throw new Error("End time must be on or after the start time.");
-      }
-
       const hasPublish = Boolean(formData.publish_date || formData.publish_clock);
       const publishIso = hasPublish
         ? combineLocalDateAndTime(formData.publish_date, formData.publish_clock)
         : null;
-      if (hasPublish && !publishIso) {
-        throw new Error("Please pick both a publish date and time, or leave both blank.");
-      }
-
       const registrationUrl = formData.external_registration_url.trim();
       const safeRegistrationUrl = registrationUrl ? asHttpUrl(registrationUrl) : null;
-      if (registrationUrl && !safeRegistrationUrl) {
-        throw new Error("Registration link must start with http:// or https://.");
-      }
 
       const {
         data: { user: authUser },
@@ -412,6 +447,7 @@ function CreateEvent() {
                 value={formData.location_name}
                 onChange={handleChange}
                 placeholder="e.g. Main Auditorium"
+                required
                 className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 min-h-[48px] text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all"
               />
             </div>
@@ -538,6 +574,8 @@ function CreateEvent() {
               onChange={handleChange}
               rows="5"
               placeholder="Provide the exciting details about your event..."
+              required
+              minLength={20}
               className="w-full bg-surface border border-outline-variant/30 rounded-xl px-4 py-3 text-sm text-on-background focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all resize-y"
             ></textarea>
           </div>

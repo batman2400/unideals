@@ -319,6 +319,7 @@ function renderPage(res, { path, title, description, h1, intro, mainHtml, items,
           <li><a href="${SITE_URL}/categories">Categories</a></li>
           <li><a href="${SITE_URL}/events">Events</a></li>
           <li><a href="${SITE_URL}/blog">Blog</a></li>
+          <li><a href="${SITE_URL}/perks">Global student perks</a></li>
         </ul>
       </nav>
     </main>
@@ -461,6 +462,32 @@ export default async function handler(req, res) {
         "Tips, guides, and student life hacks to help you make the most of your university experience.",
       items,
       mainHtml: `<section><h2>Articles (${items.length})</h2>${listHtml(items, "New student guides are published here.")}</section>`,
+    });
+  }
+
+  if (type === "perks") {
+    const rows = await fetchTable(
+      supabaseUrl,
+      supabaseKey,
+      "student_perks?select=id,provider_name,summary,category&is_active=eq.true&order=sort_order.asc",
+    );
+    const items = rows
+      .filter((perk) => perk?.id && perk.provider_name)
+      .map((perk) => ({
+        name: perk.provider_name,
+        url: `${SITE_URL}/perks/${perk.id}`,
+        detail: [perk.category, perk.summary].filter(Boolean).join(" · "),
+      }));
+    return renderPage(res, {
+      path: "/perks",
+      title: "Global student perks | Uni Deals",
+      description:
+        "Global student programs such as the GitHub Student Developer Pack. Uni Deals links to the provider. We do not issue their offers.",
+      h1: "Global student perks",
+      intro:
+        "These offers come from the provider. Uni Deals does not check eligibility, issue a code, or take a referral fee.",
+      items,
+      mainHtml: `<section><h2>Student perks (${items.length})</h2>${listHtml(items, "Global student perks are listed here as they are published.")}</section>`,
     });
   }
 

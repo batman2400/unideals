@@ -24,6 +24,7 @@ import { uploadBrandLogo } from "../lib/brandLogoUpload";
 import StudentVerificationCard from "../components/StudentVerificationCard";
 import PasswordInput from "../components/PasswordInput";
 import { formatVerificationExpiry } from "../lib/studentVerification";
+import { getDealComputedStatus } from "../lib/comingSoon";
 import { QRCodeSVG } from "qrcode.react";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
@@ -299,7 +300,7 @@ function Profile({ isLoggedIn, user }) {
   // ── Partner Specific State ────────────────────────────
   const [managedBrands, setManagedBrands] = useState([]);
   const [activeBrand, setActiveBrand] = useState(null);
-  const [activeDealsCount, setActiveDealsCount] = useState(0);
+  const [activeDealsCount, setActiveDealsCount] = useState(null);
   const [brandFormData, setBrandFormData] = useState({});
   const [isEditingBrand, setIsEditingBrand] = useState(false);
   const [brandSaving, setBrandSaving] = useState(false);
@@ -363,20 +364,26 @@ function Profile({ isLoggedIn, user }) {
     let active = true;
     async function fetchActiveDeals() {
       if (!user || !activeBrand?.id) return;
-      // Keyed on brand_id like the rest of the app; the denormalized `brand`
-      // text goes stale the moment a brand is renamed.
-      const { count, error } = await supabase
-        .from('deals')
-        .select('*', { count: 'exact', head: true })
-        .eq('brand_id', activeBrand.id)
-        .in('status', ['active', 'approved']);
+      setActiveDealsCount(null);
+      // `active` is a computed portal status, not a deals.status value.
+      // Filtering the enum with it makes PostgREST return 400, so the
+      // count stayed 0 while the portal listed the live rows.
+      const { data, error } = await supabase
+        .from("deals")
+        .select("id, status, start_time, end_time")
+        .eq("brand_id", activeBrand.id)
+        .eq("status", "approved");
 
       if (!active) return;
       if (error) {
         console.error("Failed to count active deals:", error);
+        setActiveDealsCount(null);
         return;
       }
-      setActiveDealsCount(count ?? 0);
+      const live = (data || []).filter(
+        (deal) => getDealComputedStatus(deal) === "active",
+      ).length;
+      setActiveDealsCount(live);
     }
     fetchActiveDeals();
     return () => { active = false; };
@@ -617,7 +624,12 @@ function Profile({ isLoggedIn, user }) {
             </p>
           ) : null}
           <div className="mt-1 flex items-center justify-center">
-            {isVerified || role === "admin" || hasLinkedBrand ? (
+            {verificationLoading ? (
+              <span className="inline-flex items-center gap-1.5 text-xs font-bold text-on-surface-variant bg-surface-container px-2.5 py-1 rounded-full">
+                <span className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                Checking status
+              </span>
+            ) : isVerified || role === "admin" || hasLinkedBrand ? (
               <span className="inline-flex items-center gap-1 text-xs font-bold text-primary bg-primary/10 px-2.5 py-1 rounded-full">
                 <span className="material-symbols-outlined text-[14px]">verified</span>
                 {role === "admin" ? "Verified Admin" : hasLinkedBrand ? "Verified Brand" : "Verified Student"}
@@ -702,7 +714,9 @@ function Profile({ isLoggedIn, user }) {
             </div>
             <div>
               <p className="text-on-surface-variant/50 font-bold uppercase tracking-wider mb-0.5">Live deals</p>
-              <p className="font-headline font-bold text-on-background">{activeDealsCount}</p>
+              <p className="font-headline font-bold text-on-background">
+                {activeDealsCount == null ? "…" : activeDealsCount}
+              </p>
             </div>
           </div>
           <div className="pt-2 border-t border-outline-variant/10 flex flex-col gap-2 w-full">
@@ -727,7 +741,13 @@ function Profile({ isLoggedIn, user }) {
           <div className="flex items-center justify-between w-full">
             <p className="text-[10px] font-bold tracking-[0.18em] text-primary uppercase">Student Pass</p>
             <span className="text-[10px] font-bold text-on-surface-variant/60 uppercase tracking-wider">
-              {isVerified ? "Active" : isVerificationExpired ? "Expired" : "Inactive"}
+              {verificationLoading
+                ? "…"
+                : isVerified
+                  ? "Active"
+                  : isVerificationExpired
+                    ? "Expired"
+                    : "Inactive"}
             </span>
           </div>
           <div className="flex items-center gap-4 flex-1 w-full">

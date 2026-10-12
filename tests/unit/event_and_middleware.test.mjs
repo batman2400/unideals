@@ -80,6 +80,13 @@ describe("Middleware BOT User-Agent Allowlist Tests", () => {
   }
 });
 
+describe("known app paths", () => {
+  it("keeps /become-partner from the hard-load 404", () => {
+    const source = fs.readFileSync(new URL("../../middleware.js", import.meta.url), "utf8");
+    assert.match(source, /"\/become-partner"/);
+  });
+});
+
 describe("legacyPathRedirect", () => {
   it("sends /faq to support", () => {
     assert.equal(legacyPathRedirect("/faq"), "/support");

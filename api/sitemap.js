@@ -127,6 +127,8 @@ function staticEntries(now = new Date().toISOString()) {
     urlEntry(`${SITE_URL}/brands`, { lastmod: now, changefreq: "daily", priority: "0.8" }),
     urlEntry(`${SITE_URL}/events`, { lastmod: now, changefreq: "daily", priority: "0.8" }),
     urlEntry(`${SITE_URL}/blog`, { lastmod: now, changefreq: "daily", priority: "0.7" }),
+    urlEntry(`${SITE_URL}/perks`, { lastmod: now, changefreq: "weekly", priority: "0.7" }),
+    urlEntry(`${SITE_URL}/become-partner`, { lastmod: now, changefreq: "monthly", priority: "0.4" }),
     urlEntry(`${SITE_URL}/contact`, { lastmod: now, changefreq: "monthly", priority: "0.3" }),
     urlEntry(`${SITE_URL}/support`, { lastmod: now, changefreq: "monthly", priority: "0.3" }),
     urlEntry(`${SITE_URL}/terms`, { lastmod: now, changefreq: "yearly", priority: "0.2" }),
