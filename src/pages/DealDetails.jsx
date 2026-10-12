@@ -1218,6 +1218,12 @@ function DealDetails() {
                 </li>
               </ul>
             </div>
+            <Link
+              to={`/contact?type=support&deal=${encodeURIComponent(id ?? "")}`}
+              className="mt-4 inline-flex text-sm font-bold text-on-surface-variant hover:text-primary"
+            >
+              Report this deal
+            </Link>
           </div>
         </div>
       </div>

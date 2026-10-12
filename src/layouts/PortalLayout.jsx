@@ -24,6 +24,8 @@ function PortalLayout({ children, portalType = "partner", brandName = "" }) {
     { path: "/admin/events", label: "All Events", icon: "event" },
     { path: "/admin/finished-events", label: "Finished Events", icon: "event_busy" },
     { path: "/admin/pending-events", label: "Pending Events", icon: "event_upcoming" },
+    { path: "/admin/brand-applications", label: "Brand applications", icon: "storefront" },
+    { path: "/admin/perks", label: "Student Perks", icon: "redeem" },
     { path: "/admin/inquiries", label: "Inquiries", icon: "inbox" },
     { path: "/admin/blog", label: "Blog Manager", icon: "newspaper" },
     { path: "/admin/users", label: "Users", icon: "group" },

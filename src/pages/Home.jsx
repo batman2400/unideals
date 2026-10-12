@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
 import ExploreFeed from "../components/ExploreFeed";
+import HomePerks from "../components/HomePerks";
 import HomeFAQ from "../components/HomeFAQ";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
 import { slugify, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
@@ -87,6 +88,7 @@ function Home({ searchQuery, onSearchChange }) {
       </div>
 
       <ExploreFeed searchQuery={searchQuery} />
+      <HomePerks />
 
       <section className="max-w-[1440px] mx-auto px-4 md:px-8 py-10 md:py-12">
         <div className="max-w-3xl mx-auto rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8">

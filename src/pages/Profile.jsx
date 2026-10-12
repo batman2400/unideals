@@ -305,6 +305,9 @@ function Profile({ isLoggedIn, user }) {
   const [brandSaving, setBrandSaving] = useState(false);
   const [brandError, setBrandError] = useState("");
   const [brandSaved, setBrandSaved] = useState(false);
+  const [brandNotice, setBrandNotice] = useState(
+    "Brand profile updated successfully.",
+  );
   const [brandLoading, setBrandLoading] = useState(false);
   const [brandLogoUploading, setBrandLogoUploading] = useState(false);
   const brandLogoInputRef = useRef(null);
@@ -414,6 +417,11 @@ function Profile({ isLoggedIn, user }) {
       }
       setActiveBrand({ ...activeBrand, ...data[0] });
       setManagedBrands(prev => prev.map(b => b.id === activeBrand.id ? { ...b, ...data[0] } : b));
+      setBrandNotice(
+        data[0].name !== brandFormData.name.trim()
+          ? "Saved. The name change is waiting for review. Other details are already live."
+          : "Brand profile updated successfully.",
+      );
       setIsEditingBrand(false);
       flashSaved(setBrandSaved);
     } catch (err) {
@@ -458,6 +466,11 @@ function Profile({ isLoggedIn, user }) {
       setActiveBrand({ ...activeBrand, ...data[0] });
       setManagedBrands((prev) =>
         prev.map((b) => (b.id === activeBrand.id ? { ...b, ...data[0] } : b)),
+      );
+      setBrandNotice(
+        data[0].logo_url !== publicUrl
+          ? "Saved. The logo change is waiting for review."
+          : "Brand profile updated successfully.",
       );
       flashSaved(setBrandSaved);
     } catch (err) {
@@ -937,7 +950,7 @@ function Profile({ isLoggedIn, user }) {
                 {brandSaved && (
                   <div className="flex items-center gap-2 text-primary bg-primary/10 p-2.5 rounded-lg">
                     <span className="material-symbols-outlined text-sm">check_circle</span>
-                    <p className="text-xs font-bold">Brand profile updated successfully.</p>
+                    <p className="text-xs font-bold">{brandNotice}</p>
                   </div>
                 )}
                 {brandError && <p className="text-error text-xs font-bold bg-error/10 p-2.5 rounded-lg">{brandError}</p>}

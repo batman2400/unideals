@@ -63,6 +63,11 @@ const SupportTickets = lazy(() => import("./pages/admin/SupportTickets"));
 const AdminAllEvents = lazy(() => import("./pages/admin/AdminAllEvents"));
 const AdminPendingEvents = lazy(() => import("./pages/admin/AdminPendingEvents"));
 const Contact = lazy(() => import("./pages/Contact"));
+const PartnerApply = lazy(() => import("./pages/PartnerApply"));
+const Perks = lazy(() => import("./pages/Perks"));
+const PerkDetails = lazy(() => import("./pages/PerkDetails"));
+const AdminPerks = lazy(() => import("./pages/admin/AdminPerks"));
+const AdminBrandApplications = lazy(() => import("./pages/admin/AdminBrandApplications"));
 const AdminInquiries = lazy(() => import("./pages/admin/AdminInquiries"));
 const Blog = lazy(() => import("./pages/Blog"));
 const BlogPost = lazy(() => import("./pages/BlogPost"));
@@ -343,6 +348,9 @@ function App() {
               <Route path="/blog/:slug" element={<BlogPost />} />
               <Route path="/support" element={<Support />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/become-partner" element={<PartnerApply />} />
+              <Route path="/perks" element={<Perks />} />
+              <Route path="/perks/:id" element={<PerkDetails />} />
               {/* Public: the recovery link must open for signed-out users. */}
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
@@ -414,6 +422,11 @@ function App() {
                 <Route path="/admin/analytics" element={<AdminAnalytics />} />
                 <Route path="/admin/tickets" element={<SupportTickets />} />
                 <Route path="inquiries" element={<AdminInquiries />} />
+                <Route
+                  path="brand-applications"
+                  element={<AdminBrandApplications />}
+                />
+                <Route path="perks" element={<AdminPerks />} />
                 <Route path="blog" element={<AdminBlog />} />
               </Route>
 

@@ -21,7 +21,7 @@ function PrivacyPolicy() {
           Privacy Policy
         </h1>
         <p className="mt-3 text-sm text-on-surface-variant/70 font-body">
-          Last updated: September 1, 2026
+          Last updated: October 12, 2026
         </p>
       </header>
 
@@ -62,7 +62,13 @@ function PrivacyPolicy() {
             user role, university-related verification details, usage events,
             and saved deal interactions. Partner and admin users may also
             provide business and offer-management details relevant to campaign
-            publishing.
+            publishing. If you apply to become a partner, we collect the brand
+            name, a contact name and phone number, a website or social profile,
+            and an optional logo so we can review the application. Approved
+            brands are shown to students. If you open a global student perk,
+            we send you to that provider's own site. We do not send your Uni
+            Deals account to the provider. Anything you submit there is covered
+            by the provider's policy.
           </p>
           <p className="mt-3">
             If you verify with a student ID, we collect photos of that document

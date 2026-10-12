@@ -21,7 +21,7 @@ function TermsOfService() {
           Terms of Service
         </h1>
         <p className="mt-3 text-sm text-on-surface-variant/70 font-body">
-          Last updated: September 1, 2026
+          Last updated: October 12, 2026
         </p>
       </header>
 
@@ -65,7 +65,15 @@ function TermsOfService() {
             and managed by third-party partners. Uni Deals acts as a discovery
             and access layer and does not own, manufacture, or fulfill partner
             products and services. Partners remain responsible for the accuracy,
-            legality, availability, and execution of their offers.
+            legality, availability, and execution of their offers. Brand
+            applications are reviewed before a business can publish offers. The
+            applicant stays a student until an admin approves the application.
+            After approval, changes to the public brand name or logo are held
+            until an admin approves them. Global student perks listed on Uni
+            Deals are offered by the provider, not by Uni Deals. We do not
+            check eligibility for those programs, issue their codes, or take a
+            referral fee. The provider's own terms apply, and an offer can
+            change or end without notice.
           </p>
         </section>
 

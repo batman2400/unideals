@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { SITE_URL } from "../lib/seo";
@@ -26,13 +26,16 @@ const CONTACT_FAQS = [
 export default function Contact() {
   const [searchParams] = useSearchParams();
   const initialType = searchParams.get("type");
+  const reportedDeal = searchParams.get("deal");
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     inquiry_type: ["partner", "event", "support"].includes(initialType) ? initialType : "general",
     brand_name: "",
-    message: "",
+    message: reportedDeal
+      ? `I'd like to report this deal.\n\nDeal id: ${reportedDeal}\n\nWhat happened:\n`
+      : "",
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -151,6 +154,15 @@ export default function Contact() {
           <p className="text-on-surface-variant text-lg leading-relaxed mb-8">
             Whether you have a question, want to host an event, or apply as a brand partner, we're here to help.
           </p>
+          {initialType === "partner" && (
+            <p className="text-on-surface-variant leading-relaxed mb-8">
+              To list your brand, use the{" "}
+              <Link to="/become-partner" className="text-primary font-bold">
+                partner application
+              </Link>
+              . We review it before the brand goes live.
+            </p>
+          )}
 
           <div className="bg-surface-container-low border border-outline-variant/30 rounded-2xl p-6 shadow-sm mb-6">
             <h3 className="font-headline font-bold text-on-background mb-2 flex items-center gap-2">

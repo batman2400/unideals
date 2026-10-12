@@ -12,6 +12,7 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
   const navLinks = [
     { path: "/", label: "Explore" },
     { path: "/deals", label: "Deals" },
+    { path: "/perks", label: "Perks" },
     { path: "/brands", label: "Brands" },
     { path: "/categories", label: "Categories" },
     { path: "/events", label: "Events" },
