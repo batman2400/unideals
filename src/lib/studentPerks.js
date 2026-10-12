@@ -23,6 +23,24 @@ export function mapPerk(row) {
   };
 }
 
+/** Same-origin marks. A saved https logo_url replaces these. */
+const PERK_LOGOS = {
+  "GitHub Student Developer Pack": "/perk-logos/github.svg",
+  "Google Gemini for students": "/perk-logos/googlegemini.svg",
+  "JetBrains educational licenses": "/perk-logos/jetbrains.svg",
+  "Autodesk Education": "/perk-logos/autodesk.svg",
+  "Notion Education Plan": "/perk-logos/notion.svg",
+  "Spotify Premium Student": "/perk-logos/spotify.svg",
+  "YouTube Premium Student": "/perk-logos/youtube.svg",
+  "Canva Education": "/perk-logos/canva.svg",
+};
+
+export function perkLogoSrc(perk) {
+  const remote = typeof perk?.logoUrl === "string" ? perk.logoUrl.trim() : "";
+  if (/^https:\/\//i.test(remote)) return remote;
+  return PERK_LOGOS[perk?.providerName] ?? null;
+}
+
 export function perkDisclaimer(providerName) {
   return `Not affiliated with ${providerName}. Terms set by the provider.`;
 }

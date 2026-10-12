@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import PerkMark from "./PerkMark";
 import { fetchActivePerks, perkDisclaimer } from "../lib/studentPerks";
 
 export default function HomePerks() {
@@ -34,9 +35,12 @@ export default function HomePerks() {
             to={`/perks/${perk.id}`}
             className="rounded-2xl border border-outline-variant/20 bg-surface p-4 hover:border-primary/40"
           >
-            <p className="font-headline font-extrabold text-on-background">
-              {perk.providerName}
-            </p>
+            <div className="flex items-start gap-3">
+              <PerkMark perk={perk} className="h-10 w-10" />
+              <p className="font-headline font-extrabold text-on-background">
+                {perk.providerName}
+              </p>
+            </div>
             <p className="mt-2 text-sm leading-relaxed text-on-surface-variant line-clamp-3">
               {perk.summary}
             </p>

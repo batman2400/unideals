@@ -9,6 +9,7 @@ import {
   PERK_COLUMNS,
   perksSchemaMissing,
 } from "../lib/studentPerks";
+import PerkMark from "../components/PerkMark";
 import { SITE_URL } from "../lib/seo";
 
 export default function PerkDetails() {
@@ -77,14 +78,19 @@ export default function PerkDetails() {
       <Link to="/perks" className="text-sm font-bold text-primary">
         Global student perks
       </Link>
-      <h1 className="mt-3 font-headline font-black text-3xl md:text-4xl text-on-background tracking-tight">
-        {perk.providerName}
-      </h1>
-      {perk.category ? (
-        <p className="mt-2 text-xs font-bold uppercase tracking-wide text-primary">
-          {perk.category}
-        </p>
-      ) : null}
+      <div className="mt-4 flex items-start gap-4">
+        <PerkMark perk={perk} className="h-16 w-16" />
+        <div className="min-w-0">
+          <h1 className="font-headline font-black text-3xl md:text-4xl text-on-background tracking-tight">
+            {perk.providerName}
+          </h1>
+          {perk.category ? (
+            <p className="mt-2 text-xs font-bold uppercase tracking-wide text-primary">
+              {perk.category}
+            </p>
+          ) : null}
+        </div>
+      </div>
       <p className="mt-4 text-on-background leading-relaxed">{perk.summary}</p>
       {perk.availability ? (
         <p className="mt-3 text-sm text-on-surface-variant">

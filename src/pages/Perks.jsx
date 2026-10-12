@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
+import PerkMark from "../components/PerkMark";
 import { fetchActivePerks, perkDisclaimer } from "../lib/studentPerks";
 import { SITE_URL } from "../lib/seo";
 
@@ -63,14 +64,19 @@ export default function Perks() {
                 to={`/perks/${perk.id}`}
                 className="block h-full rounded-2xl border border-outline-variant/20 bg-surface p-5 hover:border-primary/40"
               >
-                <p className="font-headline font-extrabold text-lg text-on-background">
-                  {perk.providerName}
-                </p>
-                {perk.category ? (
-                  <p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">
-                    {perk.category}
-                  </p>
-                ) : null}
+                <div className="flex items-start gap-3">
+                  <PerkMark perk={perk} />
+                  <div className="min-w-0">
+                    <p className="font-headline font-extrabold text-lg text-on-background">
+                      {perk.providerName}
+                    </p>
+                    {perk.category ? (
+                      <p className="mt-1 text-xs font-bold uppercase tracking-wide text-primary">
+                        {perk.category}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
                 <p className="mt-3 text-sm leading-relaxed text-on-surface-variant">
                   {perk.summary}
                 </p>

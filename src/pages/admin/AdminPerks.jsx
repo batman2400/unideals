@@ -9,6 +9,7 @@ import {
 
 const EMPTY = {
   providerName: "",
+  logoUrl: "",
   category: "Software",
   summary: "",
   eligibility: "",
@@ -68,10 +69,16 @@ export default function AdminPerks() {
       setError("Official link must start with https://.");
       return;
     }
+    const logoUrl = form.logoUrl.trim();
+    if (logoUrl && !/^https:\/\//i.test(logoUrl)) {
+      setError("Logo link must start with https://.");
+      return;
+    }
     setSaving(true);
     setError("");
     const payload = {
       provider_name: form.providerName.trim(),
+      logo_url: logoUrl || null,
       category: form.category.trim() || null,
       summary: form.summary.trim(),
       eligibility: form.eligibility.trim() || null,
@@ -138,6 +145,7 @@ export default function AdminPerks() {
 
       <form onSubmit={save} className="mb-8 grid gap-3 max-w-2xl">
         <input name="providerName" value={form.providerName} onChange={onChange} placeholder="Provider name" className="h-12 rounded-xl border border-outline-variant/30 bg-surface-container-low px-4" />
+        <input name="logoUrl" value={form.logoUrl} onChange={onChange} placeholder="Logo image URL (https://)" className="h-12 rounded-xl border border-outline-variant/30 bg-surface-container-low px-4" />
         <textarea name="summary" value={form.summary} onChange={onChange} placeholder="Summary" rows={3} className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3" />
         <textarea name="eligibility" value={form.eligibility} onChange={onChange} placeholder="Who can claim it" rows={3} className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3" />
         <textarea name="claimSteps" value={form.claimSteps} onChange={onChange} placeholder="Claim steps, one per line" rows={4} className="rounded-xl border border-outline-variant/30 bg-surface-container-low px-4 py-3" />
@@ -172,6 +180,7 @@ export default function AdminPerks() {
                     setEditingId(perk.id);
                     setForm({
                       providerName: perk.providerName,
+                      logoUrl: perk.logoUrl || "",
                       category: perk.category || "Software",
                       summary: perk.summary,
                       eligibility: perk.eligibility || "",

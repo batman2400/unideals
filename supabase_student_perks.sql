@@ -174,4 +174,21 @@ VALUES
   )
 ON CONFLICT (provider_name) DO NOTHING;
 
+-- Fill logos only when a row has none, so a custom logo is left alone.
+UPDATE public.student_perks AS perk
+SET logo_url = logos.logo_url
+FROM (
+  VALUES
+    ('GitHub Student Developer Pack', 'https://www.unideals.co/perk-logos/github.svg'),
+    ('Google Gemini for students', 'https://www.unideals.co/perk-logos/googlegemini.svg'),
+    ('JetBrains educational licenses', 'https://www.unideals.co/perk-logos/jetbrains.svg'),
+    ('Autodesk Education', 'https://www.unideals.co/perk-logos/autodesk.svg'),
+    ('Notion Education Plan', 'https://www.unideals.co/perk-logos/notion.svg'),
+    ('Spotify Premium Student', 'https://www.unideals.co/perk-logos/spotify.svg'),
+    ('YouTube Premium Student', 'https://www.unideals.co/perk-logos/youtube.svg'),
+    ('Canva Education', 'https://www.unideals.co/perk-logos/canva.svg')
+) AS logos(provider_name, logo_url)
+WHERE perk.provider_name = logos.provider_name
+  AND (perk.logo_url IS NULL OR btrim(perk.logo_url) = '');
+
 NOTIFY pgrst, 'reload schema';
