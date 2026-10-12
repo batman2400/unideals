@@ -8,7 +8,7 @@
  * Coming Soon uses a locked overlay (not a heavy blue banner) so live cards
  * stay visually distinct.
  */
-import { memo, useState, useEffect, useCallback } from "react";
+import { memo, useState, useEffect, useCallback, useRef } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
@@ -111,6 +111,8 @@ function DealCard({
   const isBatchMode = batchSaved !== undefined;
   const [localSaved, setLocalSaved] = useState(false);
   const [localLoading, setLocalLoading] = useState(!isBatchMode);
+  const saveLock = useRef(false);
+  const saveVersion = useRef(0);
 
   useEffect(() => {
     if (isBatchMode || isDemo) {
@@ -118,15 +120,16 @@ function DealCard({
       return;
     }
     let active = true;
+    const version = ++saveVersion.current;
     checkIfSaved(id)
       .then((saved) => {
-        if (active) {
+        if (active && version === saveVersion.current) {
           setLocalSaved(saved);
           setLocalLoading(false);
         }
       })
       .catch(() => {
-        if (active) setLocalLoading(false);
+        if (active && version === saveVersion.current) setLocalLoading(false);
       });
     return () => {
       active = false;
@@ -140,35 +143,42 @@ function DealCard({
     async (e) => {
       e.preventDefault();
       e.stopPropagation();
+      if (saveLock.current) return;
+      saveLock.current = true;
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      if (!session) {
-        window.dispatchEvent(new Event("open-auth-modal"));
-        return;
-      }
+      const currentlySaved = isBatchMode ? !!batchSaved : localSaved;
+      const nextSaved = !currentlySaved;
+      const version = ++saveVersion.current;
+      if (!isBatchMode) setLocalSaved(nextSaved);
 
       try {
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        if (!session) {
+          if (!isBatchMode) setLocalSaved(currentlySaved);
+          window.dispatchEvent(new Event("open-auth-modal"));
+          return;
+        }
+
         if (isBatchMode && batchToggle) {
           await batchToggle(id);
+        } else if (nextSaved) {
+          await saveDeal(id);
         } else {
-          setLocalLoading(true);
-          if (localSaved) {
-            await unsaveDeal(id);
-            setLocalSaved(false);
-          } else {
-            await saveDeal(id);
-            setLocalSaved(true);
-          }
-          setLocalLoading(false);
+          await unsaveDeal(id);
         }
       } catch (err) {
         console.error("Error toggling save:", err);
+        if (!isBatchMode && version === saveVersion.current) {
+          setLocalSaved(currentlySaved);
+        }
+      } finally {
+        saveLock.current = false;
         if (!isBatchMode) setLocalLoading(false);
       }
     },
-    [id, isBatchMode, batchToggle, localSaved],
+    [id, isBatchMode, batchToggle, batchSaved, localSaved],
   );
 
   const imageLoading = isDemo ? "eager" : "lazy";

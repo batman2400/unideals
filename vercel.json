@@ -164,6 +164,17 @@
       "destination": "/api/list-og-proxy?type=perks"
     },
     {
+      "source": "/become-partner",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": "(?i).*(googlebot|google-extended|googleother|bingbot|applebot|duckduckbot|yandex|baiduspider|gptbot|chatgpt-user|claudebot|anthropic|perplexitybot|bytespider|facebookexternalhit|twitterbot|linkedinbot|slackbot|whatsapp|telegrambot|discordbot|skypeuripreview|pinterest|vkShare|W3C_Validator|atproto).*"
+        }
+      ],
+      "destination": "/api/list-og-proxy?type=become-partner"
+    },
+    {
       "source": "/blog",
       "has": [
         {

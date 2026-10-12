@@ -81,6 +81,13 @@ describe("Middleware BOT User-Agent Allowlist Tests", () => {
 });
 
 describe("known app paths", () => {
+  it("404s a perk id that is not a uuid", () => {
+    const source = fs.readFileSync(new URL("../../middleware.js", import.meta.url), "utf8");
+    assert.match(source, /path\.startsWith\("\/perks\/"\)/);
+    assert.match(source, /student_perks\?id=eq\./);
+    assert.match(source, /return spaNotFound\(request\)/);
+  });
+
   it("keeps /become-partner from the hard-load 404", () => {
     const source = fs.readFileSync(new URL("../../middleware.js", import.meta.url), "utf8");
     assert.match(source, /"\/become-partner"/);

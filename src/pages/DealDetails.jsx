@@ -9,7 +9,7 @@
  *   • In-Store  → QR ticket with live 10-minute countdown
  *   • Online    → Reveal RPC (`reveal_online_deal_code`) / copy + store link
  */
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { QRCodeSVG } from "qrcode.react";
@@ -640,6 +640,8 @@ function DealDetails() {
   const [isSaved, setIsSaved] = useState(false);
   const [loadingSave, setLoadingSave] = useState(true);
   const [saveError, setSaveError] = useState("");
+  const saveLock = useRef(false);
+  const saveVersion = useRef(0);
   const [brandLogoUrl, setBrandLogoUrl] = useState(null);
   const [verificationPending, setVerificationPending] = useState(false);
 
@@ -671,16 +673,17 @@ function DealDetails() {
   useEffect(() => {
     window.scrollTo(0, 0);
     let active = true;
+    const version = ++saveVersion.current;
     if (id) {
       checkIfSaved(id)
         .then((saved) => {
-          if (active) {
+          if (active && version === saveVersion.current) {
             setIsSaved(saved);
             setLoadingSave(false);
           }
         })
         .catch(() => {
-          if (active) {
+          if (active && version === saveVersion.current) {
             setSaveError("Could not verify saved state right now.");
             setLoadingSave(false);
           }
@@ -718,31 +721,34 @@ function DealDetails() {
   const handleToggleSave = async (e) => {
     e.preventDefault();
     e.stopPropagation();
+    if (saveLock.current) return;
+    saveLock.current = true;
     setSaveError("");
 
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
-      handleOpenAuthModal();
-      return;
-    }
+    const nextSaved = !isSaved;
+    const version = ++saveVersion.current;
+    setIsSaved(nextSaved);
 
     try {
-      setLoadingSave(true);
-      if (isSaved) {
-        await unsaveDeal(id);
-        setIsSaved(false);
-      } else {
-        await saveDeal(id);
-        setIsSaved(true);
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (!session) {
+        setIsSaved(!nextSaved);
+        handleOpenAuthModal();
+        return;
       }
+
+      if (nextSaved) await saveDeal(id);
+      else await unsaveDeal(id);
     } catch (err) {
       console.error("Error toggling save:", err);
+      if (version === saveVersion.current) setIsSaved(!nextSaved);
       setSaveError(
         err?.message || "Could not update saved state. Please try again.",
       );
     } finally {
+      saveLock.current = false;
       setLoadingSave(false);
     }
   };

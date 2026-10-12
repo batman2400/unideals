@@ -10,7 +10,7 @@
  * Usage:
  *   const { deals, loading, error } = useDeals();
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { isExpiredDeal } from "./comingSoon";
 
@@ -202,17 +202,26 @@ export function usePublicDealsByIds(ids) {
  * ── Phase 3: Saved Deals Helper Functions ──────────────
  */
 
+function isDuplicateSave(error) {
+  return (
+    error?.code === "23505" ||
+    /duplicate key|saved_deals_pkey/i.test(error?.message || "")
+  );
+}
+
 export async function saveDeal(dealId) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Must be logged in to save a deal");
 
-  const { error } = await supabase
-    .from("saved_deals")
-    .insert([{ user_id: user.id, deal_id: dealId }]);
+  // ignoreDuplicates keeps a double click from failing on saved_deals_pkey.
+  const { error } = await supabase.from("saved_deals").upsert(
+    { user_id: user.id, deal_id: dealId },
+    { onConflict: "user_id,deal_id", ignoreDuplicates: true },
+  );
 
-  if (error) {
+  if (error && !isDuplicateSave(error)) {
     console.error("[saveDeal] Error:", error.message);
     throw error;
   }
@@ -306,20 +315,37 @@ export function useSavedDealIds() {
     };
   }, []);
 
+  const inflightSaves = useRef(new Set());
+
   const toggleSave = async (dealId) => {
+    if (inflightSaves.current.has(dealId)) {
+      return savedIds.has(dealId);
+    }
+    inflightSaves.current.add(dealId);
+
     const wasSaved = savedIds.has(dealId);
-    if (wasSaved) {
-      await unsaveDeal(dealId);
+    setSavedIds((prev) => {
+      const next = new Set(prev);
+      if (wasSaved) next.delete(dealId);
+      else next.add(dealId);
+      return next;
+    });
+
+    try {
+      if (wasSaved) await unsaveDeal(dealId);
+      else await saveDeal(dealId);
+      return !wasSaved;
+    } catch (err) {
       setSavedIds((prev) => {
         const next = new Set(prev);
-        next.delete(dealId);
+        if (wasSaved) next.add(dealId);
+        else next.delete(dealId);
         return next;
       });
-    } else {
-      await saveDeal(dealId);
-      setSavedIds((prev) => new Set(prev).add(dealId));
+      throw err;
+    } finally {
+      inflightSaves.current.delete(dealId);
     }
-    return !wasSaved;
   };
 
   return { savedIds, loading, toggleSave };

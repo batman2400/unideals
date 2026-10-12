@@ -225,6 +225,40 @@ export default async function middleware(request) {
     }
   }
 
+  // Unknown perk ids must not be a 200 copy of the SPA shell.
+  if (path.startsWith("/perks/") && path !== "/perks") {
+    const perkId = decodeURIComponent(path.split("/")[2] ?? "");
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        perkId,
+      );
+    if (!isUuid) return spaNotFound(request);
+
+    const supabaseUrl = process.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
+    if (supabaseUrl && supabaseAnonKey) {
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/student_perks?id=eq.${perkId}&is_active=eq.true&select=id`,
+          {
+            headers: {
+              apikey: supabaseAnonKey,
+              Authorization: `Bearer ${supabaseAnonKey}`,
+            },
+          },
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (!Array.isArray(data) || data.length === 0) {
+            return spaNotFound(request);
+          }
+        }
+      } catch {
+        // A lookup failure should not turn a live perk into a 404.
+      }
+    }
+  }
+
   if (!isKnownAppPath(path)) {
     return spaNotFound(request);
   }

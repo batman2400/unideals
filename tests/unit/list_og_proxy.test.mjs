@@ -38,6 +38,7 @@ describe("list hub bot HTML", () => {
     ["/events", "events", "Events", "https://www.unideals.co/events"],
     ["/blog", "blog", "Uni Deals Blog", "https://www.unideals.co/blog"],
     ["/perks", "perks", "Global student perks", "https://www.unideals.co/perks"],
+    ["/become-partner", "become-partner", "Become a partner", "https://www.unideals.co/become-partner"],
     ["/contact", "contact", "Get in Touch / Partner With Us", "https://www.unideals.co/contact"],
     ["/support", "support", "Help &amp; Support", "https://www.unideals.co/support"],
     ["/privacy", "privacy", "Privacy Policy", "https://www.unideals.co/privacy"],
@@ -94,6 +95,7 @@ describe("bot rewrites", () => {
     assert.equal(destinations.get("/events"), "/api/list-og-proxy?type=events");
     assert.equal(destinations.get("/blog"), "/api/list-og-proxy?type=blog");
     assert.equal(destinations.get("/perks"), "/api/list-og-proxy?type=perks");
+    assert.equal(destinations.get("/become-partner"), "/api/list-og-proxy?type=become-partner");
     assert.equal(destinations.get("/categories"), "/api/list-og-proxy?type=categories");
     assert.equal(destinations.get("/contact"), "/api/list-og-proxy?type=contact");
     assert.equal(destinations.get("/support"), "/api/list-og-proxy?type=support");

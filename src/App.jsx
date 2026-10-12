@@ -20,7 +20,7 @@
  *   /auth/callback → Google OAuth PKCE return
  */
 import { lazy, Suspense, useState, useEffect } from "react";
-import { Routes, Route, Navigate, Outlet, useLocation, useParams } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet, useLocation, useNavigate, useParams } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
 
 import Sidebar from "./components/Sidebar";
@@ -101,8 +101,94 @@ function RouteSkeleton() {
   );
 }
 
+function replaceSearch(navigate, location, mutate) {
+  const params = new URLSearchParams(location.search);
+  mutate(params);
+  const cleaned = params.toString();
+  navigate(
+    {
+      pathname: location.pathname,
+      search: cleaned ? `?${cleaned}` : "",
+      hash: location.hash,
+    },
+    { replace: true },
+  );
+}
+
+/**
+ * React Router keeps the previous page on screen while the next lazy chunk
+ * loads. Mark the click immediately so the main area can show a skeleton
+ * instead of the page the URL already left.
+ */
+function useStaleRouteHidden() {
+  const location = useLocation();
+  const [pendingPath, setPendingPath] = useState(null);
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    setPendingPath(null);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    const onClick = (event) => {
+      if (event.defaultPrevented || event.button !== 0) return;
+      if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+      const anchor = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!anchor || anchor.hasAttribute("download")) return;
+      if (anchor.target && anchor.target !== "_self") return;
+      const href = anchor.getAttribute("href") || "";
+      if (!href || href.startsWith("#") || href.startsWith("mailto:") || href.startsWith("tel:")) return;
+      let url;
+      try {
+        url = new URL(anchor.href, window.location.href);
+      } catch {
+        return;
+      }
+      if (url.origin !== window.location.origin) return;
+      if (url.pathname === window.location.pathname) return;
+      setPendingPath(url.pathname);
+    };
+
+    const onPopState = () => {
+      setPendingPath(window.location.pathname);
+    };
+
+    document.addEventListener("click", onClick, true);
+    window.addEventListener("popstate", onPopState);
+    return () => {
+      document.removeEventListener("click", onClick, true);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!pendingPath || pendingPath === location.pathname) return undefined;
+    const giveUp = setTimeout(() => {
+      if (window.location.pathname !== pendingPath) setPendingPath(null);
+    }, 600);
+    const maxWait = setTimeout(() => setPendingPath(null), 8000);
+    return () => {
+      clearTimeout(giveUp);
+      clearTimeout(maxWait);
+    };
+  }, [pendingPath, location.pathname]);
+
+  useEffect(() => {
+    if (!pendingPath || pendingPath === location.pathname) {
+      setVisible(false);
+      return undefined;
+    }
+    const timer = setTimeout(() => setVisible(true), 80);
+    return () => clearTimeout(timer);
+  }, [pendingPath, location.pathname]);
+
+  return visible;
+}
+
 function App() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const hideStaleRoute = useStaleRouteHidden();
   // ── Global UI State ──────────────────────────────────
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalError, setAuthModalError] = useState("");
@@ -196,11 +282,10 @@ function App() {
     setAuthModalTab(auth);
     setAuthModalOpen(true);
 
-    params.delete("auth");
-    const cleaned = params.toString();
-    const nextUrl = `${location.pathname}${cleaned ? `?${cleaned}` : ""}${location.hash}`;
-    window.history.replaceState({}, document.title, nextUrl);
-  }, [location.pathname, location.search, location.hash]);
+    replaceSearch(navigate, location, (next) => {
+      next.delete("auth");
+    });
+  }, [location, navigate]);
 
 
   // Surface OAuth errors returned in the URL (e.g. user cancelled Google),
@@ -222,13 +307,12 @@ function App() {
     setAuthModalOpen(true);
     console.error("[App] OAuth error:", error, description);
 
-    params.delete("error");
-    params.delete("error_description");
-    params.delete("error_code");
-    const cleaned = params.toString();
-    const nextUrl = `${location.pathname}${cleaned ? `?${cleaned}` : ""}${location.hash}`;
-    window.history.replaceState({}, document.title, nextUrl);
-  }, [location.pathname, location.search, location.hash]);
+    replaceSearch(navigate, location, (next) => {
+      next.delete("error");
+      next.delete("error_description");
+      next.delete("error_code");
+    });
+  }, [location, navigate]);
 
   // Reset window scroll on navigation (e.g. Home "View all" → /deals)
   useEffect(() => {
@@ -245,6 +329,9 @@ function App() {
 
   // ── Logout Handler ───────────────────────────────────
   const handleLogout = async () => {
+    setAuthModalOpen(false);
+    setAuthModalError("");
+    setAuthModalTab(null);
     await supabase.auth.signOut();
     // Session will be set to null by the onAuthStateChange listener
   };
@@ -289,6 +376,9 @@ function App() {
           }`}
         >
         <ChunkErrorBoundary>
+        {hideStaleRoute ? (
+          <RouteSkeleton />
+        ) : (
         <Suspense fallback={<RouteSkeleton />}>
           <div className="animate-route-fade flex flex-col flex-1">
             <Routes location={location}>
@@ -424,6 +514,7 @@ function App() {
             </Routes>
           </div>
         </Suspense>
+        )}
         </ChunkErrorBoundary>
 
         </main>

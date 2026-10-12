@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { useRoleContext } from "../lib/RoleContext";
@@ -19,10 +18,6 @@ function openAuthModal() {
 }
 
 function SignInRequired() {
-  useEffect(() => {
-    openAuthModal();
-  }, []);
-
   return (
     <section className="max-w-[760px] mx-auto px-6 py-16 text-center animate-fade-in">
       <NoIndexTag />

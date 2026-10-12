@@ -491,6 +491,20 @@ export default async function handler(req, res) {
     });
   }
 
+  if (type === "become-partner") {
+    return renderPage(res, {
+      path: "/become-partner",
+      title: "Partner application | Uni Deals",
+      description:
+        "Apply to list your brand on Uni Deals. Applications are reviewed before a brand can publish student offers.",
+      h1: "Become a partner",
+      intro:
+        "Tell us who you are and how to confirm the brand. We review every application. Your account stays a student until it is approved.",
+      mainHtml:
+        "<section><h2>How to apply</h2><p>Sign in with the account you want to use as the brand owner, then tell Uni Deals the brand name, category, and how to confirm it. Applications are reviewed before the brand can publish student offers.</p></section>",
+    });
+  }
+
   if (type === "contact") {
     return renderPage(res, {
       path: "/contact",
