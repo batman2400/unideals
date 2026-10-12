@@ -2,7 +2,11 @@ import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { BOT_UA_REGEX, legacyPathRedirect } from "../../middleware.js";
+import appMiddleware, {
+  BOT_UA_REGEX,
+  isKnownAppPath,
+  legacyPathRedirect,
+} from "../../middleware.js";
 import handler, {
   UUID_REGEX,
   isFinishedEvent,
@@ -95,6 +99,29 @@ describe("legacyPathRedirect", () => {
     assert.equal(legacyPathRedirect("/brands"), null);
     assert.equal(legacyPathRedirect("/brand/missing"), null);
     assert.equal(legacyPathRedirect("/support"), null);
+  });
+});
+
+describe("isKnownAppPath", () => {
+  it("allows the public Become Partner and Perks pages", () => {
+    assert.equal(isKnownAppPath("/become-partner"), true);
+    assert.equal(isKnownAppPath("/become-partner/"), true);
+    assert.equal(isKnownAppPath("/perks"), true);
+    assert.equal(isKnownAppPath("/perks/github"), true);
+  });
+
+  it("still rejects unknown HTML paths", () => {
+    assert.equal(isKnownAppPath("/not-a-page"), false);
+    assert.equal(isKnownAppPath("/become-partner/extra"), false);
+  });
+
+  it("lets a hard load of /become-partner through without noindex", async () => {
+    const res = await appMiddleware(
+      new Request("https://www.unideals.co/become-partner"),
+    );
+    assert.equal(res.headers.get("x-middleware-next"), "1");
+    assert.equal(res.status, 200);
+    assert.equal(res.headers.get("x-robots-tag"), null);
   });
 });
 
