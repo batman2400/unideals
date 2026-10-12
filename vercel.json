@@ -28,16 +28,6 @@
       "statusCode": 308
     },
     {
-      "source": "/perks",
-      "destination": "/deals",
-      "statusCode": 301
-    },
-    {
-      "source": "/perks/:id",
-      "destination": "/deals/:id",
-      "statusCode": 301
-    },
-    {
       "source": "/signup",
       "destination": "/?auth=signup",
       "statusCode": 302

@@ -84,12 +84,6 @@ function LegacyBrandRedirect() {
   return <Navigate to={`/brand/${slug}`} replace />;
 }
 
-/** Legacy /perks/:id → /deals/:id, preserving the deal id. */
-function LegacyDealRedirect() {
-  const { id } = useParams();
-  return <Navigate to={`/deals/${id}`} replace />;
-}
-
 function RouteSkeleton() {
   return (
     <section className="max-w-[1440px] mx-auto px-6 md:px-8 py-8 md:py-16 animate-fade-in">
@@ -310,13 +304,6 @@ function App() {
                 element={<Deals searchQuery={searchQuery} />}
               />
               <Route path="/deals/:id" element={<DealDetails />} />
-              {/* Legacy /perks URLs — permanent client-side fallback in case
-                  any old links/bookmarks slip past the vercel.json redirect. */}
-              <Route path="/perks" element={<Navigate to="/deals" replace />} />
-              <Route
-                path="/perks/:id"
-                element={<LegacyDealRedirect />}
-              />
               <Route path="/categories" element={<Categories />} />
               <Route path="/category/:categoryId" element={<CategoryPage />} />
               <Route path="/brands" element={<Brands />} />
