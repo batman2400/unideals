@@ -59,11 +59,11 @@ export default function Perks() {
       ) : (
         <ul className="mt-8 grid gap-4 md:grid-cols-2">
           {perks.map((perk) => (
-            <li key={perk.id}>
-              <Link
-                to={`/perks/${perk.id}`}
-                className="block h-full rounded-2xl border border-outline-variant/20 bg-surface p-5 hover:border-primary/40"
-              >
+            <li
+              key={perk.id}
+              className="flex h-full flex-col rounded-2xl border border-outline-variant/20 bg-surface p-5"
+            >
+              <Link to={`/perks/${perk.id}`} className="block hover:opacity-90">
                 <div className="flex items-start gap-3">
                   <PerkMark perk={perk} />
                   <div className="min-w-0">
@@ -89,6 +89,19 @@ export default function Perks() {
                   {perkDisclaimer(perk.providerName)}
                 </p>
               </Link>
+              {/^https:\/\//i.test(perk.officialUrl || "") ? (
+                <a
+                  href={perk.officialUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 inline-flex max-w-full flex-col text-primary"
+                >
+                  <span className="text-sm font-bold">Get this perk</span>
+                  <span className="truncate text-xs font-normal text-on-surface-variant">
+                    {perk.officialUrl}
+                  </span>
+                </a>
+              ) : null}
             </li>
           ))}
         </ul>

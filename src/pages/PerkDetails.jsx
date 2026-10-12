@@ -132,14 +132,24 @@ export default function PerkDetails() {
         eligibility or issue this offer.
       </p>
       {offerUrl ? (
-        <a
-          href={offerUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="mt-6 inline-flex h-12 items-center rounded-xl bg-primary px-5 font-bold text-on-primary"
-        >
-          Go to offer
-        </a>
+        <div className="mt-6">
+          <a
+            href={offerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex h-12 items-center rounded-xl bg-primary px-5 font-bold text-on-primary"
+          >
+            Get this perk
+          </a>
+          <a
+            href={offerUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3 block break-all text-sm font-bold text-primary"
+          >
+            {offerUrl}
+          </a>
+        </div>
       ) : null}
     </article>
   );

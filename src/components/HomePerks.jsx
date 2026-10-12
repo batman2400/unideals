@@ -30,24 +30,38 @@ export default function HomePerks() {
       </div>
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {perks.map((perk) => (
-          <Link
+          <article
             key={perk.id}
-            to={`/perks/${perk.id}`}
-            className="rounded-2xl border border-outline-variant/20 bg-surface p-4 hover:border-primary/40"
+            className="flex flex-col rounded-2xl border border-outline-variant/20 bg-surface p-4"
           >
-            <div className="flex items-start gap-3">
-              <PerkMark perk={perk} className="h-10 w-10" />
-              <p className="font-headline font-extrabold text-on-background">
-                {perk.providerName}
+            <Link to={`/perks/${perk.id}`} className="hover:opacity-90">
+              <div className="flex items-start gap-3">
+                <PerkMark perk={perk} className="h-10 w-10" />
+                <p className="font-headline font-extrabold text-on-background">
+                  {perk.providerName}
+                </p>
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-on-surface-variant line-clamp-3">
+                {perk.summary}
               </p>
-            </div>
-            <p className="mt-2 text-sm leading-relaxed text-on-surface-variant line-clamp-3">
-              {perk.summary}
-            </p>
-            <p className="mt-3 text-xs text-on-surface-variant">
-              {perkDisclaimer(perk.providerName)}
-            </p>
-          </Link>
+              <p className="mt-3 text-xs text-on-surface-variant">
+                {perkDisclaimer(perk.providerName)}
+              </p>
+            </Link>
+            {/^https:\/\//i.test(perk.officialUrl || "") ? (
+              <a
+                href={perk.officialUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="mt-3 inline-flex max-w-full flex-col text-primary"
+              >
+                <span className="text-sm font-bold">Get this perk</span>
+                <span className="truncate text-xs font-normal text-on-surface-variant">
+                  {perk.officialUrl}
+                </span>
+              </a>
+            ) : null}
+          </article>
         ))}
       </div>
     </section>
