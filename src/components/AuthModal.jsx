@@ -437,7 +437,7 @@ function AuthModal({ isOpen, onClose, initialError = "", initialTab = null }) {
           {/* Logo */}
           <div className="flex flex-col items-center gap-2 mb-6">
             <img
-              src="/images/logo.png"
+              src="/images/logo.png?v=13"
               alt="Uni Deals"
               className="h-10 w-auto"
             />

@@ -113,7 +113,7 @@ export default function Sidebar({ onLogout, isLoggedIn, authReady = true }) {
           <span className="material-symbols-outlined text-2xl">menu</span>
         </button>
         <Link to="/" className="flex items-center gap-2">
-          <img src="/images/logo.png" alt="Uni Deals" className="h-6 w-auto" />
+          <img src="/images/logo.png?v=13" alt="Uni Deals" className="h-6 w-auto" />
           <span className="font-headline font-black text-lg tracking-tight text-on-background">
             Uni<span className="text-primary">Deals</span>
           </span>
@@ -137,7 +137,7 @@ export default function Sidebar({ onLogout, isLoggedIn, authReady = true }) {
         {/* Brand / Logo Area */}
         <div className="flex items-center justify-between px-6 h-20 flex-shrink-0">
           <Link to="/" className="flex items-center gap-2" onClick={() => setIsOpen(false)}>
-            <img src="/images/logo.png" alt="Uni Deals" className="h-8 w-auto" />
+            <img src="/images/logo.png?v=13" alt="Uni Deals" className="h-8 w-auto" />
             <span className="font-headline font-black text-2xl tracking-tighter text-on-background">
               Uni<span className="text-primary">Deals</span>
             </span>

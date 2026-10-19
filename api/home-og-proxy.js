@@ -126,11 +126,11 @@ export default async function handler(req, res) {
     "url": SITE_URL,
     "logo": {
       "@type": "ImageObject",
-      "url": `${SITE_URL}/logo-512.png`,
+      "url": `${SITE_URL}/logo-512-v13.png`,
       "width": 512,
       "height": 512,
     },
-    "image": `${SITE_URL}/logo-512.png`,
+    "image": `${SITE_URL}/logo-512-v13.png`,
     "description":
       "Uni Deals (unideals.co) is Sri Lanka's student discount and campus perks platform, based in Colombo. It is not UNiDAYS.",
     "disambiguatingDescription":

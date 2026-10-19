@@ -4,6 +4,7 @@ import HeroSection from "../components/HeroSection";
 import ExploreFeed from "../components/ExploreFeed";
 import HomePerks from "../components/HomePerks";
 import HomeFAQ from "../components/HomeFAQ";
+import StoreBadges from "../components/StoreBadges";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
 import { slugify, DEFAULT_OG_IMAGE, DEFAULT_OG_IMAGE_WIDTH, DEFAULT_OG_IMAGE_HEIGHT } from "../lib/seo";
 import { OFFICIAL_CATEGORIES } from "../lib/categories";
@@ -89,6 +90,21 @@ function Home({ searchQuery, onSearchChange }) {
 
       <ExploreFeed searchQuery={searchQuery} />
       <HomePerks />
+
+      <section className="max-w-[1440px] mx-auto px-4 md:px-8 pt-4 pb-2">
+        <div className="flex flex-col gap-4 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:flex-row md:items-center md:justify-between md:p-8">
+          <div className="max-w-xl">
+            <h2 className="font-headline font-extrabold text-2xl md:text-3xl text-on-background tracking-tight">
+              Get the app
+            </h2>
+            <p className="text-on-surface-variant text-sm md:text-base mt-2 leading-relaxed">
+              The same student deals and campus events, with push alerts and
+              in-store QR tickets on your phone.
+            </p>
+          </div>
+          <StoreBadges />
+        </div>
+      </section>
 
       <section className="max-w-[1440px] mx-auto px-4 md:px-8 py-10 md:py-12">
         <div className="max-w-3xl mx-auto rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:p-8">

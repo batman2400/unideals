@@ -114,7 +114,7 @@ export default function BlogPost() {
     publisher: {
       "@type": "Organization",
       name: "Uni Deals",
-      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512-v9.png` },
+      logo: { "@type": "ImageObject", url: `${SITE_URL}/icon-512-v13.png` },
     },
     ...(publishedIso ? { datePublished: publishedIso } : {}),
     ...(modifiedIso ? { dateModified: modifiedIso } : {}),

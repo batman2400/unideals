@@ -31,7 +31,7 @@ export default function Navbar({ onLogout, isLoggedIn, authReady = true }) {
     <nav className="hidden md:flex items-center justify-between h-20 px-4 lg:px-8 border-b border-outline-variant/10 bg-surface/80 backdrop-blur-md sticky top-0 z-50">
       {/* Left: Logo */}
       <Link to="/" className="flex items-center gap-2 shrink-0">
-        <img src="/images/logo.png" alt="Uni Deals" className="h-8 w-auto" />
+        <img src="/images/logo.png?v=13" alt="Uni Deals" className="h-8 w-auto" />
         <span className="font-headline font-black text-2xl tracking-tighter text-on-background">
           Uni<span className="text-primary">Deals</span>
         </span>

@@ -8,6 +8,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { shareLink } from "../lib/share";
+import StoreBadges from "./StoreBadges";
 import Toast from "./Toast";
 
 function Footer() {
@@ -43,12 +44,12 @@ function Footer() {
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
             <img
-              src="/images/logo.png"
+              src="/images/logo.png?v=13"
               alt="Uni Deals"
               className="h-7 w-auto"
             />
             <span className="font-['Manrope'] font-black text-[#323233] dark:text-[#fcf9f8] text-xl">
-              Uni Deals
+              Uni<span className="text-primary">Deals</span>
             </span>
           </Link>
           <p className="font-['Inter'] text-sm tracking-wide text-[#323233]/40 dark:text-[#fcf9f8]/40">
@@ -122,6 +123,13 @@ function Footer() {
             </span>
           </button>
         </div>
+      </div>
+
+      <div className="max-w-[1440px] mx-auto mt-8 pt-6 border-t border-[#323233]/10 dark:border-[#fcf9f8]/10 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p className="font-['Inter'] text-sm tracking-wide text-[#323233]/60 dark:text-[#fcf9f8]/60">
+          Get the Uni Deals app
+        </p>
+        <StoreBadges />
       </div>
 
       {toastMessage && (

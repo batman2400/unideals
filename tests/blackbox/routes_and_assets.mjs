@@ -29,7 +29,7 @@ const PUBLIC_ROUTES = [
 ];
 
 const STATIC_ASSETS = [
-  "/favicon-48-v9.png",
+  "/favicon-48-v13.png",
   "/apple-touch-icon.png",
   "/manifest.webmanifest",
   "/robots.txt",
@@ -76,7 +76,7 @@ test("Black-Box: HTML Security & Meta Elements Audit", async (t) => {
     assert.ok(html.includes('name="viewport"'));
 
     // Check favicon links
-    assert.ok(html.includes('href="/favicon-48-v9.png"'));
+    assert.ok(html.includes('href="/favicon-48-v13.png"'));
 
     // Check OpenGraph tags presence
     assert.ok(html.includes('property="og:image"'));
