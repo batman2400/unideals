@@ -56,6 +56,59 @@ function verificationFromRoleRow(roleName, row, previousVerifiedAt = null) {
   return { isVerified, verifiedAt };
 }
 
+function delay(ms) {
+  return new Promise((resolve) => {
+    window.setTimeout(resolve, ms);
+  });
+}
+
+async function readRoleRow(userId) {
+  let { data: roleRow, error: roleQueryError } = await supabase
+    .from("user_roles")
+    .select("role, is_verified, verified_at")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (roleQueryError && /verified_at/i.test(roleQueryError.message ?? "")) {
+    const retry = await supabase
+      .from("user_roles")
+      .select("role, is_verified")
+      .eq("user_id", userId)
+      .maybeSingle();
+    roleRow = retry.data;
+    roleQueryError = retry.error;
+  }
+
+  if (roleQueryError) throw roleQueryError;
+  return roleRow;
+}
+
+/**
+ * The access token is stored before subscribers run, but a query started
+ * inside onAuthStateChange can still go out anonymously. Wait until the
+ * client session matches the user we just signed in.
+ */
+async function waitForAccessToken(userId) {
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const { data } = await supabase.auth.getSession();
+    if (data.session?.user?.id === userId && data.session.access_token) {
+      return true;
+    }
+    await delay(80 * (attempt + 1));
+  }
+  return false;
+}
+
+function clearRoleState(setters) {
+  writeRoleCache(null);
+  setters.setUser(null);
+  setters.setRole(null);
+  setters.setIsVerified(false);
+  setters.setVerifiedAt(null);
+  setters.setError(null);
+  setters.setLoading(false);
+}
+
 export function useRole() {
   const initialCache = readRoleCache();
   const [user, setUser] = useState(null);
@@ -66,12 +119,11 @@ export function useRole() {
   const [loading, setLoading] = useState(true);
   const [authReady, setAuthReady] = useState(false);
   const [error, setError] = useState(null);
+  const [sessionUser, setSessionUser] = useState(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const hasInitialResolvedRef = useRef(false);
+  const userIdRef = useRef(null);
   const staleExpiryStartedRef = useRef(false);
-  const roleChannelRef = useRef(null);
-  const roleChannelUserIdRef = useRef(null);
-  const roleChannelSequenceRef = useRef(0);
+  const channelRunRef = useRef(0);
   const roleChannelInstanceIdRef = useRef(
     typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
       ? crypto.randomUUID()
@@ -80,41 +132,197 @@ export function useRole() {
 
   useEffect(() => {
     let active = true;
-    let requestSeq = 0;
-    let committedUserId = readRoleCache()?.userId ?? null;
+    let authEventSeen = false;
 
-    function detachRoleChannel() {
-      if (roleChannelRef.current) {
-        supabase.removeChannel(roleChannelRef.current);
-        roleChannelRef.current = null;
+    function applySession(event, session) {
+      const signedOut =
+        event === "SIGNED_OUT" || event === "TOKEN_REFRESH_FAILED";
+      const nextUser = signedOut ? null : session?.user ?? null;
+
+      // A late INITIAL_SESSION from before sign-in can arrive with a null
+      // session and wipe the user the SIGNED_IN event just stored. Refresh
+      // then looks fine because storage already has the new session.
+      if (!signedOut && !nextUser && userIdRef.current) return;
+
+      const nextId = nextUser?.id ?? null;
+      const changed = userIdRef.current !== nextId;
+      userIdRef.current = nextId;
+
+      setSessionUser((previous) => {
+        if (!nextUser) return null;
+        if (previous?.id === nextUser.id) return previous;
+        return nextUser;
+      });
+      setUser((previous) => {
+        if (!nextUser) return null;
+        if (previous?.id === nextUser.id) return previous;
+        return nextUser;
+      });
+
+      if (!nextUser) {
+        clearRoleState({
+          setUser,
+          setRole,
+          setIsVerified,
+          setVerifiedAt,
+          setError,
+          setLoading,
+        });
+      } else if (changed) {
+        const cache = readRoleCache();
+        if (cache?.userId !== nextId) {
+          setRole(null);
+          setIsVerified(false);
+          setVerifiedAt(null);
+        }
+        setLoading(true);
+        setError(null);
       }
 
-      roleChannelUserIdRef.current = null;
+      setAuthReady(true);
     }
 
-    function attachRoleChannel(userId) {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!active) return;
+      authEventSeen = true;
+      // Only touch React state here. Querying user_roles from this callback
+      // deadlocks the Supabase auth lock, so the portal never appears until
+      // a full reload starts a fresh client.
+      applySession(event, session);
+    });
+
+    void supabase.auth
+      .getSession()
+      .then(({ data, error: sessionError }) => {
+        if (!active || authEventSeen) return;
+        if (sessionError?.message?.includes("Refresh Token")) {
+          void supabase.auth.signOut({ scope: "local" }).catch(() => {});
+          applySession("SIGNED_OUT", null);
+          return;
+        }
+        applySession("INITIAL_SESSION", data.session ?? null);
+      })
+      .catch((err) => {
+        if (!active || authEventSeen) return;
+        if (err?.message?.includes("Refresh Token")) {
+          void supabase.auth.signOut({ scope: "local" }).catch(() => {});
+        }
+        applySession("INITIAL_SESSION", null);
+      });
+
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!authReady) return;
+
+    let active = true;
+    const userId = sessionUser?.id ?? null;
+    let channel = null;
+
+    async function loadRole(background) {
       if (!userId) {
-        detachRoleChannel();
+        if (!active) return;
+        clearRoleState({
+          setUser,
+          setRole,
+          setIsVerified,
+          setVerifiedAt,
+          setError,
+          setLoading,
+        });
         return;
       }
 
-      // Keep existing subscription when the authenticated user hasn't changed.
-      if (roleChannelRef.current && roleChannelUserIdRef.current === userId) {
-        return;
+      if (!background) {
+        const cache = readRoleCache();
+        if (cache?.userId !== userId) {
+          setRole(null);
+          setIsVerified(false);
+          setVerifiedAt(null);
+        }
+        setLoading(true);
       }
+      setError(null);
 
-      detachRoleChannel();
+      try {
+        await waitForAccessToken(userId);
+        if (!active) return;
 
-      roleChannelSequenceRef.current += 1;
-      const channelName = [
-        "user-role-sync",
-        userId,
-        roleChannelInstanceIdRef.current,
-        roleChannelSequenceRef.current,
-      ].join("-");
+        if (!staleExpiryStartedRef.current) {
+          staleExpiryStartedRef.current = true;
+          void supabase.rpc("expire_stale_student_verifications").catch(() => {});
+        }
 
-      roleChannelRef.current = supabase
-        .channel(channelName)
+        // An anonymous read returns no row, and get_user_role() then falls
+        // back to "student", which hides Admin / Partner until a reload.
+        let roleRow = null;
+        let roleReadError = null;
+        for (let attempt = 0; attempt < 4; attempt += 1) {
+          try {
+            roleRow = await readRoleRow(userId);
+            roleReadError = null;
+            if (roleRow?.role) break;
+          } catch (readError) {
+            roleRow = null;
+            roleReadError = readError;
+          }
+          if (attempt < 3) {
+            await delay(150 * (attempt + 1));
+            if (!active) return;
+          }
+        }
+
+        let resolvedRole = roleRow?.role ?? null;
+        let resolvedRow = roleRow;
+
+        if (!resolvedRole) {
+          const { data: rpcRole, error: rpcError } =
+            await supabase.rpc("get_user_role");
+          if (!active) return;
+          if (rpcError) throw roleReadError || rpcError;
+          resolvedRole = rpcRole || "student";
+          resolvedRow = roleRow;
+        }
+
+        const fromRow = verificationFromRoleRow(resolvedRole, resolvedRow, null);
+        if (!active) return;
+
+        writeRoleCache({
+          userId,
+          role: resolvedRole,
+          isVerified: fromRow.isVerified,
+          verifiedAt: fromRow.verifiedAt,
+        });
+        setRole(resolvedRole);
+        setIsVerified(fromRow.isVerified);
+        setVerifiedAt(fromRow.verifiedAt);
+        setLoading(false);
+      } catch (err) {
+        if (!active) return;
+        setError(err?.message || "Failed to load user role.");
+        setLoading(false);
+      }
+    }
+
+    channelRunRef.current += 1;
+    void loadRole(false);
+
+    if (userId) {
+      channel = supabase
+        .channel(
+          [
+            "user-role-sync",
+            userId,
+            roleChannelInstanceIdRef.current,
+            channelRunRef.current,
+          ].join("-"),
+        )
         .on(
           "postgres_changes",
           {
@@ -124,199 +332,19 @@ export function useRole() {
             filter: `user_id=eq.${userId}`,
           },
           () => {
-            resolveRole(null, true);
+            if (active) void loadRole(true);
           },
         )
-        .subscribe((status) => {
-          if (
-            status === "CHANNEL_ERROR" ||
-            status === "TIMED_OUT" ||
-            status === "CLOSED"
-          ) {
-            resolveRole(null, true);
-          }
-        });
-
-      roleChannelUserIdRef.current = userId;
+        .subscribe();
     }
-
-    async function resolveRole(sessionOverride = null, isBackgroundRefresh = false) {
-      const requestId = ++requestSeq;
-      const stale = () => !active || requestId !== requestSeq;
-      if (stale()) return;
-
-      if (!isBackgroundRefresh && !hasInitialResolvedRef.current) {
-        setLoading(true);
-      }
-      setError(null);
-
-      try {
-        let session = sessionOverride;
-
-        if (!session) {
-          const {
-            data: { session: currentSession },
-            error: sessionError,
-          } = await supabase.auth.getSession();
-
-          if (sessionError) {
-            if (sessionError.message?.includes("Refresh Token")) {
-              void supabase.auth.signOut({ scope: "local" }).catch(() => {});
-            }
-            throw sessionError;
-          }
-
-          session = currentSession;
-        }
-
-        const nextUser = session?.user ?? null;
-        if (stale()) return;
-
-        const nextUserId = nextUser?.id ?? null;
-        // A new sign-in must keep the guard on "Checking access..." until
-        // user_roles returns. Leaving loading false here shows a blank role
-        // while the header already has the session.
-        if (nextUserId !== committedUserId) {
-          setLoading(true);
-        }
-
-        // Keep the same object when the uid is unchanged so pages that
-        // depend on `user` (Saved Deals) do not refetch on every token refresh.
-        setUser((previous) => {
-          if (!nextUser) return null;
-          if (previous?.id === nextUser.id) return previous;
-          return nextUser;
-        });
-        attachRoleChannel(nextUser?.id ?? null);
-        setAuthReady(true);
-
-        if (!nextUser) {
-          if (stale()) return;
-          committedUserId = null;
-          writeRoleCache(null);
-          setRole(null);
-          setIsVerified(false);
-          setVerifiedAt(null);
-          setLoading(false);
-          hasInitialResolvedRef.current = true;
-          return;
-        }
-
-        if (!staleExpiryStartedRef.current) {
-          staleExpiryStartedRef.current = true;
-          void supabase.rpc("expire_stale_student_verifications").catch(() => {});
-        }
-
-        let resolvedRole = null;
-        let resolvedIsVerified = false;
-        let resolvedVerifiedAt = null;
-
-        let { data: roleRow, error: roleQueryError } = await supabase
-          .from("user_roles")
-          .select("role, is_verified, verified_at")
-          .eq("user_id", nextUser.id)
-          .maybeSingle();
-
-        if (roleQueryError && /verified_at/i.test(roleQueryError.message ?? "")) {
-          const retry = await supabase
-            .from("user_roles")
-            .select("role, is_verified")
-            .eq("user_id", nextUser.id)
-            .maybeSingle();
-          roleRow = retry.data;
-          roleQueryError = retry.error;
-        }
-
-        if (roleQueryError || !roleRow?.role) {
-          const { data: rpcRole, error: rpcError } =
-            await supabase.rpc("get_user_role");
-          let { data: legacyRoleRow, error: legacyRoleError } = await supabase
-            .from("user_roles")
-            .select("role, is_verified, verified_at")
-            .eq("user_id", nextUser.id)
-            .maybeSingle();
-
-          if (legacyRoleError && /verified_at/i.test(legacyRoleError.message ?? "")) {
-            const retry = await supabase
-              .from("user_roles")
-              .select("role, is_verified")
-              .eq("user_id", nextUser.id)
-              .maybeSingle();
-            legacyRoleRow = retry.data;
-            legacyRoleError = retry.error;
-          }
-
-          if (legacyRoleError && rpcError) {
-            throw legacyRoleError;
-          }
-
-          resolvedRole = rpcRole ?? legacyRoleRow?.role ?? "student";
-          const fromRow = verificationFromRoleRow(
-            resolvedRole,
-            legacyRoleRow,
-            null,
-          );
-          resolvedIsVerified = fromRow.isVerified;
-          resolvedVerifiedAt = fromRow.verifiedAt;
-        } else {
-          resolvedRole = roleRow.role;
-          const fromRow = verificationFromRoleRow(resolvedRole, roleRow, null);
-          resolvedIsVerified = fromRow.isVerified;
-          resolvedVerifiedAt = fromRow.verifiedAt;
-        }
-
-        if (stale()) return;
-
-        committedUserId = nextUser.id;
-        writeRoleCache({
-          userId: nextUser.id,
-          role: resolvedRole,
-          isVerified: resolvedIsVerified,
-          verifiedAt: resolvedVerifiedAt,
-        });
-
-        setRole(resolvedRole);
-        setIsVerified(resolvedIsVerified);
-        setVerifiedAt(resolvedVerifiedAt);
-        setLoading(false);
-        hasInitialResolvedRef.current = true;
-      } catch (err) {
-        if (stale()) return;
-        setAuthReady(true);
-        // Preserve the last known role on transient failures.
-        setError(err?.message || "Failed to load user role.");
-        setLoading(false);
-        hasInitialResolvedRef.current = true;
-      }
-    }
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((event, session) => {
-      const isBackground =
-        event === "TOKEN_REFRESHED" || event === "USER_UPDATED";
-      // Supabase holds the auth lock while this callback runs. Starting a
-      // user_roles query here deadlocks that lock and leaves admin routes
-      // on "Checking access..." for 20 seconds after the modal login.
-      setTimeout(() => {
-        if (!active) return;
-        void resolveRole(session, isBackground);
-      }, 0);
-    });
-
-    // Run initial resolution immediately on mount
-    void resolveRole(null, false);
 
     return () => {
       active = false;
-      subscription.unsubscribe();
-      detachRoleChannel();
+      if (channel) supabase.removeChannel(channel);
     };
-  }, [refreshKey]);
+  }, [authReady, sessionUser, refreshKey]);
 
   const refreshRole = () => {
-    hasInitialResolvedRef.current = false;
-    setAuthReady(false);
     setRefreshKey((previous) => previous + 1);
   };
 
