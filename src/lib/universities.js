@@ -10,6 +10,25 @@ const NAME_ALIASES = {
     "Informatics Institute of Technology (IIT)",
   "asia pacific institute of information technology":
     "Asia Pacific Institute of Information Technology (APIIT)",
+  kiu: "KIU (Kaatsu International University)",
+  "kaatsu international university": "KIU (Kaatsu International University)",
+  "kaatsu international (private) university":
+    "KIU (Kaatsu International University)",
+  "australian college of business and technology":
+    "Australian College of Business and Technology (ACBT)",
+  "universal college lanka": "Universal College Lanka (UCL)",
+  "edith cowan university sri lanka":
+    "Edith Cowan University Sri Lanka (ECU)",
+  "edith cowan university": "Edith Cowan University Sri Lanka (ECU)",
+  "british college of applied studies":
+    "British College of Applied Studies (BCAS)",
+  "management and science institute":
+    "Management and Science Institute (MSI)",
+  "curtin colombo": "Curtin University Colombo",
+  "curtin university": "Curtin University Colombo",
+  "anc campus": "ANC Education",
+  "american education centre": "ANC Education",
+  "american education centre limited": "ANC Education",
 };
 
 export const SRI_LANKA_UNIVERSITIES = [
@@ -47,9 +66,36 @@ export const SRI_LANKA_UNIVERSITIES = [
   },
   { name: "National Institute of Business Management (NIBM)", domains: ["nibm.lk"] },
   { name: "CINEC Campus", domains: ["cinec.edu", "cinec.lk"] },
-  { name: "KIU", domains: ["kiu.lk"] },
+  {
+    name: "KIU (Kaatsu International University)",
+    domains: ["kiu.ac.lk", "kiu.lk"],
+  },
   { name: "ESOFT Metro Campus", domains: ["esoft.lk"] },
   { name: "ICBT Campus", domains: ["icbt.lk"] },
+  { name: "ANC Education", domains: ["ancedu.com"] },
+  {
+    name: "Australian College of Business and Technology (ACBT)",
+    domains: ["acbt.lk"],
+  },
+  { name: "Universal College Lanka (UCL)", domains: ["ucl.lk"] },
+  {
+    name: "Edith Cowan University Sri Lanka (ECU)",
+    domains: ["our.ecu.edu.au", "ecu.edu.lk"],
+  },
+  { name: "Horizon Campus", domains: ["horizoncampus.edu.lk"] },
+  {
+    name: "British College of Applied Studies (BCAS)",
+    domains: ["bcas.lk"],
+  },
+  { name: "Saegis Campus", domains: ["saegis.ac.lk"] },
+  {
+    name: "Curtin University Colombo",
+    domains: ["student.curtin.edu.au", "curtincolombo.lk"],
+  },
+  {
+    name: "Management and Science Institute (MSI)",
+    domains: ["msi.edu.lk"],
+  },
   { name: "Royal Institute of Colombo", domains: ["ric.lk"] },
   { name: "BMS", domains: ["bms.lk"] },
   { name: "CA Sri Lanka", domains: ["casrilanka.com"] },
