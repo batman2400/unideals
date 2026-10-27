@@ -1,9 +1,16 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
 import { useRoleContext } from "../lib/RoleContext";
 import { uploadApplicationLogo } from "../lib/brandLogoUpload";
+import {
+  IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+  IMAGE_UPLOAD_TIMEOUT_MS,
+  REQUEST_TIMEOUT_MS,
+  tookTooLongMessage,
+  withTimeout,
+} from "../lib/withTimeout";
 import { SITE_URL } from "../lib/seo";
 
 const CATEGORIES = [
@@ -62,6 +69,7 @@ export default function PartnerApply() {
   const [unavailable, setUnavailable] = useState(false);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const inFlightRef = useRef(false);
   const [error, setError] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
@@ -131,7 +139,8 @@ export default function PartnerApply() {
 
   const onSubmit = async (event) => {
     event.preventDefault();
-    if (!user?.id || submitting) return;
+    if (!user?.id || inFlightRef.current) return;
+    inFlightRef.current = true;
     setError("");
     setSubmitted(false);
     setSubmitting(true);
@@ -139,16 +148,19 @@ export default function PartnerApply() {
     try {
       let logoUrl = existingLogo;
       if (logoFile) {
-        const uploaded = await uploadApplicationLogo({
-          file: logoFile,
-          userId: user.id,
-        });
+        const uploaded = await withTimeout(
+          uploadApplicationLogo({
+            file: logoFile,
+            userId: user.id,
+          }),
+          IMAGE_UPLOAD_TIMEOUT_MS,
+          IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+        );
         logoUrl = uploaded.publicUrl;
       }
 
-      const { error: submitError } = await supabase.rpc(
-        "submit_brand_application",
-        {
+      const { error: submitError } = await withTimeout(
+        supabase.rpc("submit_brand_application", {
           p_name: form.name.trim(),
           p_contact_name: form.contactName.trim(),
           p_contact_phone: form.contactPhone.trim(),
@@ -159,7 +171,12 @@ export default function PartnerApply() {
           p_tiktok_handle: form.tiktokHandle.trim() || null,
           p_location: form.location.trim() || null,
           p_logo_url: logoUrl,
-        },
+        }),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Sending your application",
+          "the application may already have been sent.",
+        ),
       );
 
       if (submitError) {
@@ -178,6 +195,7 @@ export default function PartnerApply() {
     } catch (caught) {
       setError(caught?.message || "Couldn't submit your application.");
     } finally {
+      inFlightRef.current = false;
       setSubmitting(false);
     }
   };

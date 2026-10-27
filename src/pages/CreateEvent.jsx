@@ -43,7 +43,7 @@ function validateEventForm(formData) {
   if (!startIso) return "Please pick a start date and time.";
   const start = new Date(startIso);
   if (start.getTime() < Date.now() - 60 * 1000) {
-    return "Start time must be in the future.";
+    return "That start time has already passed. Pick a new start date and time in the future.";
   }
 
   const hasEnd = Boolean(formData.end_date || formData.end_clock);
@@ -76,7 +76,30 @@ function validateEventForm(formData) {
   return "";
 }
 
+const SUBMIT_TIMEOUT_MS = 20000;
+
+class SubmitTimeoutError extends Error {
+  constructor() {
+    super("SUBMIT_TIMEOUT");
+    this.name = "SubmitTimeoutError";
+  }
+}
+
+// A stalled request would otherwise leave "Submitting..." up forever.
+function withTimeout(promiseLike, ms = SUBMIT_TIMEOUT_MS) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new SubmitTimeoutError()), ms);
+  });
+  return Promise.race([Promise.resolve(promiseLike), timeout]).finally(() =>
+    clearTimeout(timer),
+  );
+}
+
 function explainSubmitError(error) {
+  if (error instanceof SubmitTimeoutError) {
+    return "This is taking too long. Your details are still here. Check your connection and try again. If it keeps happening, wait a minute first: the event may already have been saved, and it stays hidden until an admin approves it.";
+  }
   const message = error?.message || "";
   if (/row-level security/i.test(message) || error?.code === "42501") {
     return "Could not save this event (permission denied). Sign out, sign back in, and try again. If you added a cover image, try submitting once without it.";
@@ -101,6 +124,9 @@ function CreateEvent() {
   const [selectedImagePreviewUrl, setSelectedImagePreviewUrl] = useState("");
   const [isCropModalOpen, setIsCropModalOpen] = useState(false);
   const isMountedRef = useRef(true);
+  // A ref closes the double-click window that `disabled={submitting}`
+  // leaves open, since setSubmitting only takes effect on re-render.
+  const inFlightRef = useRef(false);
   const eventFileInputRef = useRef(null);
   const pageTitle = (
     <Helmet>
@@ -169,6 +195,8 @@ function CreateEvent() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (inFlightRef.current) return;
+
     setError("");
     setSuccess(false);
 
@@ -178,6 +206,7 @@ function CreateEvent() {
       return;
     }
 
+    inFlightRef.current = true;
     setSubmitting(true);
 
     try {
@@ -195,22 +224,22 @@ function CreateEvent() {
       const registrationUrl = formData.external_registration_url.trim();
       const safeRegistrationUrl = registrationUrl ? asHttpUrl(registrationUrl) : null;
 
-      const {
-        data: { user: authUser },
-        error: authError,
-      } = await supabase.auth.getUser();
-      if (authError) throw authError;
-      const organizerId = authUser?.id || user.id;
+      // The page already holds the signed-in user. Calling auth.getUser()
+      // here waits on the auth lock and can hang on repeat submits. The
+      // server sets the real organizer from the session anyway.
+      const organizerId = user.id;
       if (!organizerId) throw new Error("You must be logged in to create an event.");
 
       let finalImageUrl = formData.cover_image_url || null;
 
       if (selectedImageFile) {
         try {
-          const { publicUrl } = await uploadEventImage({
-            file: selectedImageFile,
-            userId: organizerId,
-          });
+          const { publicUrl } = await withTimeout(
+            uploadEventImage({
+              file: selectedImageFile,
+              userId: organizerId,
+            }),
+          );
           finalImageUrl = publicUrl;
         } catch (uploadErr) {
           if (/row-level security/i.test(uploadErr?.message || "")) {
@@ -237,10 +266,12 @@ function CreateEvent() {
         p_external_registration_url: safeRegistrationUrl,
       };
 
-      const { error: rpcError } = await supabase.rpc("submit_pending_event", rpcArgs);
+      const { error: rpcError } = await withTimeout(
+        supabase.rpc("submit_pending_event", rpcArgs),
+      );
 
       if (rpcError && /could not find the function/i.test(rpcError.message || "")) {
-        const { error: insertError } = await supabase.from("events").insert([
+        const { error: insertError } = await withTimeout(supabase.from("events").insert([
           {
             title: rpcArgs.p_title,
             description: rpcArgs.p_description,
@@ -257,7 +288,7 @@ function CreateEvent() {
             organizer_id: organizerId,
             status: "pending",
           },
-        ]);
+        ]));
         if (insertError) throw insertError;
       } else if (rpcError) {
         throw rpcError;
@@ -266,18 +297,17 @@ function CreateEvent() {
       setSuccess(true);
       setFormData(EMPTY_FORM);
       setSelectedImageFile(null);
+      setOriginalImageFile(null);
       setSelectedImagePreviewUrl("");
-
-      setTimeout(() => {
-        if (isMountedRef.current) {
-          navigate("/events");
-        }
-      }, 2500);
+      if (eventFileInputRef.current) eventFileInputRef.current.value = "";
+      // Stay on the form so several events can be submitted in a row.
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
       console.error("Error creating event:", err);
       setError(explainSubmitError(err));
     } finally {
-      setSubmitting(false);
+      inFlightRef.current = false;
+      if (isMountedRef.current) setSubmitting(false);
     }
   };
 
@@ -311,7 +341,14 @@ function CreateEvent() {
             <span className="material-symbols-outlined text-emerald-600 mt-0.5">check_circle</span>
             <div>
               <p className="font-bold text-sm mb-1">Event Submitted Successfully!</p>
-              <p className="text-xs text-emerald-700 leading-relaxed">Your event is currently under review and will appear on the public feed once approved by an admin. Redirecting to events...</p>
+              <p className="text-xs text-emerald-700 leading-relaxed">Your event is saved and pending review. It will not show on the public Events page until an admin approves it. You can submit another event below.</p>
+              <button
+                type="button"
+                onClick={() => navigate("/events")}
+                className="mt-3 text-xs font-bold text-emerald-800 underline underline-offset-2 hover:text-emerald-900"
+              >
+                Back to Events
+              </button>
             </div>
           </div>
         )}

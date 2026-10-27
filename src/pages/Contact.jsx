@@ -1,7 +1,12 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "../lib/supabaseClient";
+import {
+  REQUEST_TIMEOUT_MS,
+  tookTooLongMessage,
+  withTimeout,
+} from "../lib/withTimeout";
 import { SITE_URL } from "../lib/seo";
 import FAQSchema from "../components/FAQSchema";
 
@@ -39,6 +44,7 @@ export default function Contact() {
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const inFlightRef = useRef(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState(null);
 
@@ -52,45 +58,64 @@ export default function Contact() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setIsSubmitting(true);
     setError(null);
 
     try {
-      const { error: submitError } = await supabase.from("inquiries").insert([
-        {
-          name: formData.name,
-          email: formData.email,
-          inquiry_type: formData.inquiry_type,
-          brand_name: showBrandField ? formData.brand_name : null,
-          message: formData.message,
-        },
-      ]);
+      const { error: submitError } = await withTimeout(
+        supabase.from("inquiries").insert([
+          {
+            name: formData.name,
+            email: formData.email,
+            inquiry_type: formData.inquiry_type,
+            brand_name: showBrandField ? formData.brand_name : null,
+            message: formData.message,
+          },
+        ]),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Sending your message",
+          "the message may already have been sent.",
+        ),
+      );
 
       if (submitError) throw submitError;
 
-      const { error: mailError } = await supabase.functions.invoke(
-        "send-inquiry-notification",
-        {
-          body: {
-            record: {
-              name: formData.name,
-              email: formData.email,
-              inquiry_type: formData.inquiry_type,
-              brand_name: showBrandField ? formData.brand_name : null,
-              message: formData.message,
+      try {
+        const { error: mailError } = await withTimeout(
+          supabase.functions.invoke("send-inquiry-notification", {
+            body: {
+              record: {
+                name: formData.name,
+                email: formData.email,
+                inquiry_type: formData.inquiry_type,
+                brand_name: showBrandField ? formData.brand_name : null,
+                message: formData.message,
+              },
             },
-          },
-        },
-      );
-      if (mailError) {
-        console.error("Could not send inquiry notification:", mailError);
+          }),
+          REQUEST_TIMEOUT_MS,
+          "The notification email is taking too long.",
+        );
+        if (mailError) {
+          console.error("Could not send inquiry notification:", mailError);
+        }
+      } catch (mailErr) {
+        console.error("Could not send inquiry notification:", mailErr);
       }
 
       setIsSuccess(true);
     } catch (err) {
       console.error("Error submitting inquiry:", err);
-      setError("Failed to send your message. Please try again later.");
+      setError(
+        typeof err?.message === "string" && err.message.includes("taking too long")
+          ? err.message
+          : "Failed to send your message. Please try again later.",
+      );
     } finally {
+      inFlightRef.current = false;
       setIsSubmitting(false);
     }
   };

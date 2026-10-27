@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
 import { isAllowedStudentEmail } from "../lib/studentEmailDomain";
 import {
@@ -14,6 +14,13 @@ import {
   promptSignIn,
   requireAccessToken,
 } from "../lib/authSession";
+import {
+  IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+  IMAGE_UPLOAD_TIMEOUT_MS,
+  REQUEST_TIMEOUT_MS,
+  tookTooLongMessage,
+  withTimeout,
+} from "../lib/withTimeout";
 
 const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
@@ -212,6 +219,7 @@ function StudentVerificationCard({
   const [selectedUni, setSelectedUni] = useState("");
   const [otherUniName, setOtherUniName] = useState("");
   const [uniVerifying, setUniVerifying] = useState(false);
+  const verifyLock = useRef(false);
   const [uniError, setUniError] = useState("");
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -316,6 +324,7 @@ function StudentVerificationCard({
 
   const handleRequestVerification = async (e) => {
     e?.preventDefault();
+    if (verifyLock.current) return;
     setUniError("");
     const normalized = uniEmail.trim().toLowerCase();
     const institution = chosenUniversityName();
@@ -341,11 +350,19 @@ function StudentVerificationCard({
       return;
     }
 
+    verifyLock.current = true;
     setUniVerifying(true);
     try {
-      const { data, error } = await invokeAuthedFunction("send-verification-otp", {
-        email: normalized,
-      });
+      const { data, error } = await withTimeout(
+        invokeAuthedFunction("send-verification-otp", {
+          email: normalized,
+        }),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Sending the code",
+          "the code may already have been sent.",
+        ),
+      );
       if (data?.success) {
         setVerificationStep(2);
         setResendCooldown(60);
@@ -362,12 +379,14 @@ function StudentVerificationCard({
         err?.message || "Couldn't send the verification code. Please try again.",
       );
     } finally {
+      verifyLock.current = false;
       setUniVerifying(false);
     }
   };
 
   const handleConfirmVerification = async (e) => {
     e.preventDefault();
+    if (verifyLock.current) return;
     setUniError("");
     const institution = chosenUniversityName();
     if (!institution) {
@@ -378,18 +397,33 @@ function StudentVerificationCard({
       setUniError("Please enter a valid 6-digit code.");
       return;
     }
+    verifyLock.current = true;
     setUniVerifying(true);
     try {
-      await requireAccessToken();
-      const { data, error } = await supabase.rpc("confirm_university_verification", {
-        entered_email: uniEmail.trim().toLowerCase(),
-        entered_code: otpCode,
-        inst_name: institution,
-        course: null,
-        student_id: null,
-        image_url: null,
-        image_back_url: null,
-      });
+      await withTimeout(
+        requireAccessToken(),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Checking your sign-in",
+          "wait a moment and try the code again.",
+        ),
+      );
+      const { data, error } = await withTimeout(
+        supabase.rpc("confirm_university_verification", {
+          entered_email: uniEmail.trim().toLowerCase(),
+          entered_code: otpCode,
+          inst_name: institution,
+          course: null,
+          student_id: null,
+          image_url: null,
+          image_back_url: null,
+        }),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Checking the code",
+          "you may already be verified. Refresh the page before trying again.",
+        ),
+      );
       if (error) throw error;
       if (data?.success) {
         await refreshRequest();
@@ -400,12 +434,14 @@ function StudentVerificationCard({
     } catch (err) {
       showAuthError(setUniError, err.message || "An error occurred.");
     } finally {
+      verifyLock.current = false;
       setUniVerifying(false);
     }
   };
 
   const handleManualVerify = async (e) => {
     e.preventDefault();
+    if (verifyLock.current) return;
     setManualError("");
     const institution = chosenManualUniversityName();
     if (!institution || !manualFrontFile || !manualBackFile) {
@@ -416,22 +452,45 @@ function StudentVerificationCard({
       setManualError("Course details and Student ID are required for University verification.");
       return;
     }
+    verifyLock.current = true;
     setManualVerifying(true);
     try {
-      await requireAccessToken();
+      await withTimeout(
+        requireAccessToken(),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Checking your sign-in",
+          "wait a moment and try again.",
+        ),
+      );
       const [frontPath, backPath] = await Promise.all([
-        uploadIdPhoto(manualFrontFile, "front"),
-        uploadIdPhoto(manualBackFile, "back"),
+        withTimeout(
+          uploadIdPhoto(manualFrontFile, "front"),
+          IMAGE_UPLOAD_TIMEOUT_MS,
+          IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+        ),
+        withTimeout(
+          uploadIdPhoto(manualBackFile, "back"),
+          IMAGE_UPLOAD_TIMEOUT_MS,
+          IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+        ),
       ]);
-      const { data, error } = await supabase.rpc("submit_manual_verification", {
-        inst_type: manualInstType,
-        inst_name: institution,
-        course: manualCourse.trim(),
-        student_id: manualStudentId.trim(),
-        email: user?.email || "unknown@example.com",
-        image_url: frontPath,
-        image_back_url: backPath,
-      });
+      const { data, error } = await withTimeout(
+        supabase.rpc("submit_manual_verification", {
+          inst_type: manualInstType,
+          inst_name: institution,
+          course: manualCourse.trim(),
+          student_id: manualStudentId.trim(),
+          email: user?.email || "unknown@example.com",
+          image_url: frontPath,
+          image_back_url: backPath,
+        }),
+        REQUEST_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Sending your ID",
+          "the request may already have been sent.",
+        ),
+      );
       if (error) throw error;
       if (data?.success) {
         await refreshRequest();
@@ -448,6 +507,7 @@ function StudentVerificationCard({
         err.message || "An error occurred during submission.",
       );
     } finally {
+      verifyLock.current = false;
       setManualVerifying(false);
     }
   };

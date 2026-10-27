@@ -18,6 +18,13 @@ import {
 } from "../../lib/dealOffer";
 import { asHttpUrl } from "../../lib/httpUrl";
 import { uploadDealImage } from "../../lib/dealImageUpload";
+import {
+  IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+  IMAGE_UPLOAD_TIMEOUT_MS,
+  SAVE_TIMEOUT_MS,
+  tookTooLongMessage,
+  withTimeout,
+} from "../../lib/withTimeout";
 import { toDatetimeLocalValue } from "../../lib/comingSoon";
 import { OFFICIAL_CATEGORIES, normalizeCategory } from "../../lib/categories";
 import ImageCropModal from "../../components/ImageCropModal";
@@ -330,11 +337,15 @@ function EditDeal() {
         .toUpperCase();
 
       if (selectedImageFile) {
-        const { publicUrl } = await uploadDealImage({
-          file: selectedImageFile,
-          userId: user.id,
-          brandName: partnerBrand,
-        });
+        const { publicUrl } = await withTimeout(
+          uploadDealImage({
+            file: selectedImageFile,
+            userId: user.id,
+            brandName: partnerBrand,
+          }),
+          IMAGE_UPLOAD_TIMEOUT_MS,
+          IMAGE_UPLOAD_TIMEOUT_MESSAGE,
+        );
 
         effectiveImageUrl = publicUrl;
       }
@@ -363,13 +374,20 @@ function EditDeal() {
           formData.type === "Online" ? asHttpUrl(trimmedStoreUrl) : null,
       };
 
-      const { data, error: updateError } = await supabase
-        .from("deals")
-        .update(payload)
-        .eq("id", Number(id))
-        .eq("brand_id", partnerBrandId)
-        .select("id")
-        .maybeSingle();
+      const { data, error: updateError } = await withTimeout(
+        supabase
+          .from("deals")
+          .update(payload)
+          .eq("id", Number(id))
+          .eq("brand_id", partnerBrandId)
+          .select("id")
+          .maybeSingle(),
+        SAVE_TIMEOUT_MS,
+        tookTooLongMessage(
+          "Saving the offer",
+          "the changes may already have been saved.",
+        ),
+      );
 
       if (!isMountedRef.current) return;
 

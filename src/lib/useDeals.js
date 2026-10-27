@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "./supabaseClient";
 import { isExpiredDeal } from "./comingSoon";
+import { REQUEST_TIMEOUT_MS, withTimeout } from "./withTimeout";
 
 /**
  * Maps a Supabase row (snake_case) to the frontend deal shape (camelCase).
@@ -209,16 +210,27 @@ function isDuplicateSave(error) {
   );
 }
 
+const SAVE_HEART_TIMEOUT =
+  "Saving this deal is taking too long. Check your connection and try again. It may already have been saved.";
+
+/** Local session only. getUser() waits on the auth lock and can hang a tap. */
+async function signedInUserId() {
+  const { data } = await supabase.auth.getSession();
+  return data.session?.user?.id ?? null;
+}
+
 export async function saveDeal(dealId) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Must be logged in to save a deal");
+  const userId = await signedInUserId();
+  if (!userId) throw new Error("Must be logged in to save a deal");
 
   // ignoreDuplicates keeps a double click from failing on saved_deals_pkey.
-  const { error } = await supabase.from("saved_deals").upsert(
-    { user_id: user.id, deal_id: dealId },
-    { onConflict: "user_id,deal_id", ignoreDuplicates: true },
+  const { error } = await withTimeout(
+    supabase.from("saved_deals").upsert(
+      { user_id: userId, deal_id: dealId },
+      { onConflict: "user_id,deal_id", ignoreDuplicates: true },
+    ),
+    REQUEST_TIMEOUT_MS,
+    SAVE_HEART_TIMEOUT,
   );
 
   if (error && !isDuplicateSave(error)) {
@@ -228,16 +240,18 @@ export async function saveDeal(dealId) {
 }
 
 export async function unsaveDeal(dealId) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error("Must be logged in to unsave a deal");
+  const userId = await signedInUserId();
+  if (!userId) throw new Error("Must be logged in to unsave a deal");
 
-  const { error } = await supabase
-    .from("saved_deals")
-    .delete()
-    .eq("user_id", user.id)
-    .eq("deal_id", dealId);
+  const { error } = await withTimeout(
+    supabase
+      .from("saved_deals")
+      .delete()
+      .eq("user_id", userId)
+      .eq("deal_id", dealId),
+    REQUEST_TIMEOUT_MS,
+    SAVE_HEART_TIMEOUT,
+  );
 
   if (error) {
     console.error("[unsaveDeal] Error:", error.message);
@@ -246,17 +260,19 @@ export async function unsaveDeal(dealId) {
 }
 
 export async function checkIfSaved(dealId) {
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return false;
+  const userId = await signedInUserId();
+  if (!userId) return false;
 
-  const { data, error } = await supabase
-    .from("saved_deals")
-    .select("deal_id")
-    .eq("user_id", user.id)
-    .eq("deal_id", dealId)
-    .maybeSingle(); // maybeSingle returns null if 0 rows, instead of throwing PGRST116
+  const { data, error } = await withTimeout(
+    supabase
+      .from("saved_deals")
+      .select("deal_id")
+      .eq("user_id", userId)
+      .eq("deal_id", dealId)
+      .maybeSingle(), // maybeSingle returns null if 0 rows, instead of throwing PGRST116
+    REQUEST_TIMEOUT_MS,
+    "Checking saved deals is taking too long. Check your connection and try again.",
+  );
 
   if (error) {
     console.error("[checkIfSaved] Error:", error.message);
@@ -282,30 +298,34 @@ export function useSavedDealIds() {
 
     async function fetchAllSaved() {
       setLoading(true);
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      try {
+        const userId = await signedInUserId();
 
-      if (!user) {
+        if (!userId) {
+          if (!cancelled) {
+            setSavedIds(new Set());
+            setLoading(false);
+          }
+          return;
+        }
+
+        const { data, error } = await withTimeout(
+          supabase.from("saved_deals").select("deal_id").eq("user_id", userId),
+          REQUEST_TIMEOUT_MS,
+          "Loading saved deals is taking too long. Check your connection and try again.",
+        );
+
         if (!cancelled) {
-          setSavedIds(new Set());
+          if (error) {
+            console.error("Failed to load saved deals:", error);
+          } else if (data) {
+            setSavedIds(new Set(data.map((r) => r.deal_id)));
+          }
           setLoading(false);
         }
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from("saved_deals")
-        .select("deal_id")
-        .eq("user_id", user.id);
-
-      if (!cancelled) {
-        if (error) {
-          console.error("Failed to load saved deals:", error);
-        } else if (data) {
-          setSavedIds(new Set(data.map((r) => r.deal_id)));
-        }
-        setLoading(false);
+      } catch (err) {
+        console.error("Failed to load saved deals:", err);
+        if (!cancelled) setLoading(false);
       }
     }
 
