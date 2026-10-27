@@ -29,12 +29,8 @@ function toItems(row) {
     location: row.location,
     description: row.description,
   };
-  const items = [];
-  if (row.status === "pending") items.push({ ...shared, kind: "application" });
-  if (row.profile_review_status === "pending") {
-    items.push({ ...shared, kind: "profile" });
-  }
-  return items;
+  if (row.status !== "pending") return [];
+  return [{ ...shared, kind: "application" }];
 }
 
 export default function AdminBrandApplications() {
@@ -51,7 +47,7 @@ export default function AdminBrandApplications() {
       .select(
         "id, name, status, profile_review_status, pending_name, pending_logo_url, logo_url, category, description, contact_name, contact_phone, website_url, instagram_handle, tiktok_handle, location, submitted_at",
       )
-      .or("status.eq.pending,profile_review_status.eq.pending")
+      .eq("status", "pending")
       .order("submitted_at", { ascending: false });
 
     if (fetchError) {
@@ -83,13 +79,9 @@ export default function AdminBrandApplications() {
     if (decision === "reject" && reason === null) return;
 
     const functionName =
-      item.kind === "application"
-        ? decision === "approve"
-          ? "approve_brand_application"
-          : "reject_brand_application"
-        : decision === "approve"
-          ? "approve_brand_profile_change"
-          : "reject_brand_profile_change";
+      decision === "approve"
+        ? "approve_brand_application"
+        : "reject_brand_application";
 
     const key = `${item.kind}:${item.id}`;
     setActingKey(key);
@@ -115,8 +107,7 @@ export default function AdminBrandApplications() {
         </h1>
         <p className="text-on-surface-variant text-sm leading-relaxed">
           Approving an application promotes that student to a partner for the
-          brand. Name and logo changes stay off the public catalogue until you
-          approve them.
+          brand. Rejected applicants can edit and resubmit.
         </p>
       </div>
 
@@ -141,9 +132,6 @@ export default function AdminBrandApplications() {
         <ul className="flex flex-col gap-4">
           {items.map((item) => {
             const lines = [
-              item.kind === "profile" && item.pendingName
-                ? `Requested name: ${item.pendingName}`
-                : null,
               item.category && `Category: ${item.category}`,
               item.contactName && `Contact: ${item.contactName}`,
               item.contactPhone && `Phone: ${item.contactPhone}`,
@@ -153,10 +141,7 @@ export default function AdminBrandApplications() {
               item.location && `Location: ${item.location}`,
               item.description && `About: ${item.description}`,
             ].filter(Boolean);
-            const preview =
-              item.kind === "profile"
-                ? item.pendingLogoUrl || item.logoUrl
-                : item.logoUrl;
+            const preview = item.logoUrl;
             const key = `${item.kind}:${item.id}`;
             return (
               <li
@@ -175,9 +160,7 @@ export default function AdminBrandApplications() {
                   )}
                   <div>
                     <p className="text-[11px] font-bold uppercase tracking-wide text-primary">
-                      {item.kind === "application"
-                        ? "New application"
-                        : "Name or logo change"}
+                      New application
                     </p>
                     <p className="font-headline font-extrabold text-lg text-on-background">
                       {item.name}

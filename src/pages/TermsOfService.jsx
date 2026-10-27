@@ -68,8 +68,8 @@ function TermsOfService() {
             legality, availability, and execution of their offers. Brand
             applications are reviewed before a business can publish offers. The
             applicant stays a student until an admin approves the application.
-            After approval, changes to the public brand name or logo are held
-            until an admin approves them. Global student perks listed on Uni
+            After approval, the partner can update the public brand name and
+            logo directly. Global student perks listed on Uni
             Deals are offered by the provider, not by Uni Deals. We do not
             check eligibility for those programs, issue their codes, or take a
             referral fee. The provider's own terms apply, and an offer can

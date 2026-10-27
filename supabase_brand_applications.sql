@@ -71,14 +71,14 @@ CREATE POLICY "Brands visible when approved or owned"
 -- Direct client updates cannot change review columns. A trusted RPC sets
 -- app.brand_admin_write for the current transaction before it writes.
 -- PostgREST cannot set that flag in the same request as a table update.
+-- Approved partners may change the public name and logo immediately.
+-- Re-apply this function on an existing project with
+-- supabase_brand_name_logo_immediate.sql.
 CREATE OR REPLACE FUNCTION public.guard_brand_update()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = public
 AS $$
-DECLARE
-  attempted_name text;
-  attempted_logo text;
 BEGIN
   IF public.get_user_role() = 'admin'
      OR auth.uid() IS NULL
@@ -86,35 +86,15 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  attempted_name := NEW.name;
-  attempted_logo := NEW.logo_url;
-
   NEW.status := OLD.status;
   NEW.applicant_user_id := OLD.applicant_user_id;
   NEW.reviewed_by := OLD.reviewed_by;
   NEW.reviewed_at := OLD.reviewed_at;
   NEW.rejection_reason := OLD.rejection_reason;
-  NEW.pending_name := OLD.pending_name;
-  NEW.pending_logo_url := OLD.pending_logo_url;
-  NEW.profile_review_status := OLD.profile_review_status;
-  NEW.profile_review_note := OLD.profile_review_note;
-
-  IF OLD.status = 'approved'
-     AND (
-       btrim(coalesce(attempted_name, '')) IS DISTINCT FROM btrim(coalesce(OLD.name, ''))
-       OR attempted_logo IS DISTINCT FROM OLD.logo_url
-     ) THEN
-    IF btrim(coalesce(attempted_name, '')) IS DISTINCT FROM btrim(coalesce(OLD.name, '')) THEN
-      NEW.pending_name := btrim(attempted_name);
-    END IF;
-    IF attempted_logo IS DISTINCT FROM OLD.logo_url THEN
-      NEW.pending_logo_url := attempted_logo;
-    END IF;
-    NEW.name := OLD.name;
-    NEW.logo_url := OLD.logo_url;
-    NEW.profile_review_status := 'pending';
-    NEW.profile_review_note := NULL;
-  END IF;
+  NEW.pending_name := NULL;
+  NEW.pending_logo_url := NULL;
+  NEW.profile_review_status := 'none';
+  NEW.profile_review_note := NULL;
 
   RETURN NEW;
 END;

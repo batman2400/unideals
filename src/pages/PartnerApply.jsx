@@ -225,7 +225,7 @@ export default function PartnerApply() {
           <Link to="/profile" className="text-primary font-bold">
             your profile
           </Link>
-          . Name and logo changes are reviewed before students see them.
+          . Name and logo changes show to students as soon as you save them.
         </p>
       ) : role === "admin" ? (
         <p className="mt-8 text-on-surface-variant">

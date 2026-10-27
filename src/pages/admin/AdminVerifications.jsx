@@ -7,7 +7,6 @@ import {
   VERIFICATION_REJECT_REASONS,
   formatVerificationRejectReason,
 } from "../../lib/verificationRejectReasons";
-import { notifyVerificationRejected } from "../../lib/notifyVerificationRejected";
 
 function inQueue(row, queue) {
   if (queue === "email_otp") {
@@ -141,9 +140,6 @@ function AdminVerifications() {
       setError(updateError.message || "Failed to reject verification.");
       return;
     }
-
-    await notifyVerificationRejected(id);
-    if (!isMountedRef.current) return;
 
     setPendingVerifications((prev) => prev.filter((v) => v.id !== id));
     setActingVerificationId(null);

@@ -424,11 +424,7 @@ function Profile({ isLoggedIn, user }) {
       }
       setActiveBrand({ ...activeBrand, ...data[0] });
       setManagedBrands(prev => prev.map(b => b.id === activeBrand.id ? { ...b, ...data[0] } : b));
-      setBrandNotice(
-        data[0].name !== brandFormData.name.trim()
-          ? "Saved. The name change is waiting for review. Other details are already live."
-          : "Brand profile updated successfully.",
-      );
+      setBrandNotice("Brand profile updated successfully.");
       setIsEditingBrand(false);
       flashSaved(setBrandSaved);
     } catch (err) {
@@ -474,11 +470,7 @@ function Profile({ isLoggedIn, user }) {
       setManagedBrands((prev) =>
         prev.map((b) => (b.id === activeBrand.id ? { ...b, ...data[0] } : b)),
       );
-      setBrandNotice(
-        data[0].logo_url !== publicUrl
-          ? "Saved. The logo change is waiting for review."
-          : "Brand profile updated successfully.",
-      );
+      setBrandNotice("Brand profile updated successfully.");
       flashSaved(setBrandSaved);
     } catch (err) {
       console.error("Failed to upload brand logo:", err);
