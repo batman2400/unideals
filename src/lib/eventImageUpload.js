@@ -1,3 +1,4 @@
+import { prepareImageFile } from "./compressImage";
 import { supabase } from "./supabaseClient";
 
 export const EVENT_IMAGES_BUCKET = "event-images";
@@ -19,24 +20,21 @@ export async function uploadEventImage({ file, userId }) {
     throw new Error("Unable to resolve user account for image upload.");
   }
 
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Only image files are allowed.");
-  }
+  const prepared = await prepareImageFile(file, {
+    maxBytes: MAX_IMAGE_BYTES,
+    tooLargeMessage: "Image is too large. Maximum size is 5MB.",
+  });
 
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("Image is too large. Maximum size is 5MB.");
-  }
-
-  const extension = extractExtension(file.name);
+  const extension = extractExtension(prepared.name);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   // Must be `{userId}/...` — storage RLS checks foldername(name)[1] = auth.uid()
   const filePath = `${userId}/${Date.now()}-${randomSuffix}.${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(EVENT_IMAGES_BUCKET)
-    .upload(filePath, file, {
+    .upload(filePath, prepared, {
       cacheControl: "3600",
-      contentType: file.type,
+      contentType: prepared.type,
       upsert: false,
     });
 

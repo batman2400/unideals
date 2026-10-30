@@ -528,10 +528,6 @@ function CreateEvent() {
                       setError("Please select an image file (JPG, PNG, or WEBP).");
                       return;
                     }
-                    if (file.size > 5 * 1024 * 1024) {
-                      setError("Image is too large. Maximum allowed size is 5MB.");
-                      return;
-                    }
                     setError("");
                     setOriginalImageFile(file);
                     setFormData((prev) => ({ ...prev, cover_image_url: "" }));
@@ -548,7 +544,7 @@ function CreateEvent() {
                   <div className="flex flex-col items-center justify-center text-center">
                     <span className="material-symbols-outlined text-on-surface-variant/50 text-3xl mb-1">cloud_upload</span>
                     <p className="text-sm font-bold text-on-surface-variant">Click or drag image to upload</p>
-                    <p className="text-[10px] text-on-surface-variant/70 uppercase tracking-wide mt-1">JPG, PNG, WEBP (Max 5MB)</p>
+                    <p className="text-[10px] text-on-surface-variant/70 uppercase tracking-wide mt-1">Large photos are resized automatically</p>
                   </div>
                 ) : (
                   <div className="w-full flex flex-col items-center gap-3">

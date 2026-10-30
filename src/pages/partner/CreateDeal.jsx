@@ -219,10 +219,6 @@ function CreateDeal() {
       setError("Please select an image file (JPG, PNG, or WEBP).");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image is too large. Maximum allowed size is 5MB.");
-      return;
-    }
     setError("");
     setOriginalImageFile(file);
     setIsCropModalOpen(true);
@@ -857,7 +853,7 @@ function CreateDeal() {
                       Click to upload or drag and drop
                     </p>
                     <p className="text-sm text-on-surface-variant">
-                      JPG, PNG or WEBP (max 5MB)
+                      JPG, PNG or WEBP. Large photos are resized automatically.
                     </p>
                   </div>
                 )}

@@ -1,3 +1,4 @@
+import { prepareImageFile } from "./compressImage";
 import { supabase } from "./supabaseClient";
 
 export const BRAND_LOGOS_BUCKET = "brand-logos";
@@ -28,24 +29,21 @@ export async function uploadBrandLogo({ file, brandName }) {
     throw new Error("Brand name is required.");
   }
 
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Only image files are allowed.");
-  }
-
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("Image is too large. Maximum size is 5MB.");
-  }
+  const prepared = await prepareImageFile(file, {
+    maxBytes: MAX_IMAGE_BYTES,
+    tooLargeMessage: "Image is too large. Maximum size is 5MB.",
+  });
 
   const brandSegment = sanitizePathSegment(brandName) || "brand";
-  const extension = extractExtension(file.name);
+  const extension = extractExtension(prepared.name);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const filePath = `logos/${brandSegment}-${Date.now()}-${randomSuffix}.${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BRAND_LOGOS_BUCKET)
-    .upload(filePath, file, {
+    .upload(filePath, prepared, {
       cacheControl: "3600",
-      contentType: file.type,
+      contentType: prepared.type,
       upsert: false,
     });
 
@@ -76,23 +74,20 @@ export async function uploadApplicationLogo({ file, userId }) {
     throw new Error("Sign in again before uploading a logo.");
   }
 
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Only image files are allowed.");
-  }
+  const prepared = await prepareImageFile(file, {
+    maxBytes: MAX_IMAGE_BYTES,
+    tooLargeMessage: "Image is too large. Maximum size is 5MB.",
+  });
 
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("Image is too large. Maximum size is 5MB.");
-  }
-
-  const extension = extractExtension(file.name);
+  const extension = extractExtension(prepared.name);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const filePath = `applications/${userId}/${Date.now()}-${randomSuffix}.${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(BRAND_LOGOS_BUCKET)
-    .upload(filePath, file, {
+    .upload(filePath, prepared, {
       cacheControl: "3600",
-      contentType: file.type,
+      contentType: prepared.type,
       upsert: false,
     });
 

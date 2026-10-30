@@ -371,7 +371,7 @@ export default function PartnerApply() {
               className="font-normal text-sm"
             />
             <span className="font-normal text-xs text-on-surface-variant">
-              Optional. JPG, PNG, or WEBP, max 5MB.
+              Optional. Large photos are resized automatically.
             </span>
           </label>
 

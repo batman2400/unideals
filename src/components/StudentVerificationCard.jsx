@@ -14,6 +14,7 @@ import {
   promptSignIn,
   requireAccessToken,
 } from "../lib/authSession";
+import { prepareImageFile } from "../lib/compressImage";
 import {
   IMAGE_UPLOAD_TIMEOUT_MESSAGE,
   IMAGE_UPLOAD_TIMEOUT_MS,
@@ -22,16 +23,12 @@ import {
   withTimeout,
 } from "../lib/withTimeout";
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-function validateImageUpload(file) {
+function validateImageType(file) {
   if (!file) return "Please choose an image.";
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return "Please upload a JPEG, PNG, or WEBP image.";
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return `That file is ${(file.size / 1024 / 1024).toFixed(1)}MB. The limit is 5MB.`;
   }
   return null;
 }
@@ -62,7 +59,7 @@ function FileDrop({ label, file, onChange }) {
           <p className="text-sm font-bold text-on-background">
             {file ? file.name : `Tap to upload ${label.toLowerCase()}`}
           </p>
-          <p className="text-xs text-on-surface-variant mt-1">JPEG, PNG, WEBP (Max 5MB)</p>
+          <p className="text-xs text-on-surface-variant mt-1">Large photos are resized automatically</p>
         </div>
       </div>
     </div>
@@ -271,13 +268,18 @@ function StudentVerificationCard({
   };
 
   async function uploadIdPhoto(file, side) {
-    const validationError = validateImageUpload(file);
+    const validationError = validateImageType(file);
     if (validationError) throw new Error(validationError);
-    const fileExt = file.name.split(".").pop();
+    const prepared = await prepareImageFile(file, {
+      maxEdge: 2000,
+      quality: 0.8,
+      tooLargeMessage: "That photo is still too large after resizing. Please choose another.",
+    });
+    const fileExt = prepared.name.split(".").pop();
     const filePath = `${user.id}/${side}-${Date.now()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from("verification-documents")
-      .upload(filePath, file, { contentType: file.type });
+      .upload(filePath, prepared, { contentType: prepared.type });
     if (uploadError) throw uploadError;
     return filePath;
   }

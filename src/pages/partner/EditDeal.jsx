@@ -235,10 +235,6 @@ function EditDeal() {
       setError("Please select an image file (JPG, PNG, or WEBP).");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Image is too large. Maximum allowed size is 5MB.");
-      return;
-    }
     setError("");
     setOriginalImageFile(file);
     setIsCropModalOpen(true);
@@ -745,7 +741,7 @@ function EditDeal() {
                     <span className="material-symbols-outlined text-2xl text-on-surface-variant">cloud_upload</span>
                   </div>
                   <p className="font-headline font-bold text-sm text-on-background mb-0.5">Click to upload a new image</p>
-                  <p className="text-[11px] text-on-surface-variant/70 uppercase tracking-wide">JPG, PNG or WEBP (max 5MB)</p>
+                  <p className="text-[11px] text-on-surface-variant/70 uppercase tracking-wide">Large photos are resized automatically</p>
                 </div>
               )}
             </div>

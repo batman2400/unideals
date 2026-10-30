@@ -1,3 +1,4 @@
+import { prepareImageFile } from "./compressImage";
 import { supabase } from "./supabaseClient";
 
 export const DEAL_IMAGES_BUCKET = "deal-images";
@@ -28,24 +29,21 @@ export async function uploadDealImage({ file, userId, brandName }) {
     throw new Error("Unable to resolve partner account for image upload.");
   }
 
-  if (!file.type.startsWith("image/")) {
-    throw new Error("Only image files are allowed.");
-  }
-
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error("Image is too large. Maximum size is 5MB.");
-  }
+  const prepared = await prepareImageFile(file, {
+    maxBytes: MAX_IMAGE_BYTES,
+    tooLargeMessage: "Image is too large. Maximum size is 5MB.",
+  });
 
   const brandSegment = sanitizePathSegment(brandName) || "brand";
-  const extension = extractExtension(file.name);
+  const extension = extractExtension(prepared.name);
   const randomSuffix = Math.random().toString(36).slice(2, 8);
   const filePath = `partners/${userId}/${brandSegment}/${Date.now()}-${randomSuffix}.${extension}`;
 
   const { error: uploadError } = await supabase.storage
     .from(DEAL_IMAGES_BUCKET)
-    .upload(filePath, file, {
+    .upload(filePath, prepared, {
       cacheControl: "3600",
-      contentType: file.type,
+      contentType: prepared.type,
       upsert: false,
     });
 

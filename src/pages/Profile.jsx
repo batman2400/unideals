@@ -20,6 +20,7 @@ import { useRoleContext } from "../lib/RoleContext";
 import { PASSWORD_HINT, validatePasswordStrength } from "../lib/passwordPolicy";
 import { OFFICIAL_CATEGORIES } from "../lib/categories";
 import { asHttpUrl } from "../lib/httpUrl";
+import { prepareImageFile } from "../lib/compressImage";
 import { uploadBrandLogo } from "../lib/brandLogoUpload";
 import StudentVerificationCard from "../components/StudentVerificationCard";
 import PasswordInput from "../components/PasswordInput";
@@ -27,15 +28,11 @@ import { formatVerificationExpiry } from "../lib/studentVerification";
 import { getDealComputedStatus } from "../lib/comingSoon";
 import { QRCodeSVG } from "qrcode.react";
 
-const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
-function validateImageUpload(file) {
+function validateImageType(file) {
   if (!ALLOWED_IMAGE_TYPES.includes(file.type)) {
     return "Please upload a JPEG, PNG, or WEBP image.";
-  }
-  if (file.size > MAX_UPLOAD_BYTES) {
-    return `That file is ${(file.size / 1024 / 1024).toFixed(1)}MB. The limit is 5MB.`;
   }
   return null;
 }
@@ -148,7 +145,7 @@ function Profile({ isLoggedIn, user }) {
     if (!file || !user) return;
 
     setAvatarError("");
-    const validationError = validateImageUpload(file);
+    const validationError = validateImageType(file);
     if (validationError) {
       setAvatarError(validationError);
       e.target.value = "";
@@ -157,12 +154,16 @@ function Profile({ isLoggedIn, user }) {
 
     setAvatarUploading(true);
     try {
+      const prepared = await prepareImageFile(file, {
+        maxEdge: 1024,
+        tooLargeMessage: "That photo is still too large after resizing. Please choose another.",
+      });
       // A fixed, extension-free path so re-uploading a different format
       // replaces the old object instead of orphaning it.
       const filePath = `${user.id}/avatar`;
       const { error: uploadError } = await supabase.storage
         .from("avatars")
-        .upload(filePath, file, { upsert: true, contentType: file.type });
+        .upload(filePath, prepared, { upsert: true, contentType: prepared.type });
       if (uploadError) throw uploadError;
       const {
         data: { publicUrl },
@@ -443,7 +444,7 @@ function Profile({ isLoggedIn, user }) {
     const file = e.target.files?.[0];
     if (!file || !activeBrand?.id) return;
 
-    const validationError = validateImageUpload(file);
+    const validationError = validateImageType(file);
     if (validationError) {
       setBrandError(validationError);
       e.target.value = "";
@@ -894,7 +895,7 @@ function Profile({ isLoggedIn, user }) {
                     >
                       {brandLogoUploading ? "Uploading..." : "Change logo"}
                     </button>
-                    <p className="text-[11px] text-on-surface-variant/70 mt-1.5">JPEG, PNG, or WEBP. 5MB max.</p>
+                    <p className="text-[11px] text-on-surface-variant/70 mt-1.5">Large photos are resized automatically.</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
