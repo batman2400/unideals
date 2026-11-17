@@ -44,7 +44,7 @@ export function EventCardCompact({ event }) {
         status === "past" ? "opacity-75" : ""
       }`}
     >
-      <div className="relative w-full aspect-[4/3] overflow-hidden bg-surface-container-high">
+      <div className="relative w-full aspect-video overflow-hidden bg-surface-container-high">
         {event.cover_image_url ? (
           <img
             src={event.cover_image_url}
@@ -91,7 +91,7 @@ export function EventCardCompact({ event }) {
         <p className="text-[10px] font-bold tracking-[0.15em] text-primary uppercase mb-1.5">
           {event.category || "Event"}
         </p>
-        <h3 className="font-headline font-extrabold text-base text-on-background line-clamp-2 leading-tight mb-1">
+        <h3 className="font-headline font-extrabold text-base text-on-background line-clamp-1 leading-tight mb-1">
           {event.title}
         </h3>
         {status === "coming soon" && publishLabel ? (
@@ -120,7 +120,7 @@ export default function EventCard({ event }) {
         status === "past" ? "opacity-75" : ""
       }`}
     >
-      <div className="relative w-full h-48 sm:h-56 overflow-hidden bg-surface-container-high">
+      <div className="relative w-full aspect-video overflow-hidden bg-surface-container-high">
         {event.cover_image_url ? (
           <img
             src={event.cover_image_url}

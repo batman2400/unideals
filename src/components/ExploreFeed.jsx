@@ -1,7 +1,7 @@
 /**
  * ExploreFeed — short discovery feed on Home.
  *
- * Trending Deals → Trending Events → Coming Soon Deals → Coming Soon Events.
+ * Trending Deals → Trending Events → Global Student Perks → Coming Soon.
  * Full catalogs live on /deals and /events (View all links).
  */
 import { Link } from "react-router-dom";
@@ -10,6 +10,7 @@ import DealCard from "./DealCard";
 import DealGrid from "./DealGrid";
 import DealsLoader from "./DealsLoader";
 import { EventCardCompact } from "./EventCard";
+import HomePerks from "./HomePerks";
 import { useDeals, useSavedDealIds } from "../lib/useDeals";
 import { useEvents } from "../lib/useEvents";
 import { partitionDeals, partitionEvents } from "../lib/comingSoon";
@@ -18,11 +19,11 @@ const PREVIEW_LIMIT = 6;
 
 function HorizontalDealRow({ deals, savedIds, toggleSave, savedLoading }) {
   return (
-    <div className="flex gap-3 overflow-x-auto px-4 pb-6 md:gap-4 md:px-8 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-6 md:gap-4 md:px-8 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {deals.map((deal) => (
         <div
           key={deal.id}
-          className="w-[58vw] max-w-[280px] flex-shrink-0 sm:w-56 md:w-64"
+          className="w-[min(88vw,420px)] flex-shrink-0 snap-start md:w-96"
         >
           <DealCard
             deal={deal}
@@ -39,11 +40,11 @@ function HorizontalDealRow({ deals, savedIds, toggleSave, savedLoading }) {
 
 function HorizontalEventRow({ events }) {
   return (
-    <div className="flex gap-3 overflow-x-auto px-4 pb-6 md:gap-4 md:px-8 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+    <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-6 md:gap-4 md:px-8 scrollbar-hide [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
       {events.map((event) => (
         <div
           key={event.id}
-          className="w-[58vw] max-w-[280px] flex-shrink-0 sm:w-56 md:w-64"
+          className="w-[min(88vw,420px)] flex-shrink-0 snap-start md:w-96"
         >
           <EventCardCompact event={event} />
         </div>
@@ -182,6 +183,7 @@ function ExploreFeed({ searchQuery = "" }) {
             </p>
           )}
         </section>
+        <HomePerks />
 
         {(comingSoonDeals.length > 0 || comingSoonEvents.length > 0) && (
           <section className="space-y-10">
@@ -255,6 +257,8 @@ function ExploreFeed({ searchQuery = "" }) {
               <HorizontalEventRow events={trendingEvents} />
             </section>
           )}
+
+          <HomePerks />
 
           {previewComingSoonDeals.length > 0 && (
             <section className="border-t border-outline-variant/10 pt-6 pb-2">

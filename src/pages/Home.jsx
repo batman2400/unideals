@@ -2,7 +2,6 @@ import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import HeroSection from "../components/HeroSection";
 import ExploreFeed from "../components/ExploreFeed";
-import HomePerks from "../components/HomePerks";
 import HomeFAQ from "../components/HomeFAQ";
 import StoreBadges from "../components/StoreBadges";
 import SiteNavigationSchema from "../components/SiteNavigationSchema";
@@ -89,7 +88,6 @@ function Home({ searchQuery, onSearchChange }) {
       </div>
 
       <ExploreFeed searchQuery={searchQuery} />
-      <HomePerks />
 
       <section className="max-w-[1440px] mx-auto px-4 md:px-8 pt-4 pb-2">
         <div className="flex flex-col gap-4 rounded-2xl border border-outline-variant/20 bg-surface-container-low p-6 md:flex-row md:items-center md:justify-between md:p-8">

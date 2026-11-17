@@ -169,3 +169,21 @@ export function validateSchedule(startValue, endValue) {
 
   return "";
 }
+
+const TRAILING_STUDENT_OFFER = /(?:\s*[,.:;\-–—]?\s*)?student offer[.!?]*\s*$/i;
+
+/** Compare deal lines after trimming a trailing "student offer." suffix. */
+export function normalizeDealCopy(value) {
+  return String(value ?? "")
+    .replace(TRAILING_STUDENT_OFFER, "")
+    .replace(/[\s.,;:!?…\-–—]+$/g, "")
+    .trim()
+    .toLowerCase();
+}
+
+/** True when a subtitle or description repeats the title or discount. */
+export function isRedundantDealCopy(value, ...against) {
+  const normalized = normalizeDealCopy(value);
+  if (!normalized) return true;
+  return against.some((item) => normalizeDealCopy(item) === normalized);
+}

@@ -354,9 +354,7 @@ function EditDeal() {
         type: formData.type,
         category: formData.category,
         image_url: effectiveImageUrl,
-        description:
-          formData.description.trim() ||
-          `${formData.title.trim()} student offer.`,
+        description: formData.description.trim() || null,
         redemption_code: normalizedRedemptionCode,
         start_time: formData.start_time
           ? new Date(formData.start_time).toISOString()
@@ -863,7 +861,7 @@ function EditDeal() {
         title="Frame Deal Image"
         subtitle="Choose which part will be showcased on student deal cards (1:1 Square recommended)."
         aspectOptions={DEAL_ASPECT_OPTIONS}
-        initialAspectId="1:1"
+        initialAspectId="16:9"
         onCropComplete={handleCropComplete}
         onClose={() => setIsCropModalOpen(false)}
       />

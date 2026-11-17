@@ -132,7 +132,7 @@ export default function PerkDetails() {
       ) : null}
 
       <p className="mt-8 text-sm text-on-surface-variant">
-        {perkDisclaimer(perk.providerName)} Uni Deals does not check your
+        {perkDisclaimer(perk.providerName)} UniDeals does not check your
         eligibility or issue this offer.
       </p>
       {offerUrl ? (

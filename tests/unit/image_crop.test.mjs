@@ -11,10 +11,10 @@ import {
 
 test("Image Framing & Aspect Ratio Calculations", async (t) => {
   await t.test("Presets configuration integrity", () => {
-    const dealSquare = DEAL_ASPECT_OPTIONS.find((opt) => opt.id === "1:1");
-    assert.ok(dealSquare, "Deal options must include 1:1");
-    assert.strictEqual(dealSquare.recommended, true, "1:1 must be recommended for deals");
-    assert.strictEqual(dealSquare.ratio, 1);
+    const dealWide = DEAL_ASPECT_OPTIONS.find((opt) => opt.id === "16:9");
+    assert.ok(dealWide, "Deal options must include 16:9");
+    assert.strictEqual(dealWide.recommended, true, "16:9 must be recommended for deals");
+    assert.strictEqual(dealWide.ratio, 16 / 9);
 
     const eventWide = EVENT_ASPECT_OPTIONS.find((opt) => opt.id === "16:9");
     assert.ok(eventWide, "Event options must include 16:9");

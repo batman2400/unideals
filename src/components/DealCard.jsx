@@ -2,8 +2,8 @@
  * DealCard — lifestyle, image-first deal card.
  *
  * Variants:
- *   - hero  : 4:5 full-bleed portrait with gradient overlay (trending row)
- *   - grid  : 1:1 square image + brand / title / fulfillment pill below
+ *   - hero  : 16:9 cover with the offer copy in a footer below the photo
+ *   - grid  : 16:9 image + brand / title / fulfillment pill below
  *
  * Coming Soon uses a locked overlay (not a heavy blue banner) so live cards
  * stay visually distinct.
@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { supabase } from "../lib/supabaseClient";
 import { checkIfSaved, saveDeal, unsaveDeal } from "../lib/useDeals";
 import { formatLaunchRelative, isComingSoonDeal, isExpiredDeal } from "../lib/comingSoon";
+import { isRedundantDealCopy } from "../lib/dealOffer";
 
 /** Days remaining until endTime, or null when unavailable. */
 function getDaysLeft(endTime) {
@@ -219,62 +220,68 @@ function DealCard({
   );
 
   if (isHero) {
+    const subtitle = comingSoon ? relativeLaunch : title;
+    const showSubtitle = !isRedundantDealCopy(subtitle, discount, headline);
+
     return (
       <Link
         to={isDemo ? "#" : `/deals/${id}`}
         onClick={isDemo ? (e) => e.preventDefault() : undefined}
-        className="group relative block w-full aspect-[4/5] overflow-hidden rounded-2xl bg-surface-container"
+        className="group flex h-full flex-col overflow-hidden rounded-2xl border border-outline-variant/20 bg-surface"
       >
-        {imageOrPlaceholder}
+        <div className="relative aspect-video overflow-hidden bg-surface-container">
+          {imageOrPlaceholder}
 
-        {comingSoon && (
-          <ComingSoonLock relativeLabel={relativeLaunch} />
-        )}
-        {expired && <EndedLock />}
+          {comingSoon && (
+            <ComingSoonLock relativeLabel={relativeLaunch} />
+          )}
+          {expired && <EndedLock />}
 
-        {/* Top-left: type only — avoid stacking with coming-soon banners */}
-        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
-          <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
-            {isInStore ? "🏪 In-Store" : "🌐 Online"}
-          </span>
-          {daysLeft !== null && (
-            <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white backdrop-blur-sm">
-              ⌛ {daysLeft === 0
-                ? "Ends today"
-                : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+          <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5">
+            <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white backdrop-blur-sm">
+              {isInStore ? "In-Store" : "Online"}
             </span>
+            {daysLeft !== null && (
+              <span className="inline-flex self-start rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold tracking-wide text-white backdrop-blur-sm">
+                {daysLeft === 0
+                  ? "Ends today"
+                  : `${daysLeft} ${daysLeft === 1 ? "day" : "days"} left`}
+              </span>
+            )}
+          </div>
+
+          {!isDemo && (
+            <button
+              type="button"
+              onClick={handleToggleSave}
+              disabled={loading}
+              aria-label={saved ? "Remove from saved" : "Save deal"}
+              className={`absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:scale-110 ${
+                loading ? "opacity-50" : ""
+              }`}
+            >
+              <span
+                className="material-symbols-outlined text-lg"
+                style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}
+              >
+                favorite
+              </span>
+            </button>
           )}
         </div>
 
-        {/* Top-right heart */}
-        {!isDemo && (
-          <button
-            type="button"
-            onClick={handleToggleSave}
-            disabled={loading}
-            aria-label={saved ? "Remove from saved" : "Save deal"}
-            className={`absolute top-3 right-3 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/40 text-white backdrop-blur-sm transition hover:scale-110 ${
-              loading ? "opacity-50" : ""
-            }`}
-          >
-            <span
-              className="material-symbols-outlined text-lg"
-              style={saved ? { fontVariationSettings: "'FILL' 1" } : undefined}
-            >
-              favorite
-            </span>
-          </button>
-        )}
-
-        {/* Bottom gradient + copy */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[55%] bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
-        <div className="absolute inset-x-0 bottom-0 z-10 p-4">
-          <p className="mb-0.5 text-[11px] font-bold uppercase tracking-[0.08em] text-white/85">
+        <div className="flex flex-col gap-0.5 p-3">
+          <p className="truncate text-[11px] font-bold uppercase tracking-[0.08em] text-on-surface-variant">
             {brand}
           </p>
-          <h3 className="font-headline text-xl font-extrabold leading-tight tracking-tight text-white line-clamp-2 md:text-2xl">
+          <h3 className="truncate font-headline text-base font-extrabold leading-tight tracking-tight text-on-background">
             {headline}
           </h3>
+          {showSubtitle ? (
+            <p className="truncate text-sm font-semibold text-on-surface-variant">
+              {subtitle}
+            </p>
+          ) : null}
         </div>
       </Link>
     );
@@ -287,7 +294,7 @@ function DealCard({
       onClick={isDemo ? (e) => e.preventDefault() : undefined}
       className="group flex flex-col"
     >
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-surface-container">
+      <div className="relative aspect-video overflow-hidden rounded-2xl bg-surface-container">
         {imageOrPlaceholder}
         {comingSoon && (
           <ComingSoonLock relativeLabel={relativeLaunch} compact />

@@ -12,10 +12,10 @@ export const ASPECT_RATIOS = {
 };
 
 export const DEAL_ASPECT_OPTIONS = [
-  { ...ASPECT_RATIOS.SQUARE, recommended: true, note: "Best for deal cards" },
-  { ...ASPECT_RATIOS.WIDESCREEN, note: "Wide banner" },
-  { ...ASPECT_RATIOS.HERO, note: "Hero view" },
+  { ...ASPECT_RATIOS.WIDESCREEN, recommended: true, note: "Best for deal cards" },
+  { ...ASPECT_RATIOS.SQUARE, note: "Square layout" },
   { ...ASPECT_RATIOS.STANDARD, note: "Standard photo" },
+  { ...ASPECT_RATIOS.HERO, note: "Portrait banner" },
   { ...ASPECT_RATIOS.ORIGINAL, note: "Keep source ratio" },
 ];
 

@@ -28,7 +28,7 @@ function DealsLoader({ loading, error }) {
               key={key}
               className="rounded-xl overflow-hidden border border-outline-variant/10 bg-surface"
             >
-              <div className="aspect-[16/10] skeleton-shimmer" />
+              <div className="aspect-video skeleton-shimmer" />
               <div className="p-6 space-y-3">
                 <div className="h-6 w-2/3 rounded-md skeleton-shimmer" />
                 <div className="h-4 w-full rounded-md skeleton-shimmer" />

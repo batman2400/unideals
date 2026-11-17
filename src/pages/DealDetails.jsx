@@ -2,8 +2,8 @@
  * DealDetails Page (/deals/:id)
  *
  * Lifestyle deal detail matching the home feed:
- *   • Mobile  → full-bleed portrait hero + stacked content
- *   • Desktop → sticky portrait image + info / redemption column
+ *   • Mobile  → 16:9 cover + stacked content
+ *   • Desktop → sticky 16:9 image + info / redemption column
  *
  * Redemption UX:
  *   • In-Store  → QR ticket with live 10-minute countdown
@@ -25,6 +25,7 @@ import BreadcrumbSchema from "../components/BreadcrumbSchema";
 import RelatedDeals from "../components/RelatedDeals";
 import { trackDealEvent } from "../lib/analytics";
 import { shareLink } from "../lib/share";
+import { isRedundantDealCopy } from "../lib/dealOffer";
 import Toast from "../components/Toast";
 
 function formatDealDate(value) {
@@ -860,8 +861,11 @@ function DealDetails() {
 
   const canonicalUrl = `${SITE_URL}/deals/${deal.id}`;
   const metaTitle = `${brand} Student Discount: ${discount} | Uni Deals`;
+  const visibleDescription = isRedundantDealCopy(description, title, discount)
+    ? ""
+    : description;
   const metaDescription = (
-    description ||
+    visibleDescription ||
     `Get the latest ${brand} student discount in Sri Lanka. Save ${discount} on ${brand} with your verified university email — redeem ${
       isInStore ? "in-store" : "online"
     } instantly on Uni Deals.`
@@ -1033,20 +1037,20 @@ function DealDetails() {
         <div className="grid grid-cols-1 gap-5 md:gap-6 lg:grid-cols-12 lg:items-start lg:gap-10 lg:pb-5">
           {/* LEFT — dynamic natural-aspect hero (hugs image size, zero letterbox) */}
           <div className="flex min-w-0 justify-center lg:col-span-5 lg:sticky lg:top-24">
-            <div className="relative mx-auto w-fit max-w-full overflow-hidden rounded-2xl shadow-sm">
+            <div className="relative aspect-video w-full max-w-full overflow-hidden rounded-2xl bg-surface-container shadow-sm">
               {imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={title}
-                  width={800}
-                  height={800}
+                  width={1280}
+                  height={720}
                   fetchPriority="high"
-                  className="block h-auto w-auto max-h-[min(580px,70vh)] max-w-full rounded-2xl object-cover"
+                  className="h-full w-full object-cover"
                   loading="eager"
                   decoding="async"
                 />
               ) : (
-                <div className="flex aspect-square w-full min-w-[280px] items-center justify-center rounded-2xl bg-surface-container">
+                <div className="flex h-full w-full items-center justify-center">
                   <span className="material-symbols-outlined text-5xl text-on-surface-variant/40">
                     image
                   </span>
@@ -1170,9 +1174,9 @@ function DealDetails() {
               </div>
             )}
 
-            {description ? (
+            {visibleDescription ? (
               <p className="mb-4 text-sm leading-relaxed text-on-surface-variant sm:text-base lg:mb-3">
-                {description}
+                {visibleDescription}
               </p>
             ) : null}
 
